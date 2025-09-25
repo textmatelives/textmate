@@ -1,4 +1,4 @@
-#!/System/Library/Frameworks/Ruby.framework/Versions/Current/usr/bin/ruby
+#!/usr/bin/env ruby
 # == Synopsis
 #
 # Module to assist in building the Contributors page using git commit history.
@@ -67,7 +67,7 @@ class GitHubLookup
     # textmatelives fork contributors
     @db['8c31c603c339e672556eb6a80755b790'] = 'dayglojesus'  # dayglojesus@gmail.com
     @db['01209ad974dd6086f1275ba21ccf8e2e'] = 'dayglojesus'  # dayglojesus@users.noreply.github.com
-    ObjectSpace.define_finalizer(@db, proc {|id| db.close })
+    ObjectSpace.define_finalizer(@db, proc {|id| @db.close })
   end
 
   # Resolve a commit author's GitHub login. The legacy "search user by
