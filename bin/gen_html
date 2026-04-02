@@ -1,4 +1,7 @@
 #!/System/Library/Frameworks/Ruby.framework/Versions/Current/usr/bin/ruby
+# encoding: utf-8
+Encoding.default_external = Encoding::UTF_8
+Encoding.default_internal = Encoding::UTF_8
 require 'optparse'
 require 'erb'
 
@@ -76,7 +79,7 @@ abort "Unable to find a markdown compiler" if filter.nil?
 
 filters    = "|#{filter} --nosmart"
 
-document   = ARGF.read
+document   = ARGF.read.force_encoding('UTF-8')
 document   = wrap_authors(wrap_key_equivalents(document))
 head, body = document.scan(/\A((?:^\w+:\s+.*$\n)*)\n?((?m:.*))\z/).flatten
 tmp        = head.scan(/^(\w+):\s+(.*)$/).collect { |pair| [pair[0].downcase, pair[1].strip] }

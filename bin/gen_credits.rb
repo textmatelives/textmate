@@ -111,8 +111,8 @@ def generate_credits(dbm_file, warn=false)
   # git hash, author name, email address, author date, commit summary
   cmd = 'git log -z --date=iso --pretty=format:"%H%n%an%n%ae%n%ad%n%s%n%B"'
 
-  `#{cmd}`.split(/\x00/).each {|commit|
-    fields = commit.split(/\n/, 6)
+  `#{cmd}`.force_encoding('UTF-8').split(/\x00/).each {|commit|
+    fields = commit.split(/\n/, 6).map { |f| f.force_encoding('UTF-8') }
 
     # omit commits from Allan; he gets enough credit already ;)
     if fields[1] != 'Allan Odgaard' then

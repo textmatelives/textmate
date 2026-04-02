@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+# encoding: utf-8
 require 'optparse'
 require 'shellwords'
 require 'fileutils'
@@ -1572,7 +1573,7 @@ if __FILE__ == $PROGRAM_NAME
     end
   end
 
-  if json = JSON.generate(new_outputs.to_a)
+  if json = JSON.generate(new_outputs.to_a.map { |s| s.dup.force_encoding('UTF-8') })
     FileUtils.mkdir_p(File.dirname(outputs_file))
     File.write(outputs_file, json)
   end
