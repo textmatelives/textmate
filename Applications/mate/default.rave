@@ -3,4 +3,7 @@ target "${dirname}" {
 	sources src/*.mm
 	executable "${target}"
 	frameworks ApplicationServices Security
+
+	expand CS_ENTITLEMENTS "${dir}/Entitlements.plist"
+	add CS_FLAGS "--entitlements '${CS_ENTITLEMENTS}'"
 }
