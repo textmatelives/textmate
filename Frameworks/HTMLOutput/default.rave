@@ -1,10 +1,10 @@
 target "${dirname}" {
-	require OakAppKit OakFoundation cf document io ns text
-	headers src/HTMLOutput.h
+	require OakAppKit OakFoundation OakSystem cf document io ns text
+	headers src/HTMLOutput.h src/helpers/OakHTMLOutputRequestMetadata.h
 
 	files resources/* "Resources"
 
 	sources src/**/*.mm
 	tests tests/*.cc
-	frameworks Cocoa WebKit
+	frameworks Cocoa WebKit UniformTypeIdentifiers
 }
