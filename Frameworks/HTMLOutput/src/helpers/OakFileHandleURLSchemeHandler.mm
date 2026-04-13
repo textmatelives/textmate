@@ -42,13 +42,12 @@
 		int len;
 		char buf[8192];
 		__block BOOL keepRunning = YES;
-		NSMutableData* __strong carryover = nil;
 
 		@try {
 			while(keepRunning && (len = read(fileHandle.fileDescriptor, buf, sizeof(buf))) > 0)
 			{
 				NSData* rawData = [NSData dataWithBytes:buf length:len];
-				NSData* data = RewriteFileURLs(rawData, &carryover);
+				NSData* data = RewriteFileURLsInAttributes(rawData);
 				dispatch_sync(dispatch_get_main_queue(), ^{
 					if(self->_stoppedTasks[taskKey])
 					{
@@ -68,17 +67,6 @@
 			dispatch_sync(dispatch_get_main_queue(), ^{
 				if(!self->_stoppedTasks[taskKey])
 					[urlSchemeTask didReceiveData:data];
-			});
-		}
-
-		// Flush any remaining carryover
-		if(carryover && carryover.length > 0)
-		{
-			NSData* remaining = [carryover copy];
-			carryover = nil;
-			dispatch_sync(dispatch_get_main_queue(), ^{
-				if(!self->_stoppedTasks[taskKey])
-					[urlSchemeTask didReceiveData:remaining];
 			});
 		}
 
@@ -106,50 +94,36 @@
 		oak::kill_process_group_in_background(pid);
 }
 
-static NSData* RewriteFileURLs(NSData* data, NSMutableData* __strong *carryover)
+static NSData* RewriteFileURLsInAttributes(NSData* data)
 {
-	// Prepend any carryover from previous chunk
-	NSMutableData* working;
-	if(*carryover && (*carryover).length > 0)
+	NSString* html = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+	if(!html)
+		return data;
+
+	// Rewrite file:// in href="..." and src="..." attributes only,
+	// but NOT inside txmt:// URLs (which embed file:// as a parameter)
+	NSMutableString* result = [html mutableCopy];
+
+	// Match href="file:// or src="file:// but not href="txmt://...file://
+	NSRegularExpression* regex = [NSRegularExpression regularExpressionWithPattern:
+		@"((?:href|src)\\s*=\\s*[\"'])file://" options:0 error:nil];
+
+	// Work backwards so indices stay valid
+	NSArray<NSTextCheckingResult*>* matches = [regex matchesInString:result options:0 range:NSMakeRange(0, result.length)];
+	for(NSTextCheckingResult* match in [matches reverseObjectEnumerator])
 	{
-		working = [NSMutableData dataWithData:*carryover];
-		[working appendData:data];
-	}
-	else
-	{
-		working = [NSMutableData dataWithData:data];
-	}
+		NSRange fullRange = match.range;
+		NSString* prefix = [result substringWithRange:[match rangeAtIndex:1]];
 
-	NSData* searchBytes = [@"file://" dataUsingEncoding:NSUTF8StringEncoding];
-	NSData* replaceBytes = [@"tm-file://" dataUsingEncoding:NSUTF8StringEncoding];
+		// Skip if this is inside a txmt:// URL
+		NSUInteger searchStart = fullRange.location > 50 ? fullRange.location - 50 : 0;
+		NSRange searchRange = NSMakeRange(searchStart, fullRange.location - searchStart);
+		if([result rangeOfString:@"txmt://" options:0 range:searchRange].location != NSNotFound)
+			continue;
 
-	NSMutableData* result = [NSMutableData data];
-	const uint8_t* bytes = (const uint8_t*)working.bytes;
-	NSUInteger length = working.length;
-	NSUInteger i = 0;
-
-	while(i < length)
-	{
-		if(length - i < searchBytes.length)
-		{
-			// Save as carryover for next chunk
-			*carryover = [NSMutableData dataWithBytes:bytes + i length:length - i];
-			return result;
-		}
-
-		if(memcmp(bytes + i, searchBytes.bytes, searchBytes.length) == 0)
-		{
-			[result appendData:replaceBytes];
-			i += searchBytes.length;
-		}
-		else
-		{
-			[result appendBytes:bytes + i length:1];
-			i++;
-		}
+		[result replaceCharactersInRange:fullRange withString:[prefix stringByAppendingString:@"tm-file://"]];
 	}
 
-	*carryover = nil;
-	return result;
+	return [result dataUsingEncoding:NSUTF8StringEncoding];
 }
 @end
