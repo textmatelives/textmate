@@ -106,7 +106,25 @@
 		if([result isKindOfClass:[NSArray class]] && result.count == 2)
 			self.pendingScrollPosition = result;
 	}];
-	[self.webView loadHTMLString:someHTML baseURL:[NSURL fileURLWithPath:NSHomeDirectory()]];
+
+	// Rewrite file:// to tm-file:// in href/src attributes (same as streaming path)
+	// but preserve file:// inside txmt:// links
+	NSMutableString* rewritten = [someHTML mutableCopy];
+	NSRegularExpression* regex = [NSRegularExpression regularExpressionWithPattern:
+		@"((?:href|src)\\s*=\\s*[\"'])file://" options:0 error:nil];
+	NSArray<NSTextCheckingResult*>* matches = [regex matchesInString:rewritten options:0 range:NSMakeRange(0, rewritten.length)];
+	for(NSTextCheckingResult* match in [matches reverseObjectEnumerator])
+	{
+		NSRange fullRange = match.range;
+		NSString* prefix = [rewritten substringWithRange:[match rangeAtIndex:1]];
+		NSUInteger searchStart = fullRange.location > 50 ? fullRange.location - 50 : 0;
+		NSRange searchRange = NSMakeRange(searchStart, fullRange.location - searchStart);
+		if([rewritten rangeOfString:@"txmt://" options:0 range:searchRange].location != NSNotFound)
+			continue;
+		[rewritten replaceCharactersInRange:fullRange withString:[prefix stringByAppendingString:@"tm-file://"]];
+	}
+
+	[self.webView loadHTMLString:rewritten baseURL:[NSURL fileURLWithPath:NSHomeDirectory()]];
 }
 
 - (NSString*)mainFrameTitle
