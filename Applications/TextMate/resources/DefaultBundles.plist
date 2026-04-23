@@ -12,6 +12,7 @@
 			<key>url</key><string>https://github.com/dayglojesus/apache.tmbundle</string>
 			<key>ref</key><string>remove-legacy-ruby</string>
 			<key>autoUpdate</key><true/>
+			<key>category</key><string>Languages</string>
 		</dict>
 		<dict>
 			<key>uuid</key><string>679EFB46-5368-47E5-85BA-DEF72709A471</string>
@@ -19,6 +20,7 @@
 			<key>url</key><string>https://github.com/dayglojesus/bundle-development.tmbundle</string>
 			<key>ref</key><string>remove-legacy-ruby</string>
 			<key>autoUpdate</key><true/>
+			<key>category</key><string>Build</string>
 		</dict>
 		<dict>
 			<key>uuid</key><string>4675A940-6227-11D9-BFB1-000D93589AF6</string>
@@ -26,6 +28,7 @@
 			<key>url</key><string>https://github.com/dayglojesus/c.tmbundle</string>
 			<key>ref</key><string>remove-legacy-ruby</string>
 			<key>autoUpdate</key><true/>
+			<key>category</key><string>Languages</string>
 		</dict>
 		<dict>
 			<key>uuid</key><string>4675F24E-6227-11D9-BFB1-000D93589AF6</string>
@@ -33,6 +36,7 @@
 			<key>url</key><string>https://github.com/dayglojesus/css.tmbundle</string>
 			<key>ref</key><string>remove-legacy-ruby</string>
 			<key>autoUpdate</key><true/>
+			<key>category</key><string>Languages</string>
 		</dict>
 		<dict>
 			<key>uuid</key><string>EADD4718-EE11-4ABF-A7E6-13351FB3799D</string>
@@ -40,6 +44,7 @@
 			<key>url</key><string>https://github.com/dayglojesus/git.tmbundle</string>
 			<key>ref</key><string>remove-legacy-ruby</string>
 			<key>autoUpdate</key><true/>
+			<key>category</key><string>SCM</string>
 		</dict>
 		<dict>
 			<key>uuid</key><string>4676FC6D-6227-11D9-BFB1-000D93589AF6</string>
@@ -47,6 +52,7 @@
 			<key>url</key><string>https://github.com/dayglojesus/html.tmbundle</string>
 			<key>ref</key><string>remove-legacy-ruby</string>
 			<key>autoUpdate</key><true/>
+			<key>category</key><string>Languages</string>
 		</dict>
 		<dict>
 			<key>uuid</key><string>7592B521-FC5E-4D69-A6DD-5A0DD7529CB4</string>
@@ -54,6 +60,7 @@
 			<key>url</key><string>https://github.com/dayglojesus/hyperlink-helper.tmbundle</string>
 			<key>ref</key><string>remove-legacy-ruby</string>
 			<key>autoUpdate</key><true/>
+			<key>category</key><string>Other</string>
 		</dict>
 		<dict>
 			<key>uuid</key><string>8BB0DBAF-E65C-4E14-A6A7-467D4AA535E0</string>
@@ -61,6 +68,7 @@
 			<key>url</key><string>https://github.com/dayglojesus/json.tmbundle</string>
 			<key>ref</key><string>remove-legacy-ruby</string>
 			<key>autoUpdate</key><true/>
+			<key>category</key><string>Languages</string>
 		</dict>
 		<dict>
 			<key>uuid</key><string>AAB4FD74-73F9-11D9-B89A-000D93589AF6</string>
@@ -68,6 +76,7 @@
 			<key>url</key><string>https://github.com/dayglojesus/javascript.tmbundle</string>
 			<key>ref</key><string>remove-legacy-ruby</string>
 			<key>autoUpdate</key><true/>
+			<key>category</key><string>Languages</string>
 		</dict>
 		<dict>
 			<key>uuid</key><string>385A8908-0733-408E-AFA5-9576D2E3A16B</string>
@@ -75,6 +84,7 @@
 			<key>url</key><string>https://github.com/dayglojesus/mail.tmbundle</string>
 			<key>ref</key><string>remove-legacy-ruby</string>
 			<key>autoUpdate</key><true/>
+			<key>category</key><string>Other</string>
 		</dict>
 		<dict>
 			<key>uuid</key><string>4679297D-6227-11D9-BFB1-000D93589AF6</string>
@@ -82,6 +92,7 @@
 			<key>url</key><string>https://github.com/dayglojesus/make.tmbundle</string>
 			<key>ref</key><string>remove-legacy-ruby</string>
 			<key>autoUpdate</key><true/>
+			<key>category</key><string>Build</string>
 		</dict>
 		<dict>
 			<key>uuid</key><string>D99E8C0C-792F-11D9-A212-000D93B3A10E</string>
@@ -89,6 +100,7 @@
 			<key>url</key><string>https://github.com/dayglojesus/markdown.tmbundle</string>
 			<key>ref</key><string>remove-legacy-ruby</string>
 			<key>autoUpdate</key><true/>
+			<key>category</key><string>Languages</string>
 		</dict>
 		<dict>
 			<key>uuid</key><string>8A9DDCA2-77E8-11D9-B5A8-000D93589AF6</string>
@@ -96,6 +108,7 @@
 			<key>url</key><string>https://github.com/dayglojesus/math.tmbundle</string>
 			<key>ref</key><string>remove-legacy-ruby</string>
 			<key>autoUpdate</key><true/>
+			<key>category</key><string>Other</string>
 		</dict>
 		<dict>
 			<key>uuid</key><string>162DCB4D-4227-11DA-A523-000D93C89990</string>
@@ -103,6 +116,7 @@
 			<key>url</key><string>https://github.com/dayglojesus/mercurial.tmbundle</string>
 			<key>ref</key><string>remove-legacy-ruby</string>
 			<key>autoUpdate</key><true/>
+			<key>category</key><string>SCM</string>
 		</dict>
 		<dict>
 			<key>uuid</key><string>4679484F-6227-11D9-BFB1-000D93589AF6</string>
@@ -110,6 +124,7 @@
 			<key>url</key><string>https://github.com/dayglojesus/objective-c.tmbundle</string>
 			<key>ref</key><string>remove-legacy-ruby</string>
 			<key>autoUpdate</key><true/>
+			<key>category</key><string>Languages</string>
 		</dict>
 		<dict>
 			<key>uuid</key><string>467A1966-6227-11D9-BFB1-000D93589AF6</string>
@@ -117,6 +132,7 @@
 			<key>url</key><string>https://github.com/dayglojesus/php.tmbundle</string>
 			<key>ref</key><string>remove-legacy-ruby</string>
 			<key>autoUpdate</key><true/>
+			<key>category</key><string>Languages</string>
 		</dict>
 		<dict>
 			<key>uuid</key><string>467A3CB0-6227-11D9-BFB1-000D93589AF6</string>
@@ -124,6 +140,7 @@
 			<key>url</key><string>https://github.com/dayglojesus/property-list.tmbundle</string>
 			<key>ref</key><string>remove-legacy-ruby</string>
 			<key>autoUpdate</key><true/>
+			<key>category</key><string>Languages</string>
 		</dict>
 		<dict>
 			<key>uuid</key><string>E3BADC20-6B0E-11D9-9DC9-000D93589AF6</string>
@@ -131,6 +148,7 @@
 			<key>url</key><string>https://github.com/dayglojesus/python.tmbundle</string>
 			<key>ref</key><string>remove-legacy-ruby</string>
 			<key>autoUpdate</key><true/>
+			<key>category</key><string>Languages</string>
 		</dict>
 		<dict>
 			<key>uuid</key><string>467B298F-6227-11D9-BFB1-000D93589AF6</string>
@@ -138,6 +156,7 @@
 			<key>url</key><string>https://github.com/dayglojesus/ruby.tmbundle</string>
 			<key>ref</key><string>remove-legacy-ruby</string>
 			<key>autoUpdate</key><true/>
+			<key>category</key><string>Languages</string>
 		</dict>
 		<dict>
 			<key>uuid</key><string>7A84ECFC-2683-4129-826D-51F05F7E668A</string>
@@ -145,6 +164,7 @@
 			<key>url</key><string>https://github.com/dayglojesus/scm-diff-gutter.tmbundle</string>
 			<key>ref</key><string>remove-legacy-ruby</string>
 			<key>autoUpdate</key><true/>
+			<key>category</key><string>SCM</string>
 		</dict>
 		<dict>
 			<key>uuid</key><string>AAB4CBF7-73F9-11D9-B89A-000D93589AF6</string>
@@ -152,6 +172,7 @@
 			<key>url</key><string>https://github.com/dayglojesus/sql.tmbundle</string>
 			<key>ref</key><string>remove-legacy-ruby</string>
 			<key>autoUpdate</key><true/>
+			<key>category</key><string>Languages</string>
 		</dict>
 		<dict>
 			<key>uuid</key><string>4694B05E-6227-11D9-BFB1-000D93589AF6</string>
@@ -159,6 +180,7 @@
 			<key>url</key><string>https://github.com/dayglojesus/shellscript.tmbundle</string>
 			<key>ref</key><string>remove-legacy-ruby</string>
 			<key>autoUpdate</key><true/>
+			<key>category</key><string>Languages</string>
 		</dict>
 		<dict>
 			<key>uuid</key><string>AEAF4DD4-74CD-11D9-BAD4-000A95A89C98</string>
@@ -166,6 +188,7 @@
 			<key>url</key><string>https://github.com/dayglojesus/subversion.tmbundle</string>
 			<key>ref</key><string>remove-legacy-ruby</string>
 			<key>autoUpdate</key><true/>
+			<key>category</key><string>SCM</string>
 		</dict>
 		<dict>
 			<key>uuid</key><string>0B296803-7D51-11D9-859D-000D93B6E43C</string>
@@ -173,6 +196,7 @@
 			<key>url</key><string>https://github.com/dayglojesus/todo.tmbundle</string>
 			<key>ref</key><string>remove-legacy-ruby</string>
 			<key>autoUpdate</key><true/>
+			<key>category</key><string>Other</string>
 		</dict>
 		<dict>
 			<key>uuid</key><string>5A9D4FC6-6CBE-11D9-A21B-000D93589AF6</string>
@@ -180,6 +204,7 @@
 			<key>url</key><string>https://github.com/dayglojesus/textmate.tmbundle</string>
 			<key>ref</key><string>remove-legacy-ruby</string>
 			<key>autoUpdate</key><true/>
+			<key>category</key><string>Other</string>
 		</dict>
 		<dict>
 			<key>uuid</key><string>4694D53F-6227-11D9-BFB1-000D93589AF6</string>
@@ -187,6 +212,7 @@
 			<key>url</key><string>https://github.com/dayglojesus/xml.tmbundle</string>
 			<key>ref</key><string>remove-legacy-ruby</string>
 			<key>autoUpdate</key><true/>
+			<key>category</key><string>Languages</string>
 		</dict>
 	</array>
 </dict>

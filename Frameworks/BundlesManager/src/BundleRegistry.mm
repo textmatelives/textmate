@@ -52,15 +52,16 @@ static NSInteger const kCurrentSchemaVersion = 1;
 	}
 
 	[self seedMandatory];
+	[self seedShippedDefaults];
 
-	// First-time seeding of shipped defaults happens only if no state file
-	// existed before this load.
+	// migrateExistingInstalls runs once, only when Bundles.plist is absent.
 	if(!root)
-	{
-		[self seedShippedDefaults];
 		[self migrateExistingInstalls];
-		[self save];
-	}
+
+	// Persist whenever we mutate (new specs seeded, categories refreshed,
+	// or migration ran). Cheap — writing a small plist is fine on every
+	// launch.
+	[self save];
 }
 
 // Phase-6 migration: if Bundles.plist does not yet exist but there are
@@ -108,6 +109,7 @@ static NSInteger const kCurrentSchemaVersion = 1;
 			continue;
 
 		NSString* sha = [NSString stringWithUTF8String:m.sha];
+		NSString* category = m.category ? [NSString stringWithUTF8String:m.category] : @"Other";
 		BundleSpec* existing = _specs[uuid];
 		if(!existing)
 		{
@@ -123,6 +125,7 @@ static NSInteger const kCurrentSchemaVersion = 1;
 			// silently restore the pinned values on every load.
 			existing.ref = sha;
 		}
+		existing.category = category;
 		existing.origin = TMBundleOriginMandatory;
 	}
 }
@@ -136,10 +139,28 @@ static NSInteger const kCurrentSchemaVersion = 1;
 	NSDictionary* root = [NSDictionary dictionaryWithContentsOfFile:path];
 	for(NSDictionary* entry in root[kKeyBundles])
 	{
+		NSString* uuidStr = entry[@"uuid"];
+		NSUUID* uuid = uuidStr ? [[NSUUID alloc] initWithUUIDString:uuidStr] : nil;
+		if(!uuid)
+			continue;
+
+		BundleSpec* existing = _specs[uuid];
+		if(existing)
+		{
+			// Don't overwrite user-edited url/ref/autoUpdate, but refresh
+			// shipped metadata (category, and name when the user hasn't
+			// customized it) every launch so the scope bar stays current
+			// as DefaultBundles.plist evolves.
+			if(existing.origin != TMBundleOriginMandatory)
+			{
+				if(NSString* c = entry[@"category"])
+					existing.category = c;
+			}
+			continue;
+		}
+
 		BundleSpec* spec = [[BundleSpec alloc] initWithPlistRepresentation:entry];
 		if(!spec)
-			continue;
-		if(_specs[spec.uuid]) // mandatory already seeded, or user overrode
 			continue;
 		spec.origin = TMBundleOriginShipped;
 		_specs[spec.uuid] = spec;

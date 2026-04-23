@@ -903,6 +903,7 @@ namespace
 			bundle.htmlURL     = bundle.downloadURL;
 			bundle.ref                 = spec.ref;
 			bundle.autoUpdateEnabled   = spec.autoUpdate;
+			bundle.category            = spec.category.length ? spec.category : @"Other";
 			bundle.downloadLastUpdated = spec.installedAt;
 			bundle.lastUpdated         = spec.installedAt;
 

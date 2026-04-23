@@ -18,6 +18,7 @@ struct TMMandatoryBundle
 	char const* name;
 	char const* url;
 	char const* sha;
+	char const* category;
 };
 
 static struct TMMandatoryBundle const kTMMandatoryBundles[] = {
@@ -27,6 +28,7 @@ static struct TMMandatoryBundle const kTMMandatoryBundles[] = {
 		"Bundle Support",
 		"https://github.com/dayglojesus/bundle-support.tmbundle",
 		"7641db1a16734317103cc21df3946b9fe4eaf8c2",
+		"Other",
 	},
 	// branch: remove-legacy-ruby
 	{
@@ -34,6 +36,7 @@ static struct TMMandatoryBundle const kTMMandatoryBundles[] = {
 		"Text",
 		"https://github.com/dayglojesus/text.tmbundle",
 		"34ab58910c42f53798f19dd2cba3d7732a3e8d03",
+		"Other",
 	},
 	// branch: remove-legacy-ruby
 	{
@@ -41,6 +44,7 @@ static struct TMMandatoryBundle const kTMMandatoryBundles[] = {
 		"Source",
 		"https://github.com/dayglojesus/source.tmbundle",
 		"2c873f8382fd11cda4a86b4159bc2977577568d3",
+		"Other",
 	},
 };
 

@@ -5,11 +5,13 @@ static NSString* const kKeyName         = @"name";
 static NSString* const kKeyURL          = @"url";
 static NSString* const kKeyRef          = @"ref";
 static NSString* const kKeyAutoUpdate   = @"autoUpdate";
+static NSString* const kKeyCategory     = @"category";
 static NSString* const kKeyInstalledSHA = @"installedSHA";
 static NSString* const kKeyInstalledAt  = @"installedAt";
 static NSString* const kKeyETag         = @"etag";
 
-static NSString* const kDefaultRef = @"main";
+static NSString* const kDefaultRef      = @"main";
+static NSString* const kDefaultCategory = @"Other";
 
 @implementation BundleSpec
 
@@ -25,6 +27,7 @@ static NSString* const kDefaultRef = @"main";
 		_url        = [url copy];
 		_ref        = [(ref.length ? ref : kDefaultRef) copy];
 		_autoUpdate = YES;
+		_category   = [kDefaultCategory copy];
 		_origin     = TMBundleOriginUser;
 	}
 	return self;
@@ -43,6 +46,9 @@ static NSString* const kDefaultRef = @"main";
 	if(NSNumber* n = plist[kKeyAutoUpdate])
 		_autoUpdate = n.boolValue;
 
+	if(NSString* c = plist[kKeyCategory])
+		_category = [c copy];
+
 	_installedSHA = [plist[kKeyInstalledSHA] copy];
 	_installedAt  = [plist[kKeyInstalledAt] copy];
 	_etag         = [plist[kKeyETag] copy];
@@ -58,6 +64,7 @@ static NSString* const kDefaultRef = @"main";
 	d[kKeyURL]        = _url;
 	d[kKeyRef]        = _ref;
 	d[kKeyAutoUpdate] = @(_autoUpdate);
+	if(_category.length) d[kKeyCategory] = _category;
 	if(_installedSHA) d[kKeyInstalledSHA] = _installedSHA;
 	if(_installedAt)  d[kKeyInstalledAt]  = _installedAt;
 	if(_etag)         d[kKeyETag]         = _etag;
@@ -77,6 +84,7 @@ static NSString* const kDefaultRef = @"main";
 {
 	BundleSpec* copy = [[BundleSpec allocWithZone:zone] initWithUUID:_uuid name:_name url:_url ref:_ref];
 	copy.autoUpdate   = _autoUpdate;
+	copy.category     = _category;
 	copy.origin       = _origin;
 	copy.installedSHA = _installedSHA;
 	copy.installedAt  = _installedAt;
