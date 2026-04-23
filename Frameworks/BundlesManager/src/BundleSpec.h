@@ -26,8 +26,8 @@ typedef NS_ENUM(NSInteger, TMBundleOrigin) {
 - (NSDictionary*)plistRepresentation;
 
 @property (nonatomic, readonly) NSUUID*   uuid;
-@property (nonatomic, readonly) NSString* name;
-@property (nonatomic, readonly) NSString* url;
+@property (nonatomic)           NSString* name;
+@property (nonatomic)           NSString* url;
 
 // Mutable state
 @property (nonatomic)           NSString* ref;             // branch/tag/SHA; default "main"

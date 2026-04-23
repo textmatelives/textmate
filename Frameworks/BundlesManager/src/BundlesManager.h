@@ -36,4 +36,24 @@ extern NSString* const kUserDefaultsLastBundleUpdateCheckKey;
 // Force one immediate poll cycle across all registry specs. Useful for
 // "Check for Updates Now" UI.
 - (void)checkForBundleUpdatesNowWithCompletion:(void(^)(void))completion;
+
+// Toggle per-bundle auto-update. Persists immediately.
+- (void)setAutoUpdate:(BOOL)autoUpdate forBundle:(Bundle*)bundle;
+
+// Update the registered spec's url and/or ref, then re-fetch. Pass nil to
+// leave a field unchanged. On success fires completion with the resolved
+// SHA; on failure with an NSError.
+- (void)updateBundle:(Bundle*)bundle
+                 url:(NSString*)newURL
+                 ref:(NSString*)newRef
+          completion:(void(^)(NSString* installedSHA, NSError* error))completion;
+
+// Revert a shipped-default spec back to its DefaultBundles.plist url/ref
+// and re-fetch. No-op for mandatory or user-added specs.
+- (void)revertBundleToDefault:(Bundle*)bundle
+                   completion:(void(^)(NSString* installedSHA, NSError* error))completion;
+
+// Returns YES if bundle's registered spec differs from DefaultBundles.plist
+// (user edited a shipped default). Returns NO for mandatory/user-added.
+- (BOOL)bundleIsEditedShippedDefault:(Bundle*)bundle;
 @end

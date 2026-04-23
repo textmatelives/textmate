@@ -25,6 +25,10 @@
 @property (nonatomic)                        NSDate*   lastUpdated;
 @property (nonatomic, getter = isDependency) BOOL      dependency; // Another bundle depends on us
 
+// From BundleRegistry
+@property (nonatomic)                        NSString* ref;
+@property (nonatomic)                        BOOL      autoUpdateEnabled;
+
 // Generated
 @property (nonatomic, readonly)                        BOOL hasUpdate;
 @property (nonatomic, getter = isCompatible, readonly) BOOL compatible; // Works with current version of TextMate

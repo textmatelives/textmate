@@ -211,6 +211,7 @@ static NSString* SafeBasename (NSString* name)
 			BundleSpec* spec = existing ?: [[BundleSpec alloc] initWithUUID:uuid name:finalName url:url ref:resolvedRef];
 			if(existing)
 			{
+				spec.url = url;
 				spec.ref = resolvedRef;
 			}
 			spec.autoUpdate   = YES;
@@ -273,6 +274,87 @@ static NSString* SafeBasename (NSString* name)
 		if(completion)
 			completion();
 	}];
+}
+
+- (void)setAutoUpdate:(BOOL)autoUpdate forBundle:(Bundle*)bundle
+{
+	BundleSpec* spec = [BundleRegistry.sharedInstance specForUUID:bundle.identifier];
+	if(!spec || spec.autoUpdate == autoUpdate)
+		return;
+	spec.autoUpdate = autoUpdate;
+	[BundleRegistry.sharedInstance updateSpec:spec];
+}
+
+- (void)updateBundle:(Bundle*)bundle url:(NSString*)newURL ref:(NSString*)newRef completion:(void(^)(NSString*, NSError*))completion
+{
+	BundleSpec* spec = [BundleRegistry.sharedInstance specForUUID:bundle.identifier];
+	if(!spec)
+	{
+		completion(nil, [NSError errorWithDomain:@"BundlesManager" code:1 userInfo:@{ NSLocalizedDescriptionKey: @"No registry spec" }]);
+		return;
+	}
+	if(spec.origin == TMBundleOriginMandatory)
+	{
+		completion(nil, [NSError errorWithDomain:@"BundlesManager" code:2 userInfo:@{ NSLocalizedDescriptionKey: @"Mandatory bundle url/ref cannot be edited" }]);
+		return;
+	}
+
+	NSString* targetURL = newURL.length ? newURL : spec.url;
+	NSString* targetRef = newRef.length ? newRef : spec.ref;
+
+	// addBundleFromURL updates the existing spec in place via UUID match.
+	[self addBundleFromURL:targetURL ref:targetRef name:nil completion:completion];
+}
+
+- (NSDictionary*)shippedDefaultsByUUID
+{
+	static NSDictionary* defaults;
+	static dispatch_once_t once;
+	dispatch_once(&once, ^{
+		NSMutableDictionary* res = [NSMutableDictionary dictionary];
+		NSString* path = [NSBundle.mainBundle pathForResource:@"DefaultBundles" ofType:@"plist"];
+		for(NSDictionary* entry in [[NSDictionary dictionaryWithContentsOfFile:path] objectForKey:@"bundles"])
+		{
+			if(NSString* uuidStr = entry[@"uuid"])
+				res[uuidStr.uppercaseString] = entry;
+		}
+		defaults = [res copy];
+	});
+	return defaults;
+}
+
+- (BOOL)bundleIsEditedShippedDefault:(Bundle*)bundle
+{
+	BundleSpec* spec = [BundleRegistry.sharedInstance specForUUID:bundle.identifier];
+	if(!spec || spec.origin != TMBundleOriginShipped)
+		return NO;
+
+	NSDictionary* def = [self shippedDefaultsByUUID][spec.uuid.UUIDString.uppercaseString];
+	if(!def)
+		return NO;
+
+	NSString* defURL = def[@"url"];
+	NSString* defRef = def[@"ref"];
+	return !([spec.url isEqualToString:defURL] && [spec.ref isEqualToString:defRef]);
+}
+
+- (void)revertBundleToDefault:(Bundle*)bundle completion:(void(^)(NSString*, NSError*))completion
+{
+	BundleSpec* spec = [BundleRegistry.sharedInstance specForUUID:bundle.identifier];
+	if(!spec || spec.origin != TMBundleOriginShipped)
+	{
+		completion(nil, [NSError errorWithDomain:@"BundlesManager" code:3 userInfo:@{ NSLocalizedDescriptionKey: @"Not a shipped default" }]);
+		return;
+	}
+
+	NSDictionary* def = [self shippedDefaultsByUUID][spec.uuid.UUIDString.uppercaseString];
+	if(!def)
+	{
+		completion(nil, [NSError errorWithDomain:@"BundlesManager" code:4 userInfo:@{ NSLocalizedDescriptionKey: @"No default entry for this uuid" }]);
+		return;
+	}
+
+	[self updateBundle:bundle url:def[@"url"] ref:def[@"ref"] completion:completion];
 }
 
 - (void)updateRegisteredBundlesWithCallback:(void(^)(void))completionHandler
@@ -818,6 +900,9 @@ namespace
 			bundle.mandatory   = (spec.origin == TMBundleOriginMandatory);
 			bundle.recommended = (spec.origin == TMBundleOriginShipped);
 			bundle.downloadURL = spec.url.length ? [NSURL URLWithString:spec.url] : nil;
+			bundle.htmlURL     = bundle.downloadURL;
+			bundle.ref                 = spec.ref;
+			bundle.autoUpdateEnabled   = spec.autoUpdate;
 			bundle.downloadLastUpdated = spec.installedAt;
 			bundle.lastUpdated         = spec.installedAt;
 
