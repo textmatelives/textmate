@@ -130,13 +130,80 @@ static NSUserInterfaceItemIdentifier const kTableColumnIdentifierActions     = @
 }
 @end
 
+// ================
+// = Hover-highlight NSTableView subclass
+// ================
+
+@interface OakHoverTableView : NSTableView
+@property (nonatomic) NSInteger hoveredRow;
+@end
+
+@implementation OakHoverTableView
+{
+	NSTrackingArea* _trackingArea;
+}
+
+- (instancetype)initWithFrame:(NSRect)frameRect
+{
+	if(self = [super initWithFrame:frameRect])
+		_hoveredRow = -1;
+	return self;
+}
+
+- (void)updateTrackingAreas
+{
+	[super updateTrackingAreas];
+	if(_trackingArea)
+		[self removeTrackingArea:_trackingArea];
+	_trackingArea = [[NSTrackingArea alloc] initWithRect:NSZeroRect
+		options:(NSTrackingMouseEnteredAndExited | NSTrackingMouseMoved | NSTrackingActiveInKeyWindow | NSTrackingInVisibleRect)
+		owner:self
+		userInfo:nil];
+	[self addTrackingArea:_trackingArea];
+}
+
+- (void)mouseMoved:(NSEvent*)event
+{
+	NSPoint point = [self convertPoint:event.locationInWindow fromView:nil];
+	[self setHoveredRow:[self rowAtPoint:point]];
+}
+
+- (void)mouseExited:(NSEvent*)event
+{
+	[self setHoveredRow:-1];
+}
+
+- (void)setHoveredRow:(NSInteger)newRow
+{
+	if(_hoveredRow == newRow)
+		return;
+	NSInteger oldRow = _hoveredRow;
+	_hoveredRow = newRow;
+	if(oldRow >= 0 && oldRow < self.numberOfRows)
+		[self setNeedsDisplayInRect:[self rectOfRow:oldRow]];
+	if(newRow >= 0 && newRow < self.numberOfRows)
+		[self setNeedsDisplayInRect:[self rectOfRow:newRow]];
+}
+
+- (void)drawRow:(NSInteger)row clipRect:(NSRect)clipRect
+{
+	if(row == _hoveredRow && ![self.selectedRowIndexes containsIndex:row])
+	{
+		[[NSColor.secondaryLabelColor colorWithAlphaComponent:0.08] set];
+		NSRectFillUsingOperation([self rectOfRow:row], NSCompositingOperationSourceOver);
+	}
+	[super drawRow:row clipRect:clipRect];
+}
+
+@end
+
 @interface BundlesPreferences () <NSTableViewDelegate, NSMenuDelegate>
 {
 	NSMutableSet*              _enabledCategories;
 	NSArrayController*         _arrayController;
 	OakScopeBarViewController* _scopeBar;
 	NSSearchField*             _searchField;
-	NSTableView*               _bundlesTableView;
+	OakHoverTableView*         _bundlesTableView;
 }
 @property (nonatomic) NSUInteger selectedIndex;
 @end
@@ -247,7 +314,7 @@ static NSUserInterfaceItemIdentifier const kTableColumnIdentifierActions     = @
 	actionsCell.target      = self;
 	actionsTableColumn.dataCell = actionsCell;
 
-	_bundlesTableView = [[NSTableView alloc] initWithFrame:NSZeroRect];
+	_bundlesTableView = [[OakHoverTableView alloc] initWithFrame:NSZeroRect];
 	_bundlesTableView.allowsColumnReordering  = NO;
 	_bundlesTableView.columnAutoresizingStyle = NSTableViewLastColumnOnlyAutoresizingStyle;
 	_bundlesTableView.delegate                = self;
