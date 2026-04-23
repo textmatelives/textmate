@@ -1,0 +1,3 @@
+[submodule "Support/shared/private/vendor/plist"]
+	path = Support/shared/private/vendor/plist
+	url = https://github.com/patsplat/plist.git

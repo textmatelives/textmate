@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>name</key>
+	<string>Comments: Disable Indent</string>
+	<key>scope</key>
+	<string>comment.block</string>
+	<key>settings</key>
+	<dict>
+		<key>unIndentedLinePattern</key>
+		<string>.+</string>
+	</dict>
+	<key>uuid</key>
+	<string>B0E99103-4A5D-45FC-B5BD-38F681FFF29E</string>
+</dict>
+</plist>

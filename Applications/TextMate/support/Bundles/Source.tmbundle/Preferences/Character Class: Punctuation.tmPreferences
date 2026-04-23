@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>name</key>
+	<string>Character Class: Punctuation</string>
+	<key>scope</key>
+	<string>punctuation.separator</string>
+	<key>settings</key>
+	<dict>
+		<key>characterClass</key>
+		<string>punctuation</string>
+	</dict>
+	<key>uuid</key>
+	<string>ACFE8A63-EE5C-42C2-87FE-21BAC1810FB9</string>
+</dict>
+</plist>

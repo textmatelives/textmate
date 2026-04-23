@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>name</key>
+	<string>Character Class: Escape</string>
+	<key>scope</key>
+	<string>constant.character.escape</string>
+	<key>settings</key>
+	<dict>
+		<key>characterClass</key>
+		<string>escape</string>
+	</dict>
+	<key>uuid</key>
+	<string>67BB1E41-08BE-4F53-94A7-3BF84352B549</string>
+</dict>
+</plist>

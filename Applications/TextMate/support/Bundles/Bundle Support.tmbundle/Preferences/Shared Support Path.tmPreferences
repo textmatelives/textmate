@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>name</key>
+	<string>Shared Support Path</string>
+	<key>settings</key>
+	<dict>
+		<key>shellVariables</key>
+		<array>
+			<dict>
+				<key>name</key>
+				<string>TM_SUPPORT_PATH</string>
+				<key>value</key>
+				<string>$TM_BUNDLE_SUPPORT/shared</string>
+			</dict>
+			<dict>
+				<key>name</key>
+				<string>PATH</string>
+				<key>value</key>
+				<string>$PATH:$TM_SUPPORT_PATH/bin</string>
+			</dict>
+		</array>
+	</dict>
+	<key>uuid</key>
+	<string>65F25174-08DA-48A1-BD41-98C494972B97</string>
+</dict>
+</plist>

@@ -547,6 +547,8 @@ BOOL HasDocumentWindow (NSArray* windows)
 			os_log_error(OS_LOG_DEFAULT, "No ‘DefaultBundles.tbz’ in TextMate.app");
 		}
 	}
+
+	[BundlesManager.sharedInstance ensureMandatoryBundlesOnDisk];
 	[BundlesManager.sharedInstance loadBundlesIndex];
 
 	if(BOOL restoreSession = ![NSUserDefaults.standardUserDefaults boolForKey:kUserDefaultsDisableSessionRestoreKey])

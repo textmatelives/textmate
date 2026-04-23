@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>name</key>
+	<string>Style: Line Comments - Semicolon</string>
+	<key>scope</key>
+	<string>comment.line.semicolon</string>
+	<key>settings</key>
+	<dict>
+		<key>indentedSoftWrap</key>
+		<dict>
+			<key>format</key>
+			<string>${0/(\s*)(.{,4}).*/$1${2/./ /g}/}</string>
+			<key>match</key>
+			<string>.*(;)\s+</string>
+		</dict>
+		<key>softWrap</key>
+		<true/>
+	</dict>
+	<key>uuid</key>
+	<string>0B427248-5D44-4106-A47E-F706561BA8F7</string>
+</dict>
+</plist>

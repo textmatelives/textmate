@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>beforeRunningCommand</key>
+	<string>nop</string>
+	<key>command</key>
+	<string>#!/bin/bash
+export LC_ALL=C
+while IFS= read -r line; do
+  read -rn 10 prefix &lt; &lt;(tr -dc '[:alnum:]' &lt; /dev/urandom)
+  printf '%s\t%s\n' "$prefix" "$line"
+done|sort|cut -f2-
+</string>
+	<key>input</key>
+	<string>selection</string>
+	<key>inputFormat</key>
+	<string>text</string>
+	<key>keyEquivalent</key>
+	<string></string>
+	<key>name</key>
+	<string>Randomize Lines in Document / Selection</string>
+	<key>outputCaret</key>
+	<string>heuristic</string>
+	<key>outputFormat</key>
+	<string>text</string>
+	<key>outputLocation</key>
+	<string>replaceInput</string>
+	<key>uuid</key>
+	<string>90291A6E-34F6-4FD5-BA82-6BB6FB4DD492</string>
+	<key>version</key>
+	<integer>2</integer>
+</dict>
+</plist>

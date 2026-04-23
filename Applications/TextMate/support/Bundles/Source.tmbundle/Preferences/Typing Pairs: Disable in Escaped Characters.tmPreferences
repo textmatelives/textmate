@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>name</key>
+	<string>Typing Pairs: Disable in Escaped Characters</string>
+	<key>scope</key>
+	<string>B:constant.character.escape - dyn.selection</string>
+	<key>settings</key>
+	<dict>
+		<key>smartTypingPairs</key>
+		<array/>
+	</dict>
+	<key>uuid</key>
+	<string>F77060A4-2440-414B-9FBC-1E751A8E8FA7</string>
+</dict>
+</plist>

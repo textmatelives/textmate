@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>beforeRunningCommand</key>
+	<string>nop</string>
+	<key>command</key>
+	<string>#!/usr/bin/ruby
+
+IS_SELECTION = ENV.key?('TM_SELECTED_TEXT')
+CURRENT_LINE = ENV['TM_LINE_NUMBER'].to_i.pred
+TAB_SIZE     = (ENV['TM_TAB_SIZE'] || '2').to_i
+lines        = STDIN.readlines
+
+# List of operators that determine if a line is or is not an assignment
+INCLUDE_OPS = %w( -= += /= //= %= *= **= ^= |= &amp;= ||= &amp;&amp;= &lt;&lt;= &gt;&gt;= &gt;&gt;&gt;= .= x= := ::= =&gt; = &lt;- )
+EXCLUDE_OPS = %w( &lt;= &gt;= &lt;=&gt; == === != =~ )
+
+INCLUDE = Regexp.new(INCLUDE_OPS.map { |op| Regexp.escape(op) }.join('|'))
+EXCLUDE = Regexp.new(EXCLUDE_OPS.map { |op| Regexp.escape(op) }.join('|'))
+
+# Use look-behind to have padding inserted *after* the (colon) operator
+FALLBACK_INCLUDE = /(?&lt;=\S:[\t ])/
+
+class AlignHelper
+  def self.try(lines, include, exclude, first)
+    helper = AlignHelper.new(lines, include, exclude)
+    line_numbers = helper.find_range(first)
+    line_numbers.empty? ? nil : helper.align_lines(line_numbers)
+  end
+
+  def initialize(lines, include, exclude)
+    @lines   = lines
+    @include = include
+    @exclude = exclude
+  end
+
+  def find_range(first)
+    if first.nil?
+      (0..@lines.size).select { |i| matches?(i) }
+    elsif matches?(first)
+      last, indent = first, indent_size(first)
+      first -= 1 while first &gt; 0            &amp;&amp; matches?(first-1, indent)
+      last  += 1 while last+1 &lt; @lines.size &amp;&amp; matches?(last+1, indent)
+      (first..last).to_a
+    else
+      []
+    end
+  end
+
+  def align_lines(indexes, split_pattern = @include)
+    lines = indexes.map { |i| @lines[i] }
+
+    partitioned = lines.map do |line|
+      line.partition(split_pattern)
+    end
+
+    left_width = partitioned.map { |s, _, _| s.rstrip.size }.max
+    op_width   = partitioned.map { |_, s, _| s.size }.max
+
+    left_width += 1 if op_width &gt; 0
+
+    lines = partitioned.map do |left, op, right|
+      left.rstrip.ljust(left_width) + op.rjust(op_width) + ' ' + right.gsub(/^[\t ]+/, '')
+    end
+
+    res = @lines.dup
+    indexes.each { |i| res[i] = lines.shift }
+    res
+  end
+
+  private
+
+  def matches?(i, indent = nil)
+    include_match = @include &amp;&amp; @include.match(@lines[i])
+    exclude_match = @exclude &amp;&amp; @exclude.match(@lines[i])
+    include_match &amp;&amp; (exclude_match.nil? || include_match.begin(0) &lt; exclude_match.begin(0)) &amp;&amp; (indent.nil? || indent == indent_size(i))
+  end
+
+  def indent_size(i, tab_size = TAB_SIZE)
+    size = 0
+    $&amp;.scan(/./) do |ch|
+      size += ch == ' ' ? 1 : (tab_size - (size % tab_size))
+    end if @lines[i] =~ /^[ \t]*/
+    size
+  end
+end
+
+patterns = [
+  [ INCLUDE, EXCLUDE ],
+  [ FALLBACK_INCLUDE ],
+]
+
+for include, exclude in patterns do
+  if new_lines = AlignHelper.try(lines, include, exclude, IS_SELECTION ? nil : CURRENT_LINE)
+    lines = new_lines
+    break
+  end
+end
+
+STDOUT &lt;&lt; lines.join
+</string>
+	<key>input</key>
+	<string>selection</string>
+	<key>inputFormat</key>
+	<string>text</string>
+	<key>keyEquivalent</key>
+	<string>~@]</string>
+	<key>name</key>
+	<string>Align Assignments</string>
+	<key>outputCaret</key>
+	<string>heuristic</string>
+	<key>outputFormat</key>
+	<string>text</string>
+	<key>outputLocation</key>
+	<string>replaceInput</string>
+	<key>uuid</key>
+	<string>FCBE2215-19CA-470A-8D92-BB0D00491D62</string>
+	<key>version</key>
+	<integer>2</integer>
+</dict>
+</plist>

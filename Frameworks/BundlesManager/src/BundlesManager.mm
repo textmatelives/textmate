@@ -1,4 +1,7 @@
 #import "BundlesManager.h"
+#import "BundleFetcher.h"
+#import "BundleRegistry.h"
+#import "BundleSpec.h"
 #import <bundles/load.h>
 #import "InstallBundleItems.h"
 #import <OakAppKit/NSAlert Additions.h>
@@ -16,6 +19,7 @@
 #import <io/entries.h>
 #import <io/events.h>
 #import <oak/debug.h>
+#import <sys/stat.h>
 
 NSString* const kUserDefaultsDisableBundleUpdatesKey       = @"disableBundleUpdates";
 NSString* const kUserDefaultsLastBundleUpdateCheckKey      = @"lastBundleUpdateCheck";
@@ -46,9 +50,6 @@ static NSString* SafeBasename (NSString* name)
 @property (nonatomic) NSArray<Bundle*>* bundles;
 
 @property (nonatomic) NSString* installDirectory;
-@property (nonatomic) NSString* localIndexPath;
-@property (nonatomic) NSString* remoteIndexPath;
-@property (nonatomic) NSURL*    remoteIndexURL;
 @end
 
 @implementation BundlesManager
@@ -63,9 +64,12 @@ static NSString* SafeBasename (NSString* name)
 	if(self = [super init])
 	{
 		_installDirectory = [[NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES) firstObject] stringByAppendingPathComponent:@"TextMate/Managed"];
-		_localIndexPath   = [_installDirectory stringByAppendingPathComponent:@"LocalIndex.plist"];
-		_remoteIndexPath  = [_installDirectory stringByAppendingPathComponent:@"Cache/org.textmate.updates.default"];
-		_remoteIndexURL   = [NSURL URLWithString:@REST_API "/bundles"];
+
+		// Migration: delete stale legacy caches. Harmless if absent.
+		NSString* legacyRemoteIndex = [_installDirectory stringByAppendingPathComponent:@"Cache/org.textmate.updates.default"];
+		NSString* legacyLocalIndex  = [_installDirectory stringByAppendingPathComponent:@"LocalIndex.plist"];
+		[NSFileManager.defaultManager removeItemAtPath:legacyRemoteIndex error:nil];
+		[NSFileManager.defaultManager removeItemAtPath:legacyLocalIndex  error:nil];
 
 		[self userDefaultsDidChange:nil];
 		OakObserveUserDefaults(self);
@@ -102,9 +106,8 @@ static NSString* SafeBasename (NSString* name)
 		_updateBundleIndexScheduler.interval = updateFrequency;
 		_updateBundleIndexScheduler.repeats  = YES;
 		[_updateBundleIndexScheduler scheduleWithBlock:^(NSBackgroundActivityCompletionHandler completionHandler){
-			os_activity_initiate("Update bundle index", OS_ACTIVITY_FLAG_DEFAULT, ^(){
-				[self tryUpdateBundleIndexAndCallback:^(BOOL wasUpdated){
-					os_log(OS_LOG_DEFAULT, "Newer bundle index retrieved: %{public}s", wasUpdated ? "YES" : "NO");
+			os_activity_initiate("Update registered bundles", OS_ACTIVITY_FLAG_DEFAULT, ^(){
+				[self updateRegisteredBundlesWithCallback:^{
 					completionHandler(NSBackgroundActivityResultFinished);
 				}];
 			});
@@ -112,39 +115,276 @@ static NSString* SafeBasename (NSString* name)
 	}
 }
 
-- (void)tryUpdateBundleIndexAndCallback:(void(^)(BOOL wasUpdated))completionHandler
+- (void)ensureMandatoryBundlesOnDisk
 {
-	[OakDownloadManager.sharedInstance downloadFileAtURL:_remoteIndexURL replacingFileAtURL:[NSURL fileURLWithPath:_remoteIndexPath] publicKeys:self.publicKeys completionHandler:^(BOOL wasUpdated, NSError* error){
-		path::set_attr(_remoteIndexPath.fileSystemRepresentation, "last-check", to_s(oak::date_t::now()));
-		if(!error)
-			[NSUserDefaults.standardUserDefaults setObject:[NSDate date] forKey:kUserDefaultsLastBundleUpdateCheckKey];
-		if(wasUpdated)
-		{
-			os_log(OS_LOG_DEFAULT, "Bundle index updated: %{public}@", _remoteIndexPath);
-			dispatch_async(dispatch_get_main_queue(), ^{
-				if(NSArray* newBundles = [self bundlesByLoadingIndex])
+	[BundleRegistry.sharedInstance ensureMandatoryBundlesOnDisk];
+}
+
+- (void)addBundleFromURL:(NSString*)url ref:(NSString*)ref name:(NSString*)name completion:(void(^)(NSString*, NSError*))completion
+{
+	NSString* owner = nil;
+	NSString* repo  = nil;
+	if(![BundleFetcher parseURL:url owner:&owner repo:&repo])
+	{
+		completion(nil, [NSError errorWithDomain:@"BundlesManager" code:1 userInfo:@{ NSLocalizedDescriptionKey: [NSString stringWithFormat:@"Cannot parse URL: %@", url] }]);
+		return;
+	}
+
+	NSString* resolvedRef  = ref.length ? ref : @"main";
+	NSString* resolvedName = name.length ? name : [repo stringByReplacingOccurrencesOfString:@".tmbundle" withString:@""];
+
+	// Stage: fetch to a temp dir, read info.plist for UUID, then register.
+	NSURL* stagingURL = [NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:[[NSUUID UUID] UUIDString]] isDirectory:YES];
+	NSUUID* placeholderUUID = [NSUUID UUID];
+
+	BundleSpec* probe = [[BundleSpec alloc] initWithUUID:placeholderUUID name:resolvedName url:url ref:resolvedRef];
+	if(!probe)
+	{
+		completion(nil, [NSError errorWithDomain:@"BundlesManager" code:2 userInfo:@{ NSLocalizedDescriptionKey: @"Could not construct bundle spec" }]);
+		return;
+	}
+
+	// We don't know the real UUID until after fetch. BundleFetcher validates
+	// UUID against the spec — we need a two-step: fetch into staging without
+	// UUID check, read UUID, then rename+register.
+	//
+	// Simpler approach: resolve SHA, fetch codeload directly, extract into a
+	// temp dir, read info.plist UUID, then install properly into Managed/Bundles
+	// using the proper name.
+
+	NSString* encodedRef = [resolvedRef stringByAddingPercentEncodingWithAllowedCharacters:NSCharacterSet.URLPathAllowedCharacterSet];
+	NSString* codeloadURL = [NSString stringWithFormat:@"https://codeload.github.com/%@/%@/tar.gz/%@", owner, repo, encodedRef];
+
+	NSError* mkerr;
+	if(![NSFileManager.defaultManager createDirectoryAtURL:stagingURL withIntermediateDirectories:YES attributes:nil error:&mkerr])
+	{
+		completion(nil, mkerr);
+		return;
+	}
+
+	NSTask* curl = [NSTask new];
+	curl.launchPath = @"/bin/sh";
+	curl.arguments = @[ @"-c", [NSString stringWithFormat:@"curl --silent --show-error --fail --location '%@' | /usr/bin/tar -zxmkC '%@' --strip-components 1 --disable-copyfile --exclude '._*'", codeloadURL, stagingURL.path] ];
+	curl.terminationHandler = ^(NSTask* t){
+		dispatch_async(dispatch_get_main_queue(), ^{
+			if(t.terminationStatus != 0)
+			{
+				[NSFileManager.defaultManager removeItemAtURL:stagingURL error:nil];
+				completion(nil, [NSError errorWithDomain:@"BundlesManager" code:t.terminationStatus userInfo:@{ NSLocalizedDescriptionKey: [NSString stringWithFormat:@"Failed to fetch %@", codeloadURL] }]);
+				return;
+			}
+
+			NSDictionary* info = [NSDictionary dictionaryWithContentsOfFile:[stagingURL.path stringByAppendingPathComponent:@"info.plist"]];
+			NSString* uuidStr = info[@"uuid"];
+			NSUUID* uuid = uuidStr ? [[NSUUID alloc] initWithUUIDString:uuidStr] : nil;
+			if(!uuid)
+			{
+				[NSFileManager.defaultManager removeItemAtURL:stagingURL error:nil];
+				completion(nil, [NSError errorWithDomain:@"BundlesManager" code:3 userInfo:@{ NSLocalizedDescriptionKey: @"Fetched archive has no valid info.plist uuid" }]);
+				return;
+			}
+
+			NSString* finalName = info[@"name"] ?: resolvedName;
+			NSString* bundlesDir = [self->_installDirectory stringByAppendingPathComponent:@"Bundles"];
+			[NSFileManager.defaultManager createDirectoryAtPath:bundlesDir withIntermediateDirectories:YES attributes:nil error:nil];
+			NSURL* destURL = [NSURL fileURLWithPath:[[bundlesDir stringByAppendingPathComponent:SafeBasename(finalName)] stringByAppendingPathExtension:@"tmbundle"] isDirectory:YES];
+
+			NSError* mvErr;
+			if([NSFileManager.defaultManager fileExistsAtPath:destURL.path])
+			{
+				if(![NSFileManager.defaultManager replaceItemAtURL:destURL withItemAtURL:stagingURL backupItemName:nil options:NSFileManagerItemReplacementUsingNewMetadataOnly resultingItemURL:nil error:&mvErr])
 				{
-					NSSet* oldRecommendations = [NSSet setWithArray:[self.bundles filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"isRecommended == YES"]]];
-					self.bundles = newBundles;
-					NSArray* bundlesToUpdate = [newBundles filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"(hasUpdate == YES AND isCompatible == YES) OR (isInstalled == NO AND (isMandatory == YES OR (isRecommended == YES AND isCompatible == YES AND NOT (SELF IN %@))))", oldRecommendations]];
-					[self installBundles:bundlesToUpdate completionHandler:^(NSArray<Bundle*>* updatedBundles){
-						for(Bundle* bundle in updatedBundles)
-							os_log(OS_LOG_DEFAULT, "%{public}@ bundle updated: %{public}@", bundle.name, bundle.path);
-						completionHandler(wasUpdated);
-					}];
+					completion(nil, mvErr);
+					return;
+				}
+			}
+			else
+			{
+				if(![NSFileManager.defaultManager moveItemAtURL:stagingURL toURL:destURL error:&mvErr])
+				{
+					completion(nil, mvErr);
+					return;
+				}
+			}
+
+			BundleSpec* existing = [BundleRegistry.sharedInstance specForUUID:uuid];
+			BundleSpec* spec = existing ?: [[BundleSpec alloc] initWithUUID:uuid name:finalName url:url ref:resolvedRef];
+			if(existing)
+			{
+				spec.ref = resolvedRef;
+			}
+			spec.autoUpdate   = YES;
+			spec.installedAt  = [NSDate date];
+
+			// Resolve the actual SHA so installedSHA is meaningful.
+			[BundleFetcher.sharedInstance resolveSHAForSpec:spec conditionalEtag:nil completion:^(BundleSHAResolution* resolution, NSError* resolveError){
+				if(resolution.sha.length)
+				{
+					spec.installedSHA = resolution.sha;
+					if(resolution.etag.length)
+						spec.etag = resolution.etag;
 				}
 				else
 				{
-					completionHandler(wasUpdated);
+					// Ref is already a SHA, or resolve failed — fall back to ref.
+					spec.installedSHA = resolvedRef;
 				}
-			});
-		}
-		else
+
+				if(existing)
+					[BundleRegistry.sharedInstance updateSpec:spec];
+				else
+					[BundleRegistry.sharedInstance addSpec:spec];
+
+				[self reloadPath:destURL.path recursive:YES];
+				[self createBundlesIndex:self];
+				self.bundles = [self bundlesByLoadingIndex];
+
+				completion(spec.installedSHA, nil);
+			}];
+		});
+	};
+
+	NSError* launchErr;
+	if(@available(macos 10.13, *))
+	{
+		if(![curl launchAndReturnError:&launchErr])
 		{
-			if(error)
-				os_log_error(OS_LOG_DEFAULT, "Failed to update bundle index: %{public}@", error.localizedDescription);
-			completionHandler(wasUpdated);
+			[NSFileManager.defaultManager removeItemAtURL:stagingURL error:nil];
+			completion(nil, launchErr);
+			return;
 		}
+	}
+	else
+	{
+		@try { [curl launch]; }
+		@catch(NSException* e)
+		{
+			[NSFileManager.defaultManager removeItemAtURL:stagingURL error:nil];
+			completion(nil, [NSError errorWithDomain:@"BundlesManager" code:4 userInfo:@{ NSLocalizedDescriptionKey: e.reason ?: @"NSTask launch failed" }]);
+			return;
+		}
+	}
+}
+
+- (void)checkForBundleUpdatesNowWithCompletion:(void(^)(void))completion
+{
+	[self updateRegisteredBundlesWithCallback:^{
+		self.bundles = [self bundlesByLoadingIndex];
+		if(completion)
+			completion();
+	}];
+}
+
+- (void)updateRegisteredBundlesWithCallback:(void(^)(void))completionHandler
+{
+	NSArray<BundleSpec*>* specs = BundleRegistry.sharedInstance.allSpecs;
+	NSString* bundlesDir = [_installDirectory stringByAppendingPathComponent:@"Bundles"];
+
+	NSError* error;
+	if(![NSFileManager.defaultManager createDirectoryAtPath:bundlesDir withIntermediateDirectories:YES attributes:nil error:&error])
+	{
+		os_log_error(OS_LOG_DEFAULT, "Failed to create %{public}@: %{public}@", bundlesDir, error.localizedDescription);
+		completionHandler();
+		return;
+	}
+
+	[self processSpecs:specs index:0 bundlesDir:bundlesDir completion:completionHandler];
+}
+
+- (void)processSpecs:(NSArray<BundleSpec*>*)specs index:(NSUInteger)i bundlesDir:(NSString*)bundlesDir completion:(void(^)(void))completion
+{
+	if(i >= specs.count)
+	{
+		[NSUserDefaults.standardUserDefaults setObject:[NSDate date] forKey:kUserDefaultsLastBundleUpdateCheckKey];
+		completion();
+		return;
+	}
+
+	BundleSpec* spec = specs[i];
+
+	// User turned off updates for this bundle (unchecked in prefs or
+	// disabled in the manifest). Do not fetch.
+	if(!spec.autoUpdate)
+	{
+		[self processSpecs:specs index:i+1 bundlesDir:bundlesDir completion:completion];
+		return;
+	}
+
+	NSURL* destURL = [NSURL fileURLWithPath:[[bundlesDir stringByAppendingPathComponent:SafeBasename(spec.name)] stringByAppendingPathExtension:@"tmbundle"] isDirectory:YES];
+	BOOL isInstalled = [NSFileManager.defaultManager fileExistsAtPath:destURL.path];
+
+	// Respect developer symlinks (e.g. reset_bundles.sh). Never overwrite a
+	// symlink with a fetched archive — user wants their working checkout.
+	// lstat is required — attributesOfItemAtPath: follows symlinks.
+	struct stat st;
+	if(lstat(destURL.path.fileSystemRepresentation, &st) == 0 && S_ISLNK(st.st_mode))
+	{
+		os_log(OS_LOG_DEFAULT, "Skipping symlinked bundle %{public}@", spec.name);
+		[self processSpecs:specs index:i+1 bundlesDir:bundlesDir completion:completion];
+		return;
+	}
+
+	// Shortcut: pinned SHA already installed — nothing to do.
+	if(spec.isPinnedToSHA && isInstalled && [spec.installedSHA isEqualToString:spec.ref])
+	{
+		[self processSpecs:specs index:i+1 bundlesDir:bundlesDir completion:completion];
+		return;
+	}
+
+	void(^installAt)(NSString*) = ^(NSString* sha){
+		[BundleFetcher.sharedInstance fetchAndInstallSpec:spec intoURL:destURL completion:^(NSString* resolvedSHA, NSError* fetchError){
+			if(fetchError)
+			{
+				os_log_error(OS_LOG_DEFAULT, "Failed to install %{public}@: %{public}@", spec.name, fetchError.localizedDescription);
+			}
+			else
+			{
+				spec.installedSHA = sha ?: resolvedSHA;
+				spec.installedAt  = [NSDate date];
+				[BundleRegistry.sharedInstance updateSpec:spec];
+				os_log(OS_LOG_DEFAULT, "Installed %{public}@ @ %{public}@", spec.name, spec.installedSHA ?: @"(unknown)");
+				[self reloadPath:destURL.path recursive:YES];
+			}
+			[self processSpecs:specs index:i+1 bundlesDir:bundlesDir completion:completion];
+		}];
+	};
+
+	// Pinned SHA but not installed (or installed at wrong SHA): fetch directly.
+	if(spec.isPinnedToSHA)
+	{
+		installAt(spec.ref);
+		return;
+	}
+
+	// Branch/tag: resolve current SHA first, then fetch only if changed or missing.
+	[BundleFetcher.sharedInstance resolveSHAForSpec:spec conditionalEtag:spec.etag completion:^(BundleSHAResolution* resolution, NSError* err){
+		if(err)
+		{
+			os_log_error(OS_LOG_DEFAULT, "SHA resolve failed for %{public}@: %{public}@", spec.name, err.localizedDescription);
+			[self processSpecs:specs index:i+1 bundlesDir:bundlesDir completion:completion];
+			return;
+		}
+
+		if(resolution.etag.length)
+		{
+			spec.etag = resolution.etag;
+			[BundleRegistry.sharedInstance updateSpec:spec];
+		}
+
+		if(resolution.notModified && isInstalled)
+		{
+			[self processSpecs:specs index:i+1 bundlesDir:bundlesDir completion:completion];
+			return;
+		}
+
+		NSString* newSHA = resolution.sha;
+		if(newSHA && isInstalled && [newSHA isEqualToString:spec.installedSHA])
+		{
+			[self processSpecs:specs index:i+1 bundlesDir:bundlesDir completion:completion];
+			return;
+		}
+
+		installAt(newSHA);
 	}];
 }
 
@@ -209,18 +449,7 @@ static NSString* SafeBasename (NSString* name)
 
 - (NSProgress*)installBundles:(NSArray<Bundle*>*)someBundles completionHandler:(void(^)(NSArray<Bundle*>*))callback
 {
-	NSMutableSet* bundlesToInstall = [NSMutableSet set];
-
-	NSMutableArray* queue = [someBundles mutableCopy];
-	while(Bundle* bundle = [queue lastObject])
-	{
-		[bundlesToInstall addObject:bundle];
-		NSArray* dependencies = [bundle.dependencies filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"isInstalled == NO AND NOT (SELF IN %@)", bundlesToInstall]];
-		[dependencies enumerateObjectsUsingBlock:^(Bundle* bundle, NSUInteger, BOOL*){ bundle.dependency = YES; }];
-		[queue replaceObjectsInRange:NSMakeRange(queue.count-1, 1) withObjectsFromArray:dependencies];
-	}
-
-	if([bundlesToInstall count] == 0)
+	if(someBundles.count == 0)
 		return callback(nil), nil;
 
 	NSString* bundlesDirectory = [_installDirectory stringByAppendingPathComponent:@"Bundles"];
@@ -231,79 +460,90 @@ static NSString* SafeBasename (NSString* name)
 		return callback(nil), nil;
 	}
 
+	NSProgress* progress = [NSProgress discreteProgressWithTotalUnitCount:someBundles.count];
+	NSMutableArray<Bundle*>* installed = [NSMutableArray array];
 	dispatch_group_t group = dispatch_group_create();
-	NSArray* bundles = bundlesToInstall.allObjects;
-	NSProgress* progress = [NSProgress discreteProgressWithTotalUnitCount:bundles.count];
-	__block std::vector<std::string> res(bundles.count);
-	for(NSUInteger i = 0; i < bundles.count; ++i)
+
+	for(Bundle* bundle in someBundles)
 	{
+		BundleSpec* spec = [BundleRegistry.sharedInstance specForUUID:bundle.identifier];
+		if(!spec || !spec.url)
+		{
+			os_log_error(OS_LOG_DEFAULT, "installBundles: no registry spec for %{public}@", bundle.name);
+			progress.completedUnitCount += 1;
+			continue;
+		}
+
+		NSURL* destURL = [NSURL fileURLWithPath:[[bundlesDirectory stringByAppendingPathComponent:SafeBasename(spec.name)] stringByAppendingPathExtension:@"tmbundle"] isDirectory:YES];
+
 		dispatch_group_enter(group);
-
-		Bundle* bundle = bundles[i];
-		NSURL* destURL = [NSURL fileURLWithPath:bundle.path ?: [[bundlesDirectory stringByAppendingPathComponent:SafeBasename(bundle.name)] stringByAppendingPathExtension:@"tmbundle"] isDirectory:YES];
-		os_log(OS_LOG_DEFAULT, "Download %{public}@ as %{public}@", bundle.downloadURL, destURL.path);
-
-		[progress becomeCurrentWithPendingUnitCount:1];
-		[OakDownloadManager.sharedInstance downloadArchiveAtURL:bundle.downloadURL forReplacingURL:destURL publicKeys:self.publicKeys completionHandler:^(NSURL* extractedArchiveURL, NSError* error){
-			if(extractedArchiveURL)
+		[BundleFetcher.sharedInstance fetchAndInstallSpec:spec intoURL:destURL completion:^(NSString* resolvedSHA, NSError* fetchError){
+			progress.completedUnitCount += 1;
+			if(fetchError)
 			{
-				NSError* error;
-				if([NSFileManager.defaultManager replaceItemAtURL:destURL withItemAtURL:extractedArchiveURL backupItemName:nil options:NSFileManagerItemReplacementUsingNewMetadataOnly resultingItemURL:nil error:&error])
-				{
-					res[i] = destURL.fileSystemRepresentation;
-					os_log(OS_LOG_DEFAULT, "Updated %{public}@", destURL.path);
-				}
-				else
-				{
-					os_log_error(OS_LOG_DEFAULT, "Failed to update %{public}@: %{public}@", destURL.path, error.localizedDescription);
-				}
+				os_log_error(OS_LOG_DEFAULT, "Failed to install %{public}@: %{public}@", spec.name, fetchError.localizedDescription);
 			}
 			else
 			{
-				os_log_error(OS_LOG_DEFAULT, "Failed to download %{public}@: %{public}@", bundle.downloadURL, error.localizedDescription);
+				spec.installedSHA = resolvedSHA;
+				spec.installedAt  = [NSDate date];
+				spec.autoUpdate   = YES;
+				[BundleRegistry.sharedInstance updateSpec:spec];
+				path::set_attr(destURL.path.fileSystemRepresentation, kBundleAttributeUpdated, to_s(resolvedSHA ?: @""));
+				bundle.installed   = YES;
+				bundle.path        = destURL.path;
+				bundle.lastUpdated = spec.installedAt;
+				[self reloadPath:destURL.path recursive:YES];
+				[installed addObject:bundle];
 			}
 			dispatch_group_leave(group);
 		}];
-		[progress resignCurrent];
 	}
 
 	dispatch_group_notify(group, dispatch_get_main_queue(), ^{
-		for(NSUInteger i = 0; i < bundles.count; ++i)
-		{
-			if(res[i] == NULL_STR)
-				continue;
-
-			Bundle* bundle = bundles[i];
-			bundle.installed   = YES;
-			bundle.path        = to_ns(res[i]);
-			bundle.lastUpdated = bundle.downloadLastUpdated;
-
-			path::set_attr(res[i], kBundleAttributeUpdated, to_s(bundle.downloadLastUpdated));
-			[self reloadPath:bundle.path recursive:YES];
-		}
-
 		[self createBundlesIndex:self];
-		[self saveLocalIndex];
-
-		callback(bundles);
+		callback(installed);
 	});
 	return progress;
 }
 
 - (void)uninstallBundle:(Bundle*)bundle
 {
+	if(bundle.isMandatory)
+	{
+		os_log_error(OS_LOG_DEFAULT, "Refusing to uninstall mandatory bundle %{public}@", bundle.name);
+		return;
+	}
+
 	bundle.installed = NO;
-	if(!bundle.path || ![NSFileManager.defaultManager removeItemAtPath:bundle.path error:nil])
+	if(bundle.path && ![NSFileManager.defaultManager removeItemAtPath:bundle.path error:nil])
 		return;
 
-	[self erasePath:bundle.path];
+	if(bundle.path)
+		[self erasePath:bundle.path];
 
 	bundle.path        = nil;
 	bundle.lastUpdated = nil;
 
-	// TODO Remove bundle’s dependencies
+	// Keep the registry entry so the checkbox can re-enable it. Turn off
+	// autoUpdate and clear the install marker so the poll respects the
+	// user's off-state and a future re-install fetches fresh.
+	BundleSpec* spec = [BundleRegistry.sharedInstance specForUUID:bundle.identifier];
+	if(spec)
+	{
+		spec.autoUpdate   = NO;
+		spec.installedSHA = nil;
+		spec.installedAt  = nil;
+		spec.etag         = nil;
+		[BundleRegistry.sharedInstance updateSpec:spec];
+	}
+}
 
-	[self saveLocalIndex];
+- (void)removeBundleSpec:(Bundle*)bundle
+{
+	[self uninstallBundle:bundle];
+	[BundleRegistry.sharedInstance removeSpecForUUID:bundle.identifier];
+	self.bundles = [self bundlesByLoadingIndex];
 }
 
 // ===============================================
@@ -539,177 +779,110 @@ namespace
 
 namespace
 {
-	static NSArray<Bundle*>* BundlesFromIndex (NSString* remoteIndexPath, NSString* localIndexPath, NSString* installDir, NSDictionary<NSUUID*, Bundle*>* cache = nil)
+	// Walks the tmbundle directory for a minimal list of bundle items; used
+	// only for populating the Bundle model's `grammars` array. The primary
+	// bundle-item index lives elsewhere (Cap'n Proto cache at
+	// BundlesIndex.binary driven by FSEvents).
+	static NSArray<NSDictionary*>* bundle_item_infos (NSDictionary* info, NSString* bundlePath)
 	{
-		NSMutableDictionary* res = [NSMutableDictionary dictionary];
-
-		// =====================
-		// = Load Remote Index =
-		// =====================
-
-		NSMutableDictionary* dependencies   = [NSMutableDictionary dictionary];
-		NSMutableDictionary* bundlesByScope = [NSMutableDictionary dictionary];
-
-		for(NSDictionary* item in [[NSDictionary dictionaryWithContentsOfFile:remoteIndexPath] objectForKey:@"bundles"])
+		NSMutableArray<NSDictionary*>* items = [NSMutableArray array];
+		NSString* syntaxesDir = [bundlePath stringByAppendingPathComponent:@"Syntaxes"];
+		for(NSString* name in [NSFileManager.defaultManager contentsOfDirectoryAtPath:syntaxesDir error:nil])
 		{
-			NSUUID* identifier = [[NSUUID alloc] initWithUUIDString:item[@"uuid"]];
-			Bundle* bundle = cache[identifier] ?: [[Bundle alloc] initWithIdentifier:identifier];
-
-			bundle.name              = item[@"name"];
-			bundle.minimumAppVersion = item[@"requires"];
-			bundle.category          = item[@"category"];
-			bundle.htmlURL           = [NSURL URLWithString:item[@"html_url"]];
-			bundle.contactName       = item[@"contactName"];
-			bundle.contactEmail      = to_ns(decode::rot13(to_s(item[@"contactEmailRot13"])));
-			bundle.summary           = item[@"description"];
-			bundle.recommended       = [item[@"isDefault"] boolValue];
-			bundle.mandatory         = [item[@"isMandatory"] boolValue];
-
-			NSDictionary* version = [item[@"versions"] firstObject];
-			bundle.downloadURL         = [NSURL URLWithString:version[@"url"]];
-			bundle.downloadLastUpdated = version[@"updated"];
-			bundle.downloadSize        = [version[@"size"] intValue];
-
-			NSMutableArray* grammars = [NSMutableArray array];
-			for(NSDictionary* info in item[@"grammars"])
-			{
-				BundleGrammar* grammar = [[BundleGrammar alloc] init];
-				grammar.bundle         = bundle;
-				grammar.name           = info[@"name"];
-				grammar.identifier     = [[NSUUID alloc] initWithUUIDString:info[@"uuid"]];
-				grammar.fileType       = info[@"scope"];
-				grammar.firstLineMatch = info[@"firstLineMatch"];
-				grammar.filePatterns   = info[@"fileTypes"];
-				[grammars addObject:grammar];
-
-				bundlesByScope[grammar.fileType] = bundle;
-			}
-			bundle.grammars = [grammars copy];
-			res[bundle.identifier] = bundle;
-
-			if([item[@"dependencies"] count])
-				dependencies[bundle.identifier] = item[@"dependencies"];
+			if(![name.pathExtension isEqualToString:@"tmLanguage"] && ![name.pathExtension isEqualToString:@"plist"])
+				continue;
+			NSDictionary* gram = [NSDictionary dictionaryWithContentsOfFile:[syntaxesDir stringByAppendingPathComponent:name]];
+			if(!gram[@"uuid"])
+				continue;
+			NSMutableDictionary* d = [NSMutableDictionary dictionary];
+			d[@"type"]           = @"grammar";
+			d[@"uuid"]           = gram[@"uuid"];
+			d[@"name"]           = gram[@"name"];
+			d[@"scope"]          = gram[@"scopeName"];
+			d[@"firstLineMatch"] = gram[@"firstLineMatch"];
+			d[@"fileTypes"]      = gram[@"fileTypes"];
+			[items addObject:d];
 		}
+		return items;
+	}
 
-		// ======================
-		// = Setup Dependencies =
-		// ======================
-
-		for(NSUUID* uuid in dependencies)
-		{
-			Bundle* bundle = res[uuid];
-
-			NSMutableArray* array = [NSMutableArray array];
-			for(NSDictionary* info in dependencies[uuid])
-			{
-				if(NSString* scope = info[@"grammar"])
-				{
-					if(Bundle* otherBundle = bundlesByScope[scope])
-							[array addObject:otherBundle];
-					else	NSLog(@"%@: No bundle provides ‘%@’.", bundle.name, scope);
-				}
-				else if(NSString* uuid = info[@"uuid"])
-				{
-					if(Bundle* otherBundle = [res objectForKey:[[NSUUID alloc] initWithUUIDString:uuid]])
-							[array addObject:otherBundle];
-					else	NSLog(@"%@: Required bundle not found ‘%@’ (%@).", bundle.name, info[@"name"], uuid);
-				}
-			}
-
-			bundle.dependencies = [array copy];
-		}
-
-		// ====================
-		// = Load Local Index =
-		// ====================
-
-		for(NSDictionary* item in [[NSDictionary dictionaryWithContentsOfFile:localIndexPath] objectForKey:@"bundles"])
-		{
-			NSUUID* identifier = [[NSUUID alloc] initWithUUIDString:item[@"uuid"]];
-			Bundle* bundle = res[identifier] ?: [[Bundle alloc] initWithIdentifier:identifier];
-
-			bundle.installed   = YES;
-			bundle.path        = [installDir stringByAppendingPathComponent:item[@"path"]];
-			bundle.category    = item[@"category"] ?: bundle.category ?: @"Discontinued";
-			bundle.lastUpdated = item[@"updated"];
-			bundle.dependency  = [item[@"isDependency"] boolValue];
-
-			res[bundle.identifier] = bundle;
-		}
-
-		// ========================
-		// = Load Bundles on Disk =
-		// ========================
-
-		NSMutableDictionary* bundlesByPath = [NSMutableDictionary dictionary];
-		for(Bundle* bundle in [res allValues])
-		{
-			if(bundle.path)
-				bundlesByPath[bundle.path] = bundle;
-		}
-
+	static NSArray<Bundle*>* BundlesFromRegistry (NSString* installDir, NSDictionary<NSUUID*, Bundle*>* cache = nil)
+	{
+		NSMutableDictionary<NSUUID*, Bundle*>* res = [NSMutableDictionary dictionary];
 		NSString* bundlesDir = [installDir stringByAppendingPathComponent:@"Bundles"];
-		for(auto const& entry : path::entries(to_s(bundlesDir), "*.tm[Bb]undle"))
+
+		for(BundleSpec* spec in BundleRegistry.sharedInstance.allSpecs)
 		{
-			NSString* bundlePath = [bundlesDir stringByAppendingPathComponent:to_ns(entry->d_name)];
-			if(Bundle* bundle = [bundlesByPath objectForKey:bundlePath])
-			{
-				[bundlesByPath removeObjectForKey:bundlePath];
-				if(bundle.downloadURL) // We have category, description etc. from remote index
-					continue;
-			}
+			Bundle* bundle = cache[spec.uuid] ?: [[Bundle alloc] initWithIdentifier:spec.uuid];
+			bundle.name        = spec.name;
+			bundle.mandatory   = (spec.origin == TMBundleOriginMandatory);
+			bundle.recommended = (spec.origin == TMBundleOriginShipped);
+			bundle.downloadURL = spec.url.length ? [NSURL URLWithString:spec.url] : nil;
+			bundle.downloadLastUpdated = spec.installedAt;
+			bundle.lastUpdated         = spec.installedAt;
 
-			if(NSDictionary* info = [NSDictionary dictionaryWithContentsOfFile:[bundlePath stringByAppendingPathComponent:@"info.plist"]])
-			{
-				NSUUID* identifier = [[NSUUID alloc] initWithUUIDString:info[@"uuid"]];
-				Bundle* bundle = res[identifier] ?: [[Bundle alloc] initWithIdentifier:identifier];
+			NSString* bundlePath = [[bundlesDir stringByAppendingPathComponent:SafeBasename(spec.name)] stringByAppendingPathExtension:@"tmbundle"];
+			BOOL exists = [NSFileManager.defaultManager fileExistsAtPath:bundlePath];
+			bundle.installed = exists;
+			bundle.path      = exists ? bundlePath : nil;
 
-				bundle.installed    = YES;
-				bundle.path         = bundlePath;
-				bundle.category     = bundle.category     ?: @"Orphaned";
+			if(exists)
+			{
+				NSDictionary* info = [NSDictionary dictionaryWithContentsOfFile:[bundlePath stringByAppendingPathComponent:@"info.plist"]];
 				bundle.name         = bundle.name         ?: info[@"name"];
 				bundle.contactName  = bundle.contactName  ?: info[@"contactName"];
 				bundle.contactEmail = bundle.contactEmail ?: to_ns(decode::rot13(to_s(info[@"contactEmailRot13"])));
 				bundle.summary      = bundle.summary      ?: info[@"description"];
 
-				NSDateFormatter* dateFormatter = [[NSDateFormatter alloc] init];
-				dateFormatter.dateFormat = @"yyyy-MM-dd HH:mm:ss ZZZZZ";
-				if(NSString* str = to_ns(path::get_attr(to_s(bundlePath), kBundleAttributeUpdated)))
-					bundle.lastUpdated = [dateFormatter dateFromString:str];
-
-				res[bundle.identifier] = bundle;
-
-				NSLog(@"Found: ‘%@’ missing in local index.", bundle.name);
+				NSMutableArray* grammars = [NSMutableArray array];
+				for(NSDictionary* item in bundle_item_infos(info, bundlePath))
+				{
+					if([item[@"type"] isEqualToString:@"grammar"])
+					{
+						BundleGrammar* grammar = [[BundleGrammar alloc] init];
+						grammar.bundle         = bundle;
+						grammar.name           = item[@"name"];
+						grammar.identifier     = [[NSUUID alloc] initWithUUIDString:item[@"uuid"]];
+						grammar.fileType       = item[@"scope"];
+						grammar.firstLineMatch = item[@"firstLineMatch"];
+						grammar.filePatterns   = item[@"fileTypes"];
+						[grammars addObject:grammar];
+					}
+				}
+				bundle.grammars = [grammars copy];
 			}
+
+			res[bundle.identifier] = bundle;
 		}
 
-		for(Bundle* bundle in [bundlesByPath allValues])
+		// Surface any on-disk bundles not registered — e.g. user-symlinked
+		// dev forks. They show in the prefs pane but have no origin and
+		// cannot be auto-updated.
+		for(auto const& entry : path::entries(to_s(bundlesDir), "*.tm[Bb]undle"))
 		{
-			bundle.installed = NO;
-			NSLog(@"Missing: ‘%@’ not on disk.", bundle.name);
+			NSString* bundlePath = [bundlesDir stringByAppendingPathComponent:to_ns(entry->d_name)];
+			NSDictionary* info = [NSDictionary dictionaryWithContentsOfFile:[bundlePath stringByAppendingPathComponent:@"info.plist"]];
+			if(!info[@"uuid"])
+				continue;
+			NSUUID* uuid = [[NSUUID alloc] initWithUUIDString:info[@"uuid"]];
+			if(res[uuid])
+				continue;
+
+			Bundle* bundle = cache[uuid] ?: [[Bundle alloc] initWithIdentifier:uuid];
+			bundle.installed    = YES;
+			bundle.path         = bundlePath;
+			bundle.name         = info[@"name"];
+			bundle.contactName  = info[@"contactName"];
+			bundle.contactEmail = to_ns(decode::rot13(to_s(info[@"contactEmailRot13"])));
+			bundle.summary      = info[@"description"];
+			bundle.category     = @"Orphaned";
+			res[uuid] = bundle;
 		}
 
-		return [[res allValues] sortedArrayUsingDescriptors:@[ [NSSortDescriptor sortDescriptorWithKey:@"name" ascending:YES selector:@selector(localizedCompare:)] ]];
+		return [[res allValues] sortedArrayUsingDescriptors:@[
+			[NSSortDescriptor sortDescriptorWithKey:@"name" ascending:YES selector:@selector(localizedCompare:)]
+		]];
 	}
-}
-
-- (NSDictionary<NSString*, NSString*>*)publicKeys
-{
-	NSMutableDictionary* res = [NSMutableDictionary dictionary];
-
-	NSProgress* dummy = [NSProgress discreteProgressWithTotalUnitCount:1];
-	[dummy becomeCurrentWithPendingUnitCount:1];
-	for(NSDictionary* key in [[NSDictionary dictionaryWithContentsOfFile:_remoteIndexPath] objectForKey:@"keys"])
-		res[key[@"identity"]] = key[@"publicKey"];
-	[dummy resignCurrent];
-
-	if(res.count)
-		return res;
-
-	return @{
-		@"org.textmate.duff":    @"-----BEGIN PUBLIC KEY-----\nMIIBtjCCASsGByqGSM44BAEwggEeAoGBAPIE9PpXPK3y2eBDJ0dnR/D8xR1TiT9m\n8DnPXYqkxwlqmjSShmJEmxYycnbliv2JpojYF4ikBUPJPuerlZfOvUBC99ERAgz7\nN1HYHfzFIxVo1oTKWurFJ1OOOsfg8AQDBDHnKpS1VnwVoDuvO05gK8jjQs9E5LcH\ne/opThzSrI7/AhUAy02E9H7EOwRyRNLofdtPxpa10o0CgYBKDfcBscidAoH4pkHR\nIOEGTCYl3G2Pd1yrblCp0nCCUEBCnvmrWVSXUTVa2/AyOZUTN9uZSC/Kq9XYgqwj\nhgzqa8h/a8yD+ao4q8WovwGeb6Iso3WlPl8waz6EAPR/nlUTnJ4jzr9t6iSH9owS\nvAmWrgeboia0CI2AH++liCDvigOBhAACgYAFWO66xFvmF2tVIB+4E7CwhrSi2uIk\ndeBrpmNcZZ+AVFy1RXJelNe/cZ1aXBYskn/57xigklpkfHR6DGqpEbm6KC/47Jfy\ny5GEx+F/eBWEePi90XnLinytjmXRmS2FNqX6D15XNG1xJfjociA8bzC7s4gfeTUd\nlpQkBq2z71yitA==\n-----END PUBLIC KEY-----\n",
-		@"org.textmate.msheets": @"-----BEGIN PUBLIC KEY-----\nMIIDOzCCAi4GByqGSM44BAEwggIhAoIBAQDfYsqBc18uL7yYb/bDrrEtVTBG8tML\nmMtNFyU8XhlVKWdQJwBGG/fV2Wjc0hVYSeTWv3VueITZbuuVZEePXlem6Dki1DEL\nsMNeDvE/l0MKHXi1+sr1cht7QvuTi/c1UK4I6QNWDJWi7KmqJg3quLCwJfMef1x5\n/qgLUln5cU6+pAj43Vp62bzHJBjAnrC432yD7F4Mxu4oV/PEm5QC6pU7RcvUwAox\np7m7c8+CxX7Aq4dH6Jd8Jt6XuYIktlfcFivvvF60CvxhABDBdGMra4roO0wlJmID\n91oQ3PLxFBsDmbluPJlkmTp4YetsF8/Zd9P3WwBQUArtNdiqKZIQ4uHXAhUAvNZ5\ntZkzuUiblIxZKmOCBN/JeMsCggEBAK9jUiC98+hwY5XcDQjDSLPE4uvv+dHZ29Bx\n8KevX+qzd6shIhp6urvyBXrM+h8l7iB6Jh4Wm3WhqKMBjquRqyGogQDGxJr7QBVk\nQSOiyaKDT4Ue/Nhg1MFsrt3PtS1/nscZ6GGWswrCfQ1t4m/wXDasUSfz2smae+Jd\nZ6UGBzWQMRawyU/O/LX0PlJkBOMHopecAUcxHc2G02P2QwAMKPavwksQ4tWCJvIr\n7ZELfCcVQtG2UnpTRWqLZQaVwSYMHoNK9/reu099sdv9CQ+trH2Q5LlBXJmHloFK\nafiuQPjTmaJVf/piiQ79xJB6VmwoEpOJJG4NYNt7f+I7YCk07xwDggEFAAKCAQA5\nSBwWJouMKUI6Hi0EZ4/Yh98qQmItx4uWTYFdjcUVVYCKK7GIuXu67rfkbCJUrvT9\nID1vw2eyTmbuW2TPuRDsxUcB7WRyyLekl67vpUgMgLBLgYMXQf6RF4HM2tW7UWg7\noNQHkZKWbhDgXdumKzKf/qZPB/LT2Yndv/zqkQ+YXIu08j0RGkxJaAjB7nEv1XGq\nL2VJf8aEi+MnihAtMPCHcW34qswqO1kOCbOWNShlfWHGjKlfdsPYv87RcalHNqps\nk1r60kyEkeZvKGM+FDT80N7cafX286v8n9L4IvvnLr/FDOH4XXzEjXB9Vr5Ffvj1\ndxNPRmDZOo6JNKA8Uvki\n-----END PUBLIC KEY-----\n",
-	};
 }
 
 - (NSArray<Bundle*>*)bundles
@@ -724,33 +897,6 @@ namespace
 	NSMutableDictionary* previousBundles = [NSMutableDictionary dictionary];
 	for(Bundle* bundle : _bundles)
 		previousBundles[bundle.identifier] = bundle;
-	return BundlesFromIndex(_remoteIndexPath, _localIndexPath, _installDirectory, previousBundles);
-}
-
-- (void)saveLocalIndex
-{
-	if(!_bundles)
-		return;
-
-	NSMutableArray* bundles = [NSMutableArray array];
-	for(Bundle* bundle : [_bundles filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"isInstalled == YES AND path != NULL"]])
-	{
-		NSMutableDictionary* dict = [NSMutableDictionary dictionaryWithDictionary:@{
-			@"uuid": [bundle.identifier UUIDString],
-			@"path": [bundle.path stringByReplacingOccurrencesOfString:[_installDirectory stringByAppendingString:@"/"] withString:@""],
-		}];
-
-		if(bundle.lastUpdated)
-			dict[@"updated"]  = bundle.lastUpdated;
-		if(bundle.isDependency)
-			dict[@"isDependency"] = @YES;
-		if(bundle.category)
-			dict[@"category"] = bundle.category;
-
-		[bundles addObject:dict];
-	}
-
-	NSDictionary* plist = @{ @"bundles": bundles };
-	[plist writeToFile:_localIndexPath atomically:YES];
+	return BundlesFromRegistry(_installDirectory, previousBundles);
 }
 @end

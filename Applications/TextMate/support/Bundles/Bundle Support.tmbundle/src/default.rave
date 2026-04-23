@@ -1,0 +1,23 @@
+set APP_MIN_OS   "10.9"
+set INSTALL_PATH "../Support/shared/bin"
+
+set FLAGS    "-Wall -Os -DNDEBUG -flto=thin"
+add LN_FLAGS "-flto=thin -Wl,-cache_path_lto,'\\${builddir}/.cache'"
+add LN_FLAGS "-Wl,-dead_strip -Wl,-dead_strip_dylibs"
+set CS_FLAGS "--force --options runtime"
+
+target find_app {
+	set CS_IDENTITY "${APPLE_DEVELOPER_ID}"
+	notarize "${APPLE_NOTARIZE_USER}" "${APPLE_NOTARIZE_PASS}" "none"
+
+	arch "arm64" "x86_64" {
+		add FLAGS    "-mmacosx-version-min=${APP_MIN_OS} -target macos-${arch}"
+		add LN_FLAGS "-mmacosx-version-min=${APP_MIN_OS} -target macos-${arch}"
+	}
+
+	sources    find_app.cc
+	executable ${target}
+	frameworks ApplicationServices
+
+	define install "/bin/cp -Xp '${executable}' '${INSTALL_PATH}/${target}'"
+}

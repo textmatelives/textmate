@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>name</key>
+	<string>Comments: Exclude from Paragraph Selection</string>
+	<key>scope</key>
+	<string>comment.line</string>
+	<key>settings</key>
+	<dict>
+		<key>excludeFromParagraphSelection</key>
+		<true/>
+	</dict>
+	<key>uuid</key>
+	<string>D9B1BFF7-38D0-46CD-BC72-3B565B2AAB21</string>
+</dict>
+</plist>

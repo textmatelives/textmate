@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>name</key>
+	<string>Highlight Pairs: Disable in Escaped Characters</string>
+	<key>scope</key>
+	<string>constant.character.escape</string>
+	<key>settings</key>
+	<dict>
+		<key>highlightPairs</key>
+		<array/>
+	</dict>
+	<key>uuid</key>
+	<string>94B7F596-0981-4B76-A909-BF3FC1C2EBE8</string>
+</dict>
+</plist>

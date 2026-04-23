@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>name</key>
+	<string>Style: Line Comments - Slash</string>
+	<key>scope</key>
+	<string>comment.line.slash, comment.line.double-slash</string>
+	<key>settings</key>
+	<dict>
+		<key>indentedSoftWrap</key>
+		<dict>
+			<key>format</key>
+			<string>${0/(\s*)(.{,4}).*/$1${2/./ /g}/}</string>
+			<key>match</key>
+			<string>.*(//?)\s+</string>
+		</dict>
+		<key>softWrap</key>
+		<true/>
+	</dict>
+	<key>uuid</key>
+	<string>B538AEB0-E3CE-48A6-8F32-D9AD82DC4085</string>
+</dict>
+</plist>
