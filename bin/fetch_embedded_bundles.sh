@@ -13,20 +13,21 @@ dest_root="$repo_root/Applications/TextMate/support/Bundles"
 
 mkdir -p "$dest_root"
 
-# Parse entries from the header. Each entry is four consecutive quoted
-# C-strings in order uuid, name, url, sha.
+# Parse entries from the header. Each entry is five consecutive quoted
+# C-strings in order uuid, name, url, sha, category. The category is
+# unused by this script but consumed by C++.
 strings=()
 while IFS= read -r line; do
 	strings+=("$line")
 done < <(grep -oE '"[^"]+"' "$header" | tr -d '"')
 
 count=${#strings[@]}
-if (( count % 4 != 0 )); then
+if (( count % 5 != 0 )); then
 	echo >&2 "fetch_embedded_bundles.sh: unexpected entry count in $header: $count"
 	exit 1
 fi
 
-for (( i = 0; i < count; i += 4 )); do
+for (( i = 0; i < count; i += 5 )); do
 	uuid=${strings[i]}
 	name=${strings[i+1]}
 	url=${strings[i+2]}

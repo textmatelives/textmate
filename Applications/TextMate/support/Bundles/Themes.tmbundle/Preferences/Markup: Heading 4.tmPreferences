@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>name</key>
+	<string>Markup: Heading 4</string>
+	<key>scope</key>
+	<string>markup.heading.4</string>
+	<key>settings</key>
+	<dict>
+		<key>fontName</key>
+		<string>Baskerville</string>
+		<key>fontSize</key>
+		<string>1.6em</string>
+	</dict>
+	<key>uuid</key>
+	<string>C0127CB1-BE5B-4235-8242-2FA6E6B3A7AF</string>
+</dict>
+</plist>

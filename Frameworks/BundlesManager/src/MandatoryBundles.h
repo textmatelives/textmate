@@ -46,6 +46,14 @@ static struct TMMandatoryBundle const kTMMandatoryBundles[] = {
 		"2c873f8382fd11cda4a86b4159bc2977577568d3",
 		"Other",
 	},
+	// branch: master (upstream textmate/themes.tmbundle — pure data, no Ruby)
+	{
+		"A4380B27-F366-4C70-A542-B00D26ED997E",
+		"Themes",
+		"https://github.com/textmate/themes.tmbundle",
+		"e6e918506291b2dec178ad1b7e6f04653d25818c",
+		"Themes",
+	},
 };
 
 static size_t const kTMMandatoryBundleCount = sizeof(kTMMandatoryBundles) / sizeof(kTMMandatoryBundles[0]);
