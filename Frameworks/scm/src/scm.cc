@@ -1,5 +1,6 @@
 #include "scm.h"
 #include "drivers/api.h"
+#include "gutter_diff.h"
 #include "snapshot.h"
 #include "fs_events.h"
 #include <io/path.h>
@@ -246,6 +247,33 @@ namespace scm
 
 	void shared_info_t::fs_did_change (std::set<std::string> const& changedPaths)
 	{
+		// Drop the gutter-diff HEAD-blob cache when anything that
+		// could move HEAD or rewrite the staged snapshot fires.
+		// .lock paths are already filtered upstream by
+		// scm::is_transient_git_path; the events that reach us are
+		// the real writes. We deliberately don't invalidate on
+		// refs/remotes/** (a fetch doesn't move our working tree)
+		// or objects/** (gc doesn't either).
+		auto const is_repo_meta_change = [](std::string const& p) -> bool {
+			auto const pos = p.find("/.git/");
+			if(pos == std::string::npos)
+				return false;
+			std::string const rel = p.substr(pos + 6);
+			return rel == "HEAD"
+			    || rel == "index"
+			    || rel == "packed-refs"
+			    || rel.compare(0, 11, "refs/heads/") == 0;
+		};
+
+		for(auto const& p : changedPaths)
+		{
+			if(is_repo_meta_change(p))
+			{
+				gutter_diff::invalidate_repo(_root_path);
+				break;
+			}
+		}
+
 		schedule_update();
 	}
 
