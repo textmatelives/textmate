@@ -1,34 +1,19 @@
 #import "SCMManager.h"
-#import "FSEventsManager.h"
-#import "drivers/api.h"
 #import <scm/scm.h>
 #import <ns/ns.h>
 #import <TMFileReference/TMFileReference.h>
-
-namespace scm
-{
-	driver_t* git_driver ();
-	driver_t* hg_driver ();
-	driver_t* p4_driver ();
-	driver_t* svn_driver ();
-}
 
 @class SCMRepositoryObserver;
 
 @interface SCMRepository ()
 {
-	BOOL _needsUpdate;
-	BOOL _updating;
-	NSTimer* _updateTimer;
-	NSDate* _noUpdateBefore;
 	NSMutableSet<TMFileReference*>* _fileReferences;
+	scm::info_ptr _info;
 }
 @property (nonatomic, readwrite) std::map<std::string, scm::status::type> status;
 @property (nonatomic, readwrite) NSDictionary<NSString*, NSString*>* variables;
-@property (nonatomic, readonly) scm::driver_t const* driver;
 @property (nonatomic, readonly) NSMutableArray<SCMRepositoryObserver*>* observers;
-@property (nonatomic) id fsEventsObserver;
-- (instancetype)initWithURL:(NSURL*)url driver:(scm::driver_t const*)driver;
+- (instancetype)initWithURL:(NSURL*)url;
 - (scm::status::type)SCMStatusForURL:(NSURL*)url;
 - (SCMRepositoryObserver*)addObserver:(void(^)(SCMRepository*))handler;
 - (void)removeObserver:(SCMRepositoryObserver*)observer;
@@ -101,88 +86,45 @@ namespace scm
 // ===========================================
 
 @implementation SCMRepository
-- (instancetype)initWithURL:(NSURL*)url driver:(scm::driver_t const*)driver
+- (instancetype)initWithURL:(NSURL*)url
 {
 	if(self = [super init])
 	{
-		_URL               = url;
-		_driver            = driver;
-		_enabled           = scm::scm_enabled_for_path(url.fileSystemRepresentation);
-		_tracksDirectories = driver && driver->tracks_directories();
-		_noUpdateBefore    = [NSDate distantPast];
-		_observers         = [NSMutableArray array];
+		_URL       = url;
+		_enabled   = scm::scm_enabled_for_path(url.fileSystemRepresentation);
+		_observers = [NSMutableArray array];
 
-		if(_enabled == YES)
+		if(_enabled)
 		{
-			[self tryUpdateStatusInBackground];
+			_info = scm::info(url.fileSystemRepresentation);
+			if(_info)
+			{
+				_tracksDirectories = _info->tracks_directories();
 
-			__weak SCMRepository* weakSelf = self;
-			_fsEventsObserver = [FSEventsManager.sharedInstance addObserverToDirectoryAtURL:url observeSubdirectories:YES usingBlock:^(NSURL* url){
-				_noUpdateBefore = [_noUpdateBefore laterDate:[NSDate dateWithTimeIntervalSinceNow:NSApp.isActive ? 0.5 : 3]];
-				[weakSelf tryUpdateStatusInBackground];
-			}];
+				__weak SCMRepository* weakSelf = self;
+				_info->push_callback(^(scm::info_t const& info){
+					if(SCMRepository* strongSelf = weakSelf)
+						[strongSelf observeSharedUpdate:info];
+				});
+			}
 		}
-
-		[NSNotificationCenter.defaultCenter addObserver:self selector:@selector(applicationDidBecomeActive:) name:NSApplicationDidBecomeActiveNotification object:NSApp];
 	}
 	return self;
 }
 
 - (void)dealloc
 {
-	[NSNotificationCenter.defaultCenter removeObserver:self name:NSApplicationDidBecomeActiveNotification object:NSApp];
-	[FSEventsManager.sharedInstance removeObserver:_fsEventsObserver];
+	if(_info)
+		_info->pop_callback();
 }
 
-- (void)applicationDidBecomeActive:(NSNotification*)aNotification
+- (void)observeSharedUpdate:(scm::info_t const&)info
 {
-	if(_updateTimer)
-		[self updateStatusInBackground:nil];
-}
+	NSMutableDictionary* variables = [NSMutableDictionary dictionary];
+	for(auto const& pair : info.scm_variables())
+		variables[to_ns(pair.first)] = to_ns(pair.second);
 
-- (void)tryUpdateStatusInBackground
-{
-	if(_updating)
-	{
-		_needsUpdate = YES;
-		return;
-	}
-
-	NSTimeInterval delayUpdate = [_noUpdateBefore timeIntervalSinceNow];
-	if(delayUpdate > 0)
-	{
-		[_updateTimer invalidate];
-		_updateTimer = [NSTimer scheduledTimerWithTimeInterval:delayUpdate target:self selector:@selector(updateStatusInBackground:) userInfo:nil repeats:NO];
-	}
-	else
-	{
-		[self updateStatusInBackground:nil];
-	}
-}
-
-- (void)updateStatusInBackground:(id)sender
-{
-	[_updateTimer invalidate];
-	_updateTimer = nil;
-	_needsUpdate = NO;
-	_updating    = YES;
-
-	__weak SCMRepository* weakSelf = self;
-
-	NSURL* url = _URL;
-	scm::driver_t const* driver = _driver;
-
-	dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-		std::map<std::string, scm::status::type> const status = driver->status(url.fileSystemRepresentation);
-
-		NSMutableDictionary* variables = [NSMutableDictionary dictionary];
-		for(auto pair : driver->variables(url.fileSystemRepresentation))
-			variables[to_ns(pair.first)] = to_ns(pair.second);
-
-		dispatch_async(dispatch_get_main_queue(), ^{
-			[weakSelf updateStatus:status variables:variables];
-		});
-	});
+	[self updateStatus:info.status() variables:variables];
 }
 
 - (void)updateStatus:(std::map<std::string, scm::status::type> const&)status variables:(NSDictionary<NSString*, NSString*>*)variables
@@ -210,11 +152,6 @@ namespace scm
 
 	for(SCMRepositoryObserver* observer in [_observers copy])
 		observer.handler(self);
-
-	_updating       = NO;
-	_noUpdateBefore = [_noUpdateBefore laterDate:[NSDate dateWithTimeIntervalSinceNow:1.5]];
-	if(_needsUpdate)
-		[self tryUpdateStatusInBackground];
 }
 
 - (scm::status::type)SCMStatusForURL:(NSURL*)url
@@ -308,34 +245,17 @@ namespace scm
 
 - (SCMRepository*)repositoryAtURL:(NSURL*)url
 {
-	static scm::driver_t* const drivers[] = { scm::git_driver(), scm::hg_driver(), scm::p4_driver(), scm::svn_driver() };
+	std::string root = scm::root_for_path(url.fileSystemRepresentation);
+	if(root == NULL_STR)
+		return nil;
 
-	while(url)
-	{
-		if(SCMRepository* repository = [_repositories objectForKey:url])
-			return repository;
+	NSURL* rootURL = [NSURL fileURLWithPath:to_ns(root) isDirectory:YES];
+	if(SCMRepository* repository = [_repositories objectForKey:rootURL])
+		return repository;
 
-		for(scm::driver_t* driver : drivers)
-		{
-			if(driver && driver->has_info_for_directory(url.fileSystemRepresentation))
-			{
-				SCMRepository* repository = [[SCMRepository alloc] initWithURL:url driver:driver];
-				[_repositories setObject:repository forKey:url];
-				return repository;
-			}
-		}
-
-		NSNumber* isVolume;
-		if([url getResourceValue:&isVolume forKey:NSURLIsVolumeKey error:nil] && isVolume.boolValue)
-			break;
-
-		NSURL* parentURL;
-		if(![url getResourceValue:&parentURL forKey:NSURLParentDirectoryURLKey error:nil] || [url isEqual:parentURL])
-			break;
-
-		url = parentURL;
-	}
-	return nil;
+	SCMRepository* repository = [[SCMRepository alloc] initWithURL:rootURL];
+	[_repositories setObject:repository forKey:rootURL];
+	return repository;
 }
 
 - (SCMDirectory*)directoryAtURL:(NSURL*)url
