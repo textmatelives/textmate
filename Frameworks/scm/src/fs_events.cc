@@ -4,6 +4,30 @@
 
 namespace scm
 {
+	// Paths inside .git/ that fire FSEvents during normal git operations
+	// but do not represent working-tree changes. Suppressing these saves
+	// a schedule_update() call (and its `git status` cascade) per event.
+	// Patterns are matched as substrings of the absolute event path.
+	bool is_transient_git_path (std::string const& path)
+	{
+		auto const dotgit = path.find("/.git/");
+		if(dotgit == std::string::npos)
+			return false;
+
+		std::string const rel = path.substr(dotgit + 6); // skip "/.git/"
+
+		// fsmonitor daemon IPC + watchman cookies. Both fire continuously
+		// but their content has no bearing on the working tree.
+		if(rel.compare(0, 18, "fsmonitor--daemon.") == 0)
+			return true;
+
+		// Lockfiles for index, refs, HEAD, packed-refs, etc.
+		if(rel.size() >= 5 && rel.compare(rel.size() - 5, 5, ".lock") == 0)
+			return true;
+
+		return false;
+	}
+
 	// =============
 	// = watcher_t =
 	// =============
@@ -55,8 +79,14 @@ namespace scm
 		{
 			std::string const& file = ((char const* const*)eventPaths)[i];
 			std::string const& path = path::join(watcher.mount_point, "./" + file);
+			if(is_transient_git_path(path))
+				continue;
 			changedPaths.insert(path);
 		}
-		watcher.invoke_callback(changedPaths);
+
+		// Don't fire schedule_update for batches that were entirely
+		// transient git internals (lockfile churn, fsmonitor IPC).
+		if(!changedPaths.empty())
+			watcher.invoke_callback(changedPaths);
 	}
 }
