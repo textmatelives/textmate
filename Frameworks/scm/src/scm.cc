@@ -53,6 +53,11 @@ namespace scm
 		dispatch_time_t _no_check_before = DISPATCH_TIME_NOW;
 		std::shared_ptr<watcher_t> _watcher;
 		std::set<info_t*> _clients;
+		// Per-repo serial queue. Was a function-local static — one queue
+		// for every shared_info_t — so a slow repo blocked refreshes for
+		// every other repo. Per-repo serialization is the right level
+		// because git's index lock is per-repo.
+		dispatch_queue_t _queue;
 	};
 
 	// ==========
@@ -140,10 +145,12 @@ namespace scm
 
 	shared_info_t::shared_info_t (std::string const& rootPath, scm::driver_t const* driver) : _root_path(rootPath), _driver(driver)
 	{
+		_queue = dispatch_queue_create("org.textmate.scm.status", DISPATCH_QUEUE_SERIAL);
 	}
 
 	shared_info_t::~shared_info_t ()
 	{
+		dispatch_release(_queue);
 	}
 
 	void shared_info_t::add_client (info_t* client)
@@ -227,11 +234,10 @@ namespace scm
 
 		if(CFRunLoopRef currentRunLoop = CFRunLoopGetCurrent())
 		{
-			static dispatch_queue_t queue = dispatch_queue_create("org.textmate.scm.status", DISPATCH_QUEUE_SERIAL);
 			shared_info_weak_ptr weakThis = shared_from_this();
 
 			CFRetain(currentRunLoop);
-			dispatch_after(_no_check_before, queue, ^{
+			dispatch_after(_no_check_before, _queue, ^{
 				async_update(weakThis, currentRunLoop);
 				CFRelease(currentRunLoop);
 			});
