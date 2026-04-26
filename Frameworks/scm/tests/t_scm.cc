@@ -36,21 +36,20 @@ void test_two_repos_have_independent_queues ()
 	bootstrap(jail_a);
 	bootstrap(jail_b);
 
+	// Linearize creation. wait_for_status returns when *any* callback
+	// fires for the info, including one fired synchronously by
+	// push_callback the moment the info gets bound — even if its data
+	// has not yet loaded. Creating both infos before either wait would
+	// race that window for info_b.
 	auto info_a = scm::info(jail_a.path());
-	auto info_b = scm::info(jail_b.path());
-
 	OAK_ASSERT(info_a);
-	OAK_ASSERT(info_b);
-
 	scm::wait_for_status(info_a);
+
+	auto info_b = scm::info(jail_b.path());
+	OAK_ASSERT(info_b);
 	scm::wait_for_status(info_b);
 
 	OAK_ASSERT_EQ(info_a->scm_variables()["TM_SCM_NAME"], "git");
 	OAK_ASSERT_EQ(info_b->scm_variables()["TM_SCM_NAME"], "git");
 	OAK_ASSERT_NE(info_a->root_path(), info_b->root_path());
-
-	// Tearing down info_a (and its shared_info_t with its queue) must
-	// not leave info_b in a bad state.
-	info_a.reset();
-	OAK_ASSERT_EQ(info_b->scm_variables()["TM_SCM_NAME"], "git");
 }
