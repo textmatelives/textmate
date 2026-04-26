@@ -115,8 +115,10 @@ static void collect_all_paths (std::string const& git, std::map<std::string, scm
 		// show-ref + diff-files + diff-index --cached + ls-files -zto sequence.
 		// `git status --porcelain=v1` correctly handles the no-HEAD case
 		// (entries appear with X='A'), so the haveHead probe is no longer
-		// needed here.
-		scm::git_parse::parse_porcelain(entries, io::exec(env, git, "status", "--porcelain=v1", "-z", "--untracked-files=normal", "--ignore-submodules=dirty", nullptr));
+		// needed here. `--untracked-files=all` matches the prior behaviour of
+		// `ls-files -zto`, which enumerated individual files inside untracked
+		// directories rather than reporting the directory as a single entry.
+		scm::git_parse::parse_porcelain(entries, io::exec(env, git, "status", "--porcelain=v1", "-z", "--untracked-files=all", "--ignore-submodules=dirty", nullptr));
 	}
 
 	path::remove(tmpIndex);
