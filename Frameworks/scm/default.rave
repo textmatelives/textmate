@@ -1,6 +1,6 @@
 target "${dirname}" {
-	require text cf io settings regexp
-	headers src/{scm,status}.h
+	require text cf io settings regexp xdiff
+	headers src/{scm,status,gutter_diff}.h
 
 	files resources/* "Resources"
 
