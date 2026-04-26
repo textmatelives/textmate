@@ -1,0 +1,8 @@
+target "${dirname}" {
+	headers     src/xdiff.h
+
+	add FLAGS   "-I${dir}/src"
+	add C_FLAGS "-Wno-sign-compare -Wno-shorten-64-to-32 -Wno-implicit-int-conversion"
+
+	sources     src/*.c
+}
