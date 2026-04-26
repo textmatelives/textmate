@@ -226,19 +226,22 @@ int main (int argc, char const* argv[])
 
   if(!run_benchmarks)
   {
-    dispatch_group_async(group, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-      if(parallel)
-      {
+    if(parallel)
+    {
+      dispatch_group_async(group, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
         dispatch_apply(tests.size(), DISPATCH_APPLY_AUTO, ^(size_t n){
           tests[n].execute(measure, repeat);
         });
-      }
-      else
-      {
-        for(auto& test : tests)
-          test.execute(measure, repeat);
-      }
-    });
+      });
+    }
+    else
+    {
+      // Run synchronously on the main thread before entering the
+      // run loop, so Cocoa tests that assert NSThread.isMainThread
+      // (e.g. TMFileReference factory methods) can call into AppKit.
+      for(auto& test : tests)
+        test.execute(measure, repeat);
+    }
   }
 
   __block bool hasMoreTests = true;

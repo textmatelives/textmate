@@ -1391,8 +1391,13 @@ module Target
         test_sources = test_sources.sort.uniq
         gen_test_bin = "#{__dir__}/gen_test"
 
+        # Use .mm if any test source is Objective-C++; .mm is a strict
+        # superset so it's safe for pure C++ test files too. .cc keeps
+        # the existing scm/text/etc. test toolchain unchanged.
+        runner_ext = test_sources.any? { |f| f.end_with?('.mm', '.m') } ? '.mm' : '.cc'
+
         # Step 1: GenTest
-        runner_src = File.join(target[:builddir], '_GenTest', target[:identifier], "_T#{target[:name]}.cc")
+        runner_src = File.join(target[:builddir], '_GenTest', target[:identifier], "_T#{target[:name]}#{runner_ext}")
         rules << {
           name:         'GenTest',
           in:           test_sources,
@@ -1441,13 +1446,19 @@ module Target
             description: 'Link test ‘${out}’…',
           }
 
-          # Step 4: Run the test binary on the console pool.
+          # Step 4: Run the test binary on the console pool. ObjC++ tests
+          # commonly use Cocoa APIs that assert main-thread (e.g.
+          # TMFileReference); pass --no-parallel for those so each test
+          # runs serially. Ninja deduplicates rules by name, so per-build
+          # arguments must travel via the $flags variable.
+          run_flags = (runner_ext == '.mm') ? '--no-parallel' : ''
           runner_marker = File.join(target[:builddir], '_Test', target[:identifier], '.always-run')
           rules << {
             name:        'RunTest',
             in:          test_bin,
             out:         runner_marker,
-            command:     '$in',
+            flags:       run_flags,
+            command:     '$in $flags',
             description: 'Run tests for ‘' + target[:name] + '’…',
             pool:        'console',
           }
