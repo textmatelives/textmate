@@ -1,4 +1,5 @@
 #include "api.h"
+#include "git_parse.h"
 #include <text/tokenize.h>
 #include <text/format.h>
 #include <io/io.h>
@@ -25,20 +26,6 @@ static scm::status::type parse_status_flag (std::string const& str)
 
 	ASSERT_EQ(str, NULL_STR); // we use ‘str’ in the assertion to output the unrecognized status flag
 	return scm::status::unknown;
-}
-
-static void parse_diff (std::map<std::string, scm::status::type>& entries, std::string const& output)
-{
-	if(output == NULL_STR)
-		return;
-
-	auto v = text::tokenize(output.begin(), output.end(), '\0');
-	for(auto it = v.begin(); it != v.end() && !(*it).empty(); ++it)
-	{
-		scm::status::type flag = parse_status_flag(*it);
-		if(++it != v.end())
-			entries[*it] = flag;
-	}
 }
 
 static void parse_ls (std::map<std::string, scm::status::type>& entries, std::string const& output, scm::status::type state = scm::status::unknown)
@@ -112,29 +99,25 @@ static void collect_all_paths (std::string const& git, std::map<std::string, scm
 	env["GIT_WORK_TREE"] = dir;
 	env["GIT_DIR"]       = path::join(dir, ".git");
 
-	bool haveHead = io::exec(env, git, "show-ref", "-qh", nullptr) != NULL_STR;
-
 	std::string const tmpIndex = copy_git_index(dir);
 	if(tmpIndex != NULL_STR)
 	{
 		env["GIT_INDEX_FILE"] = tmpIndex;
 		io::exec(env, git, "update-index", "-q", "--unmerged", "--ignore-missing", "--refresh", nullptr);
 
-		// All files part of the repository (index)
-		if(haveHead)
-				parse_ls(entries, io::exec(env, git, "ls-files", "--exclude-standard", "-zt", nullptr));
-		else	parse_ls(entries, io::exec(env, git, "ls-files", "--exclude-standard", "-zt", nullptr), scm::status::added);
+		// Baseline: every tracked file with H/M/A/D/etc. flag from ls-files.
+		// `filter()` needs the universe of tracked paths to compute directory
+		// status rollups (`status_for` in this file) — porcelain alone only
+		// reports changed/untracked files.
+		parse_ls(entries, io::exec(env, git, "ls-files", "--exclude-standard", "-zt", nullptr));
 
-		// Modified, Deleted (on disk, not staged)
-		parse_diff(entries, io::exec(env, git, "diff-files", "--name-status", "--ignore-submodules=dirty", "-z", nullptr));
-
-		// Added (to index), Deleted (from index)
-		if(haveHead)
-			parse_diff(entries, io::exec(env, git, "diff-index", "--name-status", "--ignore-submodules=dirty", "-z", "--cached", "HEAD", nullptr));
+		// Overlay: index/worktree changes plus untracked. Replaces the prior
+		// show-ref + diff-files + diff-index --cached + ls-files -zto sequence.
+		// `git status --porcelain=v1` correctly handles the no-HEAD case
+		// (entries appear with X='A'), so the haveHead probe is no longer
+		// needed here.
+		scm::git_parse::parse_porcelain(entries, io::exec(env, git, "status", "--porcelain=v1", "-z", "--untracked-files=normal", "--ignore-submodules=dirty", nullptr));
 	}
-
-	// All files with ‘other’ status
-	parse_ls(entries, io::exec(env, git, "ls-files", "--exclude-standard", "-zto", nullptr));
 
 	path::remove(tmpIndex);
 }
