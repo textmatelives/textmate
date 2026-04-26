@@ -1368,6 +1368,105 @@ module Target
 
     target[:build][:expand]
   end
+
+  # Emit ninja rules for `tests tests/t_*.cc` declarations:
+  #
+  #   1. GenTest    — bin/gen_test concatenates the t_*.cc files into a
+  #                   single _T<name>.cc with a generated main().
+  #   2. CompileClang on _T<name>.cc — same flags / include paths as the
+  #                   framework's own sources, via Compiler.transform.
+  #   3. Link       — links the test object against the framework's own
+  #                   objects plus required-target objects, frameworks,
+  #                   libraries.
+  #   4. RunTest    — phony console rule that runs the binary; aliased
+  #                   to <target>/test.
+  def tests(archs, targets)
+    target = archs.values.first
+
+    unless target[:build].include?(:tests)
+      rules = []
+      runner_phony = nil
+
+      if test_sources = target[:tests]
+        test_sources = test_sources.sort.uniq
+        gen_test_bin = "#{__dir__}/gen_test"
+
+        # Step 1: GenTest
+        runner_src = File.join(target[:builddir], '_GenTest', target[:identifier], "_T#{target[:name]}.cc")
+        rules << {
+          name:         'GenTest',
+          in:           test_sources,
+          out:          runner_src,
+          command:      "#{gen_test_bin} $in > $out~ && mv $out~ $out",
+          description:  'Generate test runner ‘${out}’…',
+          dependencies: gen_test_bin,
+        }
+
+        # Step 2: Compile the generated runner with the framework's flags.
+        # Tests can include the framework's own exported headers (e.g.
+        # `<scm/scm.h>`), so we also expose self's include_dir via
+        # `include_self: true`.
+        include_dirs = required_targets(target, targets, include_self: true, include_weak: true).map { |a| include_dir(a) }.reject { |e| e.nil? }.sort.uniq
+        config = target[:variables].merge(prelude: target[:prelude], inference: target[:inference], include: include_dirs)
+
+        if links = Compiler.transform(runner_src, config, target[:builddir])
+          runner_obj = links.last[:out]
+          link = links.shift
+          rules += [ link.merge(order_only: [ *Array(link[:order_only]) ]), *links ]
+
+          # Step 3: Link with the framework's own objects + required deps.
+          required = required_targets(target, targets, include_self: true).map { |a| a[target[:arch]] }.reject { |t| t.nil? }
+          framework_objects = required.flat_map { |t| Target.objects(t, targets) }
+
+          frameworks = required.flat_map { |t| t[:frameworks] }.reject { |e| e.nil? }.sort.uniq
+          libraries  = required.flat_map { |t| t[:libraries]  }.reject { |e| e.nil? }.sort.uniq
+          static, libraries = libraries.partition { |lib| lib =~ /\.a$/ }
+
+          ln_flags = []
+          required.each do |t|
+            ln_flags += t[:variables]['LN_FLAGS'].split(' ') if t[:variables].include?('LN_FLAGS')
+          end
+          ln_flags = [ ln_flags.uniq.join(' ') ]
+          ln_flags += frameworks.map { |e| "-framework #{e.shellescape}" }
+          ln_flags += libraries.map  { |e| "-l#{e.shellescape}" }
+          ln_flags += static
+
+          test_bin = File.join(target[:builddir], '_Test', target[:identifier], target[:name])
+          rules << {
+            name:        'Link',
+            in:          ([ runner_obj ] + framework_objects).sort.uniq,
+            out:         test_bin,
+            flags:       ln_flags.join(' '),
+            command:     'xcrun --sdk macosx clang -o $out $flags $in',
+            description: 'Link test ‘${out}’…',
+          }
+
+          # Step 4: Run the test binary on the console pool.
+          runner_marker = File.join(target[:builddir], '_Test', target[:identifier], '.always-run')
+          rules << {
+            name:        'RunTest',
+            in:          test_bin,
+            out:         runner_marker,
+            command:     '$in',
+            description: 'Run tests for ‘' + target[:name] + '’…',
+            pool:        'console',
+          }
+
+          rules << {
+            name: 'phony',
+            in:   runner_marker,
+            out:  target[:identifier] + '/test',
+          }
+          runner_phony = target[:identifier] + '/test'
+        end
+      end
+
+      target[:build][:rules] += rules
+      target[:build][:tests]  = runner_phony
+    end
+
+    target[:build][:tests]
+  end
 end
 
 # ====================
@@ -1491,6 +1590,7 @@ if __FILE__ == $PROGRAM_NAME
     Target.expand(archs, targets)
     Target.notarize(archs, targets)
     Target.runner(archs, targets)
+    Target.tests(archs, targets)
     Target.signature(archs, targets)
     Target.defines(archs, targets)
   end
