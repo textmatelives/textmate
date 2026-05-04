@@ -27,7 +27,7 @@ static struct TMMandatoryBundle const kTMMandatoryBundles[] = {
 		"0BB1F01A-4F0A-475A-ACDD-0F5578F2EFC3",
 		"Bundle Support",
 		"https://github.com/dayglojesus/bundle-support.tmbundle",
-		"7641db1a16734317103cc21df3946b9fe4eaf8c2",
+		"7c779d06bab86a9e0d5d9d7121d43ce9869e9856",
 		"Other",
 	},
 	// branch: remove-legacy-ruby
