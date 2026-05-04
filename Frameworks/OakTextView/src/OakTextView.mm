@@ -998,22 +998,12 @@ static std::string shell_quote (std::vector<std::string> paths)
 		[self performSelector:@selector(runDidChangeSCMStatusCallbacks:) withObject:self afterDelay:0];
 }
 
-// UUID of `Update Gutter on Save.tmCommand` in SCM Diff Gutter.tmbundle
-// (verified at .../Update Gutter on Save.tmCommand:90). The Ruby
-// command is replaced by -updateScmDiffGutter; skip it so we don't
-// run both pipelines in parallel.
-static oak::uuid_t const kSCMDiffGutterCommandUUID("081613BD-FBAF-4339-87AC-ED8FE942C525");
-
 - (void)runDidChangeSCMStatusCallbacks:(id)sender
 {
 	[self updateScmDiffGutter];
 
 	for(auto const& item : bundles::query(bundles::kFieldSemanticClass, "callback.document.did-change-scm-status", [self scopeContext], bundles::kItemTypeMost, oak::uuid_t(), false))
-	{
-		if(item->uuid() == kSCMDiffGutterCommandUUID)
-			continue;
 		[self performBundleItem:item];
-	}
 }
 
 - (void)updateScmDiffGutter
@@ -1083,11 +1073,7 @@ static oak::uuid_t const kSCMDiffGutterCommandUUID("081613BD-FBAF-4339-87AC-ED8F
 	[self updateScmDiffGutter];
 
 	for(auto const& item : bundles::query(bundles::kFieldSemanticClass, "callback.document.did-save", [self scopeContext], bundles::kItemTypeMost, oak::uuid_t(), false))
-	{
-		if(item->uuid() == kSCMDiffGutterCommandUUID)
-			continue;
 		[self performBundleItem:item];
-	}
 }
 
 - (void)documentWillReload:(NSNotification*)aNotification

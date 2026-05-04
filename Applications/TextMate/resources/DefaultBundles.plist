@@ -39,6 +39,14 @@
 			<key>category</key><string>Languages</string>
 		</dict>
 		<dict>
+			<key>uuid</key><string>C2D2BFF9-708D-11D9-BD09-0011242E4184</string>
+			<key>name</key><string>Diff</string>
+			<key>url</key><string>https://github.com/dayglojesus/diff.tmbundle</string>
+			<key>ref</key><string>master</string>
+			<key>autoUpdate</key><true/>
+			<key>category</key><string>Languages</string>
+		</dict>
+		<dict>
 			<key>uuid</key><string>EADD4718-EE11-4ABF-A7E6-13351FB3799D</string>
 			<key>name</key><string>Git</string>
 			<key>url</key><string>https://github.com/dayglojesus/git.tmbundle</string>
@@ -159,10 +167,10 @@
 			<key>category</key><string>Languages</string>
 		</dict>
 		<dict>
-			<key>uuid</key><string>7A84ECFC-2683-4129-826D-51F05F7E668A</string>
-			<key>name</key><string>SCM Diff Gutter</string>
-			<key>url</key><string>https://github.com/dayglojesus/scm-diff-gutter.tmbundle</string>
-			<key>ref</key><string>remove-legacy-ruby</string>
+			<key>uuid</key><string>3BDF79F4-94AE-46C0-BFBF-D5572AD2F515</string>
+			<key>name</key><string>SCM</string>
+			<key>url</key><string>https://github.com/dayglojesus/scm.tmbundle</string>
+			<key>ref</key><string>master</string>
 			<key>autoUpdate</key><true/>
 			<key>category</key><string>SCM</string>
 		</dict>
