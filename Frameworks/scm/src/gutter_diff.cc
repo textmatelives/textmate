@@ -273,11 +273,14 @@ namespace scm { namespace gutter_diff {
 		}
 	}
 
-	void compute (std::string const& repo_root,
-	              std::string const& rel_path,
+	void compute (std::string repo_root,
+	              std::string rel_path,
 	              std::string current_text,
 	              void (^completion)(result_t))
 	{
+		// Parameters are taken by value, not by reference: the block
+		// outlives this stack frame, so const& would dangle. Each
+		// local string is then captured by-copy by the block.
 		auto block_completion = Block_copy(completion);
 
 		dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), ^{

@@ -37,8 +37,10 @@ namespace scm { namespace gutter_diff {
 	// current_text, and deliver the result on the main queue.
 	// Untracked files synthesise an empty HEAD blob so additions show
 	// as additions.
-	void compute (std::string const& repo_root,
-	              std::string const& rel_path,
+	// Parameters are taken by value: the block outlives this stack
+	// frame, so each one must be captured by-copy.
+	void compute (std::string repo_root,
+	              std::string rel_path,
 	              std::string current_text,
 	              void (^completion)(result_t));
 
