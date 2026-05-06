@@ -392,6 +392,14 @@ static NSString* SafeBasename (NSString* name)
 		return;
 	}
 
+	// Available-origin bundles skip auto-fetch only while uninstalled; once
+	// the user opts in, fall through to the normal update path.
+	if(spec.origin == TMBundleOriginAvailable && !spec.installedSHA)
+	{
+		[self processSpecs:specs index:i+1 bundlesDir:bundlesDir completion:completion];
+		return;
+	}
+
 	NSURL* destURL = [NSURL fileURLWithPath:[[bundlesDir stringByAppendingPathComponent:SafeBasename(spec.name)] stringByAppendingPathExtension:@"tmbundle"] isDirectory:YES];
 	BOOL isInstalled = [NSFileManager.defaultManager fileExistsAtPath:destURL.path];
 

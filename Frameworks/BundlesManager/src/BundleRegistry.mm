@@ -53,6 +53,7 @@ static NSInteger const kCurrentSchemaVersion = 1;
 
 	[self seedMandatory];
 	[self seedShippedDefaults];
+	[self seedAvailableBundles];
 
 	// migrateExistingInstalls runs once, only when Bundles.plist is absent.
 	if(!root)
@@ -163,6 +164,31 @@ static NSInteger const kCurrentSchemaVersion = 1;
 		if(!spec)
 			continue;
 		spec.origin = TMBundleOriginShipped;
+		_specs[spec.uuid] = spec;
+	}
+}
+
+- (void)seedAvailableBundles
+{
+	NSString* path = [NSBundle.mainBundle pathForResource:@"AvailableBundles" ofType:@"plist"];
+	if(!path)
+		return;
+
+	NSDictionary* root = [NSDictionary dictionaryWithContentsOfFile:path];
+	for(NSDictionary* entry in root[kKeyBundles])
+	{
+		NSString* uuidStr = entry[@"uuid"];
+		NSUUID* uuid = uuidStr ? [[NSUUID alloc] initWithUUIDString:uuidStr] : nil;
+		if(!uuid)
+			continue;
+
+		if(_specs[uuid])
+			continue;
+
+		BundleSpec* spec = [[BundleSpec alloc] initWithPlistRepresentation:entry];
+		if(!spec)
+			continue;
+		spec.origin = TMBundleOriginAvailable;
 		_specs[spec.uuid] = spec;
 	}
 }

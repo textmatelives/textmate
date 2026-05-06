@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>schemaVersion</key>
+	<integer>1</integer>
+	<key>bundles</key>
+	<array>
+		<dict>
+			<key>uuid</key><string>BC5DE172-1E1A-457C-8807-0B958DDE5B2D</string>
+			<key>name</key><string>Made of Code</string>
+			<key>url</key><string>https://github.com/mkdynamic/made-of-code-tmbundle</string>
+			<key>ref</key><string>master</string>
+			<key>autoUpdate</key><true/>
+			<key>category</key><string>Themes</string>
+		</dict>
+	</array>
+</dict>
+</plist>

@@ -4,6 +4,7 @@ typedef NS_ENUM(NSInteger, TMBundleOrigin) {
 	TMBundleOriginUser      = 0,
 	TMBundleOriginShipped   = 1,
 	TMBundleOriginMandatory = 2,
+	TMBundleOriginAvailable = 3,
 };
 
 // Value object: everything needed to fetch, track, and describe one bundle
