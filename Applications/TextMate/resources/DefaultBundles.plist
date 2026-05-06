@@ -42,7 +42,7 @@
 			<key>uuid</key><string>62FB4173-A31D-41D6-8201-16C7866F567E</string>
 			<key>name</key><string>CVS</string>
 			<key>url</key><string>https://github.com/dayglojesus/cvs.tmbundle</string>
-			<key>ref</key><string>master</string>
+			<key>ref</key><string>remove-legacy-ruby</string>
 			<key>autoUpdate</key><true/>
 			<key>category</key><string>SCM</string>
 		</dict>
@@ -90,7 +90,7 @@
 			<key>uuid</key><string>D9D34536-A9FC-4DC2-8AF4-30D1ACC4B5F4</string>
 			<key>name</key><string>Groovy</string>
 			<key>url</key><string>https://github.com/dayglojesus/groovy.tmbundle</string>
-			<key>ref</key><string>master</string>
+			<key>ref</key><string>remove-legacy-ruby</string>
 			<key>autoUpdate</key><true/>
 			<key>category</key><string>Languages</string>
 		</dict>
@@ -122,7 +122,7 @@
 			<key>uuid</key><string>4677FEB2-6227-11D9-BFB1-000D93589AF6</string>
 			<key>name</key><string>Java</string>
 			<key>url</key><string>https://github.com/dayglojesus/java.tmbundle</string>
-			<key>ref</key><string>master</string>
+			<key>ref</key><string>remove-legacy-ruby</string>
 			<key>autoUpdate</key><true/>
 			<key>category</key><string>Languages</string>
 		</dict>
