@@ -912,6 +912,7 @@ namespace
 			bundle.ref                 = spec.ref;
 			bundle.autoUpdateEnabled   = spec.autoUpdate;
 			bundle.category            = spec.category.length ? spec.category : @"Other";
+			bundle.summary             = bundle.summary ?: spec.summary;
 			bundle.downloadLastUpdated = spec.installedAt;
 			bundle.lastUpdated         = spec.installedAt;
 

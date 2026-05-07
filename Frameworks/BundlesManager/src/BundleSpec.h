@@ -34,6 +34,7 @@ typedef NS_ENUM(NSInteger, TMBundleOrigin) {
 @property (nonatomic)           NSString* ref;             // branch/tag/SHA; default "main"
 @property (nonatomic)           BOOL      autoUpdate;      // default YES
 @property (nonatomic)           NSString* category;        // scope bar label; default "Other"
+@property (nonatomic)           NSString* summary;         // description shown in prefs pane before install
 @property (nonatomic)           TMBundleOrigin origin;     // set at load, not persisted
 
 // Install state (nil until first successful install)

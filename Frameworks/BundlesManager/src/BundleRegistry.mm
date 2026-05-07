@@ -182,8 +182,22 @@ static NSInteger const kCurrentSchemaVersion = 1;
 		if(!uuid)
 			continue;
 
-		if(_specs[uuid])
+		if(BundleSpec* existing = _specs[uuid])
+		{
+			// Mandatory/Shipped entries win — leave them alone.
+			if(existing.origin == TMBundleOriginMandatory || existing.origin == TMBundleOriginShipped)
+				continue;
+
+			// Refresh source-of-truth metadata from the seed; preserve
+			// install state (installedSHA, installedAt, etag).
+			if(NSString* s = entry[@"description"]) existing.summary    = s;
+			if(NSString* c = entry[@"category"])    existing.category   = c;
+			if(NSString* n = entry[@"name"])        existing.name       = n;
+			if(NSString* r = entry[@"ref"])         existing.ref        = r;
+			if(NSNumber* a = entry[@"autoUpdate"])  existing.autoUpdate = a.boolValue;
+			existing.origin = TMBundleOriginAvailable;
 			continue;
+		}
 
 		BundleSpec* spec = [[BundleSpec alloc] initWithPlistRepresentation:entry];
 		if(!spec)
