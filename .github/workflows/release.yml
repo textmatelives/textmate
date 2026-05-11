@@ -99,6 +99,18 @@ jobs:
           done < <(find "$APP/Contents/SharedSupport" -type f -print0)
           echo "Re-signed $count Mach-O files under SharedSupport"
 
+      - name: Re-sign outer .app with entitlements (after modifying SharedSupport contents)
+        run: |
+          set -euo pipefail
+          APP="${{ steps.app.outputs.app_path }}"
+          ENT="$RUNNER_TEMP/Entitlements.plist"
+          # Entitlements.plist has a ${CS_GET_TASK_ALLOW} placeholder; release
+          # builds set this to false (Applications/TextMate/default.rave:14-16).
+          sed 's|${CS_GET_TASK_ALLOW}|false|g' \
+            Applications/TextMate/Entitlements.plist > "$ENT"
+          codesign --force --sign "$CS_IDENTITY" --options runtime --timestamp \
+            --entitlements "$ENT" "$APP"
+
       - name: Verify codesign + hardened runtime
         run: |
           codesign --verify --deep --strict --verbose=2 "${{ steps.app.outputs.app_path }}"
