@@ -82,6 +82,23 @@ jobs:
           echo "Located: $APP_PATH"
           echo "app_path=$APP_PATH" >> "$GITHUB_OUTPUT"
 
+      - name: Re-sign embedded Mach-O assets under SharedSupport
+        run: |
+          set -euo pipefail
+          APP="${{ steps.app.outputs.app_path }}"
+          # SharedSupport ships pre-built Ruby native extensions (.bundle) and
+          # helper binaries. They're committed with the upstream maintainer's
+          # cert (not our Dev ID) and lack the secure timestamp + hardened
+          # runtime required for notarization. Re-sign everything Mach-O.
+          count=0
+          while IFS= read -r -d '' f; do
+            if /usr/bin/file -b "$f" | grep -q 'Mach-O'; then
+              codesign --force --sign "$CS_IDENTITY" --options runtime --timestamp "$f"
+              count=$((count+1))
+            fi
+          done < <(find "$APP/Contents/SharedSupport" -type f -print0)
+          echo "Re-signed $count Mach-O files under SharedSupport"
+
       - name: Verify codesign + hardened runtime
         run: |
           codesign --verify --deep --strict --verbose=2 "${{ steps.app.outputs.app_path }}"
