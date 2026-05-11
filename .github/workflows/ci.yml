@@ -33,11 +33,13 @@ jobs:
 
       - name: Discover and run all framework tests
         run: |
-          # buffer is excluded: 3 spellcheck tests in t_buffer.mm need NSSpellChecker,
-          # which has no dictionary on headless macOS runners and returns 0 misspellings.
+          # Excluded:
+          #   buffer - 3 spellcheck tests need NSSpellChecker dictionary (no headless support)
+          #   cf     - t_rect.cc segfaults under parallel test runner on macos-14 (.cc tests
+          #            run parallel; .mm get --no-parallel via bin/rave:1454)
           TESTS=$(grep -lE '^[[:space:]]*tests[[:space:]]' Frameworks/*/default.rave \
                   | xargs -n1 dirname | xargs -n1 basename \
-                  | grep -v '^buffer$' \
+                  | grep -vE '^(buffer|cf)$' \
                   | sed 's|$|/test|')
           echo "Running tests: $TESTS"
           ninja $TESTS
