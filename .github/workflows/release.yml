@@ -106,7 +106,21 @@ jobs:
             --wait
 
       - name: Staple ticket onto .app
-        run: xcrun stapler staple "${{ steps.app.outputs.app_path }}"
+        run: |
+          set -euo pipefail
+          # notarytool --wait returns once Apple accepts, but stapler reads from
+          # CloudKit which can lag a minute or two. Retry until propagated.
+          attempts=0
+          max_attempts=10
+          until xcrun stapler staple "${{ steps.app.outputs.app_path }}"; do
+            attempts=$((attempts+1))
+            if [ "$attempts" -ge "$max_attempts" ]; then
+              echo "Stapler failed after $max_attempts attempts" >&2
+              exit 1
+            fi
+            echo "Stapler attempt $attempts failed; ticket likely not propagated yet — sleeping 30s..." >&2
+            sleep 30
+          done
 
       - name: Verify Gatekeeper acceptance
         run: spctl --assess --type execute --verbose=4 "${{ steps.app.outputs.app_path }}"
