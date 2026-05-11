@@ -152,7 +152,8 @@ namespace command
 	{
 		NSData* data = [NSData dataWithBytesNoCopy:(void*)command.data() length:command.size() freeWhenDone:NO];
 
-		NSString* scriptPath = [NSString pathWithComponents:@[ NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES).firstObject, NSBundle.mainBundle.bundleIdentifier, @"Scripts", hash(data) ]];
+		NSString* bundleId = NSBundle.mainBundle.bundleIdentifier ?: @"com.macromates.TextMate";
+		NSString* scriptPath = [NSString pathWithComponents:@[ NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES).firstObject, bundleId, @"Scripts", hash(data) ]];
 		if(![NSFileManager.defaultManager isExecutableFileAtPath:scriptPath])
 		{
 			[NSFileManager.defaultManager createDirectoryAtPath:scriptPath.stringByDeletingLastPathComponent withIntermediateDirectories:YES attributes:nil error:nullptr];

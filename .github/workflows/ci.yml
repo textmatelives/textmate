@@ -36,11 +36,9 @@ jobs:
           # Excluded:
           #   buffer  - 3 spellcheck tests need NSSpellChecker dictionary (no headless support)
           #   cf      - t_rect.cc segfaults under parallel test runner on macos-14
-          #   command - runner.mm:155 dereferences NSBundle.mainBundle.bundleIdentifier
-          #             which is nil for the CLI test binary; @[...] then crashes
           TESTS=$(grep -lE '^[[:space:]]*tests[[:space:]]' Frameworks/*/default.rave \
                   | xargs -n1 dirname | xargs -n1 basename \
-                  | grep -vE '^(buffer|cf|command)$' \
+                  | grep -vE '^(buffer|cf)$' \
                   | sed 's|$|/test|')
           echo "Running tests: $TESTS"
           ninja $TESTS
