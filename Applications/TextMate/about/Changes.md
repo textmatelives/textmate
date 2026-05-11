@@ -2,6 +2,11 @@ Title: Release Notes
 
 # Changes
 
+## 2026-05-10 (v2.0.23-undead.0)
+
+* First dayglojesus/textmate "undead" release. macOS 26 / Apple Silicon only.
+* See [CHANGELOG_FORK.md](../../../CHANGELOG_FORK.md) for the full delta from upstream.
+
 ## 2021-10-12 (v2.0.23)
 
 * Miscellaneous improvements, [see changes since v2.0.22 on GitHub](https://github.com/textmate/textmate/compare/v2.0.22...v2.0.23)

@@ -1,0 +1,131 @@
+name: Release
+
+on:
+  push:
+    tags: ['v2.0.23-undead.*']
+
+jobs:
+  release:
+    runs-on: macos-14
+    timeout-minutes: 60
+    permissions:
+      contents: write
+
+    env:
+      KEYCHAIN_PWD: ${{ github.run_id }}-${{ github.run_attempt }}
+      CERT_IDENTITY_NAME: "Developer ID Application"
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Install build dependencies
+        run: brew install boost capnp google-sparsehash multimarkdown ninja ragel
+
+      - name: Import signing certificate into temporary keychain
+        env:
+          P12_B64: ${{ secrets.MAC_CERTIFICATE_P12 }}
+          P12_PWD: ${{ secrets.MAC_CERTIFICATE_PWD }}
+        run: |
+          set -euo pipefail
+          KEYCHAIN_PATH="$RUNNER_TEMP/build.keychain-db"
+          P12_PATH="$RUNNER_TEMP/cert.p12"
+
+          echo "$P12_B64" | base64 --decode > "$P12_PATH"
+
+          security create-keychain -p "$KEYCHAIN_PWD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PWD" "$KEYCHAIN_PATH"
+          security import "$P12_PATH" -P "$P12_PWD" -A -t cert -f pkcs12 \
+            -k "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: \
+            -s -k "$KEYCHAIN_PWD" "$KEYCHAIN_PATH"
+          security list-keychain -d user -s "$KEYCHAIN_PATH" login.keychain
+
+          IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" \
+            | grep "$CERT_IDENTITY_NAME" | head -n1 | awk '{print $2}')
+          if [ -z "$IDENTITY" ]; then
+            echo "ERROR: no Developer ID Application identity found in imported keychain"
+            security find-identity -v -p codesigning "$KEYCHAIN_PATH"
+            exit 1
+          fi
+          echo "Resolved identity hash: $IDENTITY"
+          echo "CS_IDENTITY=$IDENTITY" >> "$GITHUB_ENV"
+
+      - name: Pre-seed local.rave (arm64 + signing identity + hardened runtime)
+        run: |
+          cat > local.rave <<EOF
+          add FLAGS    "-I/opt/homebrew/include"
+          add LN_FLAGS "-L/opt/homebrew/lib"
+          set CS_IDENTITY "${CS_IDENTITY}"
+          add CS_FLAGS "--options runtime --timestamp"
+          EOF
+
+      - name: Configure
+        run: ./configure
+
+      - name: Build signed TextMate.app
+        run: ninja TextMate
+
+      - name: Locate built app
+        id: app
+        run: |
+          APP_PATH="$HOME/build/TextMate/release/TextMate.app"
+          test -d "$APP_PATH" || { echo "App not found at $APP_PATH"; exit 1; }
+          echo "app_path=$APP_PATH" >> "$GITHUB_OUTPUT"
+
+      - name: Verify codesign + hardened runtime
+        run: |
+          codesign --verify --deep --strict --verbose=2 "${{ steps.app.outputs.app_path }}"
+          codesign -dvv "${{ steps.app.outputs.app_path }}" 2>&1 | tee /tmp/codesign.out
+          grep -q "flags=.*runtime" /tmp/codesign.out \
+            || { echo "ERROR: hardened runtime flag missing"; exit 1; }
+
+      - name: Notarize via notarytool
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_ID_PWD: ${{ secrets.APPLE_ID_PWD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          APP="${{ steps.app.outputs.app_path }}"
+          ZIP="$RUNNER_TEMP/TextMate-notarize.zip"
+          /usr/bin/ditto -ck --keepParent --norsrc --noextattr --noacl --noqtn "$APP" "$ZIP"
+          xcrun notarytool submit "$ZIP" \
+            --apple-id "$APPLE_ID" \
+            --team-id "$APPLE_TEAM_ID" \
+            --password "$APPLE_ID_PWD" \
+            --wait
+
+      - name: Staple ticket onto .app
+        run: xcrun stapler staple "${{ steps.app.outputs.app_path }}"
+
+      - name: Verify Gatekeeper acceptance
+        run: spctl --assess --type execute --verbose=4 "${{ steps.app.outputs.app_path }}"
+
+      - name: Build distribution .tbz
+        id: archive
+        run: |
+          set -euo pipefail
+          VERSION="${GITHUB_REF_NAME#v}"
+          ARCHIVE="$RUNNER_TEMP/TextMate-${VERSION}.tbz"
+          /usr/bin/tar --disable-copyfile -cjf "$ARCHIVE" \
+            -C "$(dirname '${{ steps.app.outputs.app_path }}')" \
+            "$(basename '${{ steps.app.outputs.app_path }}')"
+          echo "archive=$ARCHIVE" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --title "TextMate ${{ steps.archive.outputs.version }}" \
+            --generate-notes \
+            "${{ steps.archive.outputs.archive }}"
+
+      - name: Cleanup keychain
+        if: always()
+        run: security delete-keychain "$RUNNER_TEMP/build.keychain-db" || true
