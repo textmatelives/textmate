@@ -9,7 +9,7 @@ on:
 jobs:
   build-test:
     runs-on: macos-14   # Apple Silicon
-    timeout-minutes: 30
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
@@ -36,9 +36,13 @@ jobs:
           # Excluded:
           #   buffer  - 3 spellcheck tests need NSSpellChecker dictionary (no headless support)
           #   cf      - t_rect.cc segfaults under parallel test runner on macos-14
+          #   command,
+          #   editor  - both call runner_t::launch() + wait_for_command(); wait() polls NSApp
+          #             events and a worker-thread runloop. With NSApp nil in a CLI binary the
+          #             completion path never fires and the test hangs to job timeout.
           TESTS=$(grep -lE '^[[:space:]]*tests[[:space:]]' Frameworks/*/default.rave \
                   | xargs -n1 dirname | xargs -n1 basename \
-                  | grep -vE '^(buffer|cf)$' \
+                  | grep -vE '^(buffer|cf|command|editor)$' \
                   | sed 's|$|/test|')
           echo "Running tests: $TESTS"
           ninja $TESTS
