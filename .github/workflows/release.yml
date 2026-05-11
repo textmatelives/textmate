@@ -72,8 +72,14 @@ jobs:
       - name: Locate built app
         id: app
         run: |
-          APP_PATH="$HOME/build/TextMate/release/TextMate.app"
-          test -d "$APP_PATH" || { echo "App not found at $APP_PATH"; exit 1; }
+          set -euo pipefail
+          APP_PATH=$(find "$HOME/build" -type d -name 'TextMate.app' -path '*/release/*' 2>/dev/null | head -n1)
+          if [ -z "$APP_PATH" ] || [ ! -d "$APP_PATH" ]; then
+            echo "TextMate.app not found under \$HOME/build/" >&2
+            find "$HOME/build" -maxdepth 5 -name 'TextMate.app' 2>/dev/null || true
+            exit 1
+          fi
+          echo "Located: $APP_PATH"
           echo "app_path=$APP_PATH" >> "$GITHUB_OUTPUT"
 
       - name: Verify codesign + hardened runtime
