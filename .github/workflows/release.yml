@@ -99,11 +99,25 @@ jobs:
           APP="${{ steps.app.outputs.app_path }}"
           ZIP="$RUNNER_TEMP/TextMate-notarize.zip"
           /usr/bin/ditto -ck --keepParent --norsrc --noextattr --noacl --noqtn "$APP" "$ZIP"
-          xcrun notarytool submit "$ZIP" \
+
+          # notarytool --wait can exit 0 even when status is Invalid; parse JSON ourselves.
+          OUT=$(xcrun notarytool submit "$ZIP" \
             --apple-id "$APPLE_ID" \
             --team-id "$APPLE_TEAM_ID" \
             --password "$APPLE_ID_PWD" \
-            --wait
+            --wait \
+            --output-format json)
+          echo "$OUT"
+          STATUS=$(echo "$OUT" | jq -r .status)
+          SUBMIT_ID=$(echo "$OUT" | jq -r .id)
+          if [ "$STATUS" != "Accepted" ]; then
+            echo "::error::Notarization failed (status=$STATUS, id=$SUBMIT_ID). Fetching log:"
+            xcrun notarytool log "$SUBMIT_ID" \
+              --apple-id "$APPLE_ID" \
+              --team-id "$APPLE_TEAM_ID" \
+              --password "$APPLE_ID_PWD" || true
+            exit 1
+          fi
 
       - name: Staple ticket onto .app
         run: |
