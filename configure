@@ -6,7 +6,7 @@ function error () { printf >&2 "%s\n\nPlease see README.md for build instruction
 # = Check required dependencies =
 # ===============================
 
-for dep in capnp ninja ragel multimarkdown pgrep pkill; do
+for dep in ninja ragel multimarkdown pgrep pkill; do
 	which -s "$dep" || error "*** dependency missing: ‘${dep}’."
 done
 
@@ -16,12 +16,8 @@ else
 	echo >> local.rave 'add FLAGS    "-I/usr/local/include"'
 	echo >> local.rave 'add LN_FLAGS "-L/usr/local/lib"'
 
-	for hdr in boost/{crc,variant}.hpp capnp/{message,serialize-packed}.h sparsehash/dense_hash_map; do
+	for hdr in boost/{crc,variant}.hpp sparsehash/dense_hash_map; do
 		test -f "/usr/local/include/${hdr}" || error "*** dependency missing: ‘/usr/local/include/${hdr}’. Install dependency and/or update ‘local.rave’ with correct path."
-	done
-
-	for lib in capnp kj; do
-		test -f "/usr/local/lib/lib${lib}."* || error "*** dependency missing: ‘/usr/local/lib/lib${lib}.*’. Install dependency and/or update ‘local.rave’ with correct path."
 	done
 fi
 

@@ -646,24 +646,6 @@ class CompileRagel < Compiler
   end
 end
 
-class CompileCapnp < Compiler
-  transforms '.capnp' => '.capnp.c++'
-
-  def transform(file, config, builddir)
-    base = super
-
-    source = base[:out]
-    header = source.chomp('.c++') + '.h'
-
-    base.merge(
-      out:         [ source, header ],
-      flags:       "-oc++:#{File.dirname(source).shellescape} --src-prefix=#{File.dirname(file).shellescape}",
-      command:     'capnp compile $flags $in',
-      description: 'Cap’n Proto ‘${in}’…',
-    )
-  end
-end
-
 class CompileXib < Compiler
   transforms '.xib' => '.nib'
 

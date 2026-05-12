@@ -16,7 +16,7 @@ jobs:
           submodules: recursive
 
       - name: Install build dependencies
-        run: brew install boost capnp google-sparsehash multimarkdown ninja ragel mercurial subversion
+        run: brew install boost google-sparsehash multimarkdown ninja ragel mercurial subversion
 
       - name: Pre-seed local.rave for arm64 Homebrew prefix
         run: |

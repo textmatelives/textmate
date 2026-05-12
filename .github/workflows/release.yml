@@ -22,7 +22,7 @@ jobs:
           fetch-depth: 0
 
       - name: Install build dependencies
-        run: brew install boost capnp google-sparsehash multimarkdown ninja ragel
+        run: brew install boost google-sparsehash multimarkdown ninja ragel
 
       - name: Import signing certificate into temporary keychain
         env:
@@ -82,41 +82,13 @@ jobs:
           echo "Located: $APP_PATH"
           echo "app_path=$APP_PATH" >> "$GITHUB_OUTPUT"
 
-      - name: Bundle Homebrew dylibs into .app/Contents/Frameworks
-        run: |
-          set -euo pipefail
-          brew install dylibbundler
-          APP="${{ steps.app.outputs.app_path }}"
-          FRAMEWORKS="$APP/Contents/Frameworks"
-          mkdir -p "$FRAMEWORKS"
-          # TextMate / mate / tm_query / CommitWindowTool link against
-          # /opt/homebrew/Cellar/{capnp,kj}/.../libcapnp.X.X.X.dylib etc by
-          # absolute Cellar path. A fresh Mac without Homebrew can't resolve
-          # those at launch (dyld abort). Walk every Mach-O in the .app; for
-          # anything that references /opt/homebrew/, copy the dep into
-          # Contents/Frameworks and rewrite the load path to
-          # @executable_path/../Frameworks/.
-          while IFS= read -r -d '' f; do
-            if /usr/bin/file -b "$f" | grep -q 'Mach-O'; then
-              if otool -L "$f" 2>/dev/null | grep -q '/opt/homebrew/'; then
-                echo "Bundling deps of: $f"
-                dylibbundler -of -b -x "$f" \
-                  -d "$FRAMEWORKS/" \
-                  -p '@executable_path/../Frameworks/'
-              fi
-            fi
-          done < <(find "$APP/Contents" -type f -print0)
-          echo "Frameworks dir contents after bundling:"
-          ls -la "$FRAMEWORKS" || true
-
       - name: Re-sign every embedded Mach-O asset
         run: |
           set -euo pipefail
           APP="${{ steps.app.outputs.app_path }}"
-          # After dylibbundler we have new dylibs in Frameworks/ that need
-          # signing, plus every binary that got its install_names rewritten
-          # needs a fresh signature. SharedSupport Ruby native extensions
-          # (.bundle) also need our Dev ID + hardened runtime + timestamp.
+          # Every embedded Mach-O (frameworks, helpers, SharedSupport Ruby
+          # native .bundle extensions) needs our Dev ID + hardened runtime
+          # + timestamp before notarization.
           count=0
           while IFS= read -r -d '' f; do
             if /usr/bin/file -b "$f" | grep -q 'Mach-O'; then
