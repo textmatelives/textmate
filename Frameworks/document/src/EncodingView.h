@@ -5,5 +5,4 @@
 @property (nonatomic, readonly) NSString* encodingNoBOM; // Same as encoding except there will never be a //BOM modifier
 @property (nonatomic) NSString* displayName;
 @property (nonatomic) BOOL acceptableEncoding;
-@property (nonatomic) BOOL trainClassifier;
 @end

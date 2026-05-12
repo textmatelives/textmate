@@ -90,12 +90,9 @@ namespace file
 			{
 				charset = "ISO-8859-1";
 
-				std::multimap<double, std::string> probabilities;
-				for(auto const& charset : encoding::charsets())
-					probabilities.emplace(1 - encoding::probability(buf.data(), buf.data() + buf.size(), charset), charset);
-
-				if(!probabilities.empty() && probabilities.begin()->first < 1)
-					charset = probabilities.begin()->second;
+				std::string detected = encoding::detect(buf.data(), buf.data() + buf.size());
+				if(!detected.empty() && detected != "UTF-8" && detected != "US-ASCII")
+					charset = detected;
 
 				set_charset(charset);
 			}

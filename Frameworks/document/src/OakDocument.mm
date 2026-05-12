@@ -760,19 +760,15 @@ static void* kDocumentEditedObserverContext = &kDocumentEditedObserverContext;
 			EncodingWindowController* controller = [[EncodingWindowController alloc] initWithData:[NSData dataWithBytesNoCopy:content->begin() length:content->size() freeWhenDone:NO]];
 			controller.displayName = _self.displayName;
 
-			std::multimap<double, std::string> probabilities;
-			for(auto const& charset : encoding::charsets())
-				probabilities.emplace(1 - encoding::probability(content->begin(), content->end(), charset), charset);
-			if(!probabilities.empty() && probabilities.begin()->first < 1)
-				controller.encoding = [NSString stringWithCxxString:probabilities.begin()->second];
+			std::string detected = encoding::detect(content->begin(), content->end());
+			if(!detected.empty() && detected != "UTF-8" && detected != "US-ASCII")
+				controller.encoding = [NSString stringWithCxxString:detected];
 
 			[NSNotificationCenter.defaultCenter postNotificationName:OakDocumentWillShowAlertNotification object:_self];
 			[controller beginSheetModalForWindow:_window completionHandler:^(NSModalResponse response){
 				if(response != NSModalResponseCancel)
 				{
 					context->set_charset(to_s(controller.encodingNoBOM));
-					if(controller.trainClassifier)
-						encoding::learn(content->begin(), content->end(), to_s(controller.encodingNoBOM));
 				}
 			}];
 		}
@@ -1712,11 +1708,9 @@ static void* kDocumentEditedObserverContext = &kDocumentEditedObserverContext;
 			{
 				_encoding_state = kEncodingUseFallback;
 
-				std::multimap<double, std::string> probabilities;
-				for(auto const& charset : encoding::charsets())
-					probabilities.emplace(1 - encoding::probability(content->begin(), content->end(), charset), charset);
-				if(!probabilities.empty() && probabilities.begin()->first < 1)
-						context->set_charset(probabilities.begin()->second);
+				std::string detected = encoding::detect(content->begin(), content->end());
+				if(!detected.empty() && detected != "UTF-8" && detected != "US-ASCII")
+						context->set_charset(detected);
 				else	context->set_charset("ISO-8859-1");
 			}
 			else if(_encoding_state == kEncodingUseFallback)

@@ -162,7 +162,6 @@ static NSTextView* MyCreateTextView ()
 @property (nonatomic) OakEncodingPopUpButton* popUpButton;
 @property (nonatomic) NSScrollView* scrollView;
 @property (nonatomic) NSTextView* textView;
-@property (nonatomic) NSButton* learnCheckBox;
 @property (nonatomic) NSButton* openButton;
 @property (nonatomic) NSButton* cancelButton;
 @property (nonatomic) EncodingContentView* contentView;
@@ -177,7 +176,6 @@ static NSTextView* MyCreateTextView ()
 		_data            = data;
 		_encoding        = @"ISO-8859-1";
 		_displayName     = @"untitled";
-		_trainClassifier = YES;
 
 		self.objectController = [[NSObjectController alloc] initWithContent:self];
 
@@ -187,7 +185,6 @@ static NSTextView* MyCreateTextView ()
 		self.popUpButton   = [[OakEncodingPopUpButton alloc] initWithFrame:NSZeroRect pullsDown:NO];
 		self.scrollView    = [[NSScrollView alloc] initWithFrame:NSZeroRect];
 		self.textView      = MyCreateTextView();
-		self.learnCheckBox = OakCreateCheckBox(@"Use document for training encoding classifier");
 		self.openButton    = OakCreateButton(@"Open");
 		self.cancelButton  = OakCreateButton(@"Cancel");
 
@@ -218,7 +215,6 @@ static NSTextView* MyCreateTextView ()
 		self.window.delegate = self;
 
 		[self.popUpButton   bind:@"encoding"      toObject:_objectController withKeyPath:@"content.encoding"           options:nil];
-		[self.learnCheckBox bind:NSValueBinding   toObject:_objectController withKeyPath:@"content.trainClassifier"    options:nil];
 		[self.openButton    bind:NSEnabledBinding toObject:_objectController withKeyPath:@"content.acceptableEncoding" options:nil];
 
 		[self updateTextView];
@@ -248,7 +244,6 @@ static NSTextView* MyCreateTextView ()
 		@"label":       self.label,
 		@"popUp":       self.popUpButton,
 		@"textView":    self.scrollView,
-		@"learn":       self.learnCheckBox,
 		@"open":        self.openButton,
 		@"cancel":      self.cancelButton
 	};
@@ -270,9 +265,8 @@ static NSTextView* MyCreateTextView ()
 	CONSTRAINT(@"H:|-[explanation]-|",                    NSLayoutFormatAlignAllBaseline);
 	CONSTRAINT(@"H:|-[label]-[popUp]-|",                  NSLayoutFormatAlignAllBaseline);
 	CONSTRAINT(@"H:|-[textView(>=100)]-|",                0);
-	CONSTRAINT(@"H:|-[learn]-|",                          0);
 	CONSTRAINT(@"H:[cancel]-[open]-|",                    NSLayoutFormatAlignAllBaseline);
-	CONSTRAINT(@"V:|-[title]-[explanation]-[popUp]-[textView(>=100)]-[learn]-[open]-|", NSLayoutFormatAlignAllRight);
+	CONSTRAINT(@"V:|-[title]-[explanation]-[popUp]-[textView(>=100)]-[open]-|", NSLayoutFormatAlignAllRight);
 
 	[self.contentView addConstraints:_myConstraints];
 }
