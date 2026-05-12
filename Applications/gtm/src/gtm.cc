@@ -104,7 +104,7 @@ static void load_bundle_index (bool verbose)
 	std::string const path = path::join(path::home(), "Library/Caches/com.macromates.TextMate/BundlesIndex.binary");
 
 	plist::cache_t cache;
-	cache.load_capnp(path);
+	cache.load(path);
 
 	std::vector<std::string> paths;
 	for(auto path : bundles::locations())
