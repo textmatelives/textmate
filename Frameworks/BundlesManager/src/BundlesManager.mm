@@ -338,6 +338,11 @@ static NSString* SafeBasename (NSString* name)
 	return !([spec.url isEqualToString:defURL] && [spec.ref isEqualToString:defRef]);
 }
 
+- (BundleSpec*)bundleSpecForFileExtension:(NSString*)ext
+{
+	return [BundleRegistry.sharedInstance bundleSpecForFileExtension:ext];
+}
+
 - (void)revertBundleToDefault:(Bundle*)bundle completion:(void(^)(NSString*, NSError*))completion
 {
 	BundleSpec* spec = [BundleRegistry.sharedInstance specForUUID:bundle.identifier];

@@ -10,9 +10,17 @@ static NSString* const kKeyBundles      = @"bundles";
 static NSString* const kKeySchemaVersion = @"schemaVersion";
 static NSInteger const kCurrentSchemaVersion = 1;
 
+static NSString* const kFileTypeIndexResourceName = @"BundleFileTypeIndex";
+static NSString* const kFileTypeIndexResourceType = @"plist";
+static NSString* const kFileTypeIndexKeyByExt     = @"byExtension";
+static NSString* const kFileTypeIndexKeyBundleUUID = @"bundleUUID";
+
 @interface BundleRegistry ()
 {
 	NSMutableDictionary<NSUUID*, BundleSpec*>* _specs;
+	NSDictionary<NSString*, NSUUID*>* _fileTypeIndex; // lazily loaded
+	NSString* _fileTypeIndexPath;                     // nil → default app-bundle resource path
+	BOOL      _fileTypeIndexLoaded;
 }
 @property (nonatomic, readwrite) NSString* stateFilePath;
 @end
@@ -367,6 +375,107 @@ static NSInteger const kCurrentSchemaVersion = 1;
 		return NO;
 	}
 	return YES;
+}
+
+// ---------------------------------------------------------------------------
+// File-type index (Phase 1: on-demand bundle install)
+// ---------------------------------------------------------------------------
+
+- (instancetype)initForTestingWithSpecs:(NSArray<BundleSpec*>*)specs
+                      fileTypeIndexPath:(NSString*)indexPath
+{
+	if(self = [super init])
+	{
+		_specs = [NSMutableDictionary dictionary];
+		for(BundleSpec* spec in specs)
+		{
+			if(spec.uuid)
+				_specs[spec.uuid] = spec;
+		}
+		_fileTypeIndexPath = [indexPath copy];
+		// _stateFilePath intentionally left nil — this init bypasses the
+		// on-disk persistence layer entirely.
+	}
+	return self;
+}
+
++ (NSDictionary<NSString*, NSUUID*>*)loadFileTypeIndexFromPath:(NSString*)path
+{
+	if(!path.length)
+		return @{};
+
+	NSDictionary* root = [NSDictionary dictionaryWithContentsOfFile:path];
+	if(!root)
+		return @{};
+
+	NSDictionary* byExt = root[kFileTypeIndexKeyByExt];
+	if(![byExt isKindOfClass:NSDictionary.class])
+		return @{};
+
+	NSMutableDictionary<NSString*, NSUUID*>* map = [NSMutableDictionary dictionaryWithCapacity:byExt.count];
+	for(NSString* ext in byExt)
+	{
+		if(![ext isKindOfClass:NSString.class])
+			continue;
+		NSDictionary* entry = byExt[ext];
+		if(![entry isKindOfClass:NSDictionary.class])
+			continue;
+		NSString* uuidStr = entry[kFileTypeIndexKeyBundleUUID];
+		if(![uuidStr isKindOfClass:NSString.class])
+			continue;
+		NSUUID* uuid = [[NSUUID alloc] initWithUUIDString:uuidStr];
+		if(!uuid)
+			continue;
+		map[ext.lowercaseString] = uuid;
+	}
+	return map;
+}
+
+- (NSDictionary<NSString*, NSUUID*>*)fileTypeIndex
+{
+	if(_fileTypeIndexLoaded)
+		return _fileTypeIndex;
+
+	NSString* path = _fileTypeIndexPath;
+	if(!path.length)
+	{
+		path = [NSBundle.mainBundle pathForResource:kFileTypeIndexResourceName ofType:kFileTypeIndexResourceType];
+	}
+
+	if(!path.length || ![NSFileManager.defaultManager fileExistsAtPath:path])
+	{
+		os_log(OS_LOG_DEFAULT, "BundleFileTypeIndex.plist not found; on-demand bundle prompts disabled");
+		_fileTypeIndex = @{};
+	}
+	else
+	{
+		_fileTypeIndex = [[self class] loadFileTypeIndexFromPath:path];
+	}
+	_fileTypeIndexLoaded = YES;
+	return _fileTypeIndex;
+}
+
+- (BundleSpec*)bundleSpecForFileExtension:(NSString*)ext
+{
+	if(!ext.length)
+		return nil;
+
+	NSString* key = ext.lowercaseString;
+	NSUUID* uuid = [self fileTypeIndex][key];
+	if(!uuid)
+		return nil;
+
+	BundleSpec* spec = _specs[uuid];
+	if(!spec)
+	{
+		os_log_error(OS_LOG_DEFAULT, "BundleFileTypeIndex references unknown bundle UUID %{public}@ for ext %{public}@", uuid.UUIDString, key);
+		return nil;
+	}
+
+	if(spec.installedSHA)
+		return nil;
+
+	return spec;
 }
 
 @end

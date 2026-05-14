@@ -56,4 +56,10 @@ extern NSString* const kUserDefaultsLastBundleUpdateCheckKey;
 // Returns YES if bundle's registered spec differs from DefaultBundles.plist
 // (user edited a shipped default). Returns NO for mandatory/user-added.
 - (BOOL)bundleIsEditedShippedDefault:(Bundle*)bundle;
+
+// Look up an uninstalled catalogue spec by lowercase file extension via the
+// build-time BundleFileTypeIndex.plist. Returns nil when no catalogue match
+// exists or when the matching bundle is already installed. Used by the
+// on-demand bundle prompt (Phase 2).
+- (BundleSpec*)bundleSpecForFileExtension:(NSString*)ext;
 @end

@@ -51,4 +51,24 @@
 // edits Bundles.plist externally.
 - (void)reload;
 
+// Look up an uninstalled catalogue spec by lowercase file extension via the
+// build-time BundleFileTypeIndex.plist. Returns nil when (a) ext is nil or
+// empty, (b) the extension is not in the index, (c) the matching bundle is
+// already installed (installedSHA non-nil), (d) the index references a UUID
+// missing from the spec table, or (e) the index plist itself is absent.
+- (BundleSpec*)bundleSpecForFileExtension:(NSString*)ext;
+
+// Parses the BundleFileTypeIndex.plist at `path` into an extension → UUID
+// dictionary. Returns an empty dictionary (never nil) when the file is
+// missing or unparseable. Entries with malformed UUIDs are silently
+// dropped. Lowercases keys defensively even though the generator emits
+// lowercase already.
++ (NSDictionary<NSString*, NSUUID*>*)loadFileTypeIndexFromPath:(NSString*)path;
+
+// Test seam: construct a registry against an explicit spec list and index
+// path, bypassing the singleton's seeding pipeline. Not for production
+// callers.
+- (instancetype)initForTestingWithSpecs:(NSArray<BundleSpec*>*)specs
+                      fileTypeIndexPath:(NSString*)indexPath;
+
 @end
