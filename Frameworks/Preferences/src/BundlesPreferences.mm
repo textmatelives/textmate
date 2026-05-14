@@ -4,6 +4,13 @@
 #import <OakAppKit/OakUIConstructionFunctions.h>
 #import <OakAppKit/OakScopeBarView.h>
 
+// File-static mirrors of keys declared file-static in
+// DocumentWindowController.mm. The on-demand bundle prompt also reads/writes
+// the kUserDefaultsBundlesToNeverSuggestKey exported by BundlesManager.h.
+// Keep these in sync with DocumentWindowController.mm:43-44.
+static NSString* const kUserDefaultsDisableBundleSuggestionsKey = @"disableBundleSuggestions";
+static NSString* const kUserDefaultsGrammarsToNeverSuggestKey   = @"grammarsToNeverSuggest";
+
 static NSUserInterfaceItemIdentifier const kTableColumnIdentifierInstalled   = @"Installed";
 static NSUserInterfaceItemIdentifier const kTableColumnIdentifierBundleName  = @"BundleName";
 static NSUserInterfaceItemIdentifier const kTableColumnIdentifierWebLink     = @"WebLink";
@@ -204,6 +211,7 @@ static NSUserInterfaceItemIdentifier const kTableColumnIdentifierActions     = @
 	OakScopeBarViewController* _scopeBar;
 	NSSearchField*             _searchField;
 	OakHoverTableView*         _bundlesTableView;
+	NSButton*                  _resetDismissedButton;
 }
 @property (nonatomic) NSUInteger selectedIndex;
 @end
@@ -336,6 +344,8 @@ static NSUserInterfaceItemIdentifier const kTableColumnIdentifierActions     = @
 
 	NSButton* updateBundlesCheckbox = [NSButton checkboxWithTitle:@"Check for and install updates automatically" target:nil action:nil];
 
+	NSButton* suggestBundlesCheckbox = [NSButton checkboxWithTitle:@"Suggest bundle installs for unrecognized file types" target:nil action:nil];
+
 	NSButton* addBundleButton = [NSButton buttonWithTitle:@"+ Add Bundle…" target:self action:@selector(showAddBundleSheet:)];
 	addBundleButton.controlSize = NSControlSizeSmall;
 	addBundleButton.bezelStyle  = NSBezelStyleRounded;
@@ -343,6 +353,11 @@ static NSUserInterfaceItemIdentifier const kTableColumnIdentifierActions     = @
 	NSButton* checkNowButton = [NSButton buttonWithTitle:@"Check Now" target:self action:@selector(checkForUpdatesNow:)];
 	checkNowButton.controlSize = NSControlSizeSmall;
 	checkNowButton.bezelStyle  = NSBezelStyleRounded;
+
+	_resetDismissedButton = [NSButton buttonWithTitle:@"Reset Dismissed Bundle Suggestions" target:self action:@selector(resetDismissedSuggestions:)];
+	_resetDismissedButton.controlSize = NSControlSizeSmall;
+	_resetDismissedButton.bezelStyle  = NSBezelStyleRounded;
+	[self updateResetDismissedButtonEnabled];
 
 	NSTextField* statusTextField = [NSTextField labelWithString:@""];
 	statusTextField.textColor = NSColor.secondaryLabelColor;
@@ -369,23 +384,26 @@ static NSUserInterfaceItemIdentifier const kTableColumnIdentifierActions     = @
 	[statusTextField.centerXAnchor constraintEqualToAnchor:footerView.centerXAnchor].active = YES;
 
 	NSDictionary* views = @{
-		@"scopeBar":      _scopeBar.view,
-		@"search":        _searchField,
-		@"scrollView":    scrollView,
-		@"addBundle":     addBundleButton,
-		@"checkNow":      checkNowButton,
-		@"updateBundles": updateBundlesCheckbox,
-		@"footer":        footerView,
+		@"scopeBar":        _scopeBar.view,
+		@"search":          _searchField,
+		@"scrollView":      scrollView,
+		@"addBundle":       addBundleButton,
+		@"checkNow":        checkNowButton,
+		@"updateBundles":   updateBundlesCheckbox,
+		@"resetDismissed":  _resetDismissedButton,
+		@"suggestBundles":  suggestBundlesCheckbox,
+		@"footer":          footerView,
 	};
 
-	NSView* view = [[NSView alloc] initWithFrame:NSMakeRect(0, 0, 622, 454)];
+	NSView* view = [[NSView alloc] initWithFrame:NSMakeRect(0, 0, 622, 478)];
 	OakAddAutoLayoutViewsToSuperview(views.allValues, view);
 
 	[view addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|-8-[scopeBar]-(>=8)-[search(>=50,<=100,==100@250)]-8-|"        options:NSLayoutFormatAlignAllCenterY metrics:nil views:views]];
 	[view addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|-[scrollView(>=50)]-|"                                         options:0 metrics:nil views:views]];
 	[view addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|-[addBundle]-8-[checkNow]-(>=8)-[updateBundles]-|"             options:NSLayoutFormatAlignAllCenterY metrics:nil views:views]];
+	[view addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|-[resetDismissed]-(>=8)-[suggestBundles]-|"                    options:NSLayoutFormatAlignAllCenterY metrics:nil views:views]];
 	[view addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|[footer]|"                                                     options:NSLayoutFormatAlignAllCenterY metrics:nil views:views]];
-	[view addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|-8-[search]-8-[scrollView(>=50)]-[addBundle]-20-[footer]|"     options:0 metrics:nil views:views]];
+	[view addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|-8-[search]-8-[scrollView(>=50)]-[addBundle]-8-[resetDismissed]-20-[footer]|" options:0 metrics:nil views:views]];
 
 	// ============
 	// = Bindings =
@@ -402,7 +420,8 @@ static NSUserInterfaceItemIdentifier const kTableColumnIdentifierActions     = @
 	[updatedTableColumn     bind:NSValueBinding toObject:_arrayController withKeyPath:@"arrangedObjects.downloadLastUpdated" options:nil];
 	[descriptionTableColumn bind:NSValueBinding toObject:_arrayController withKeyPath:@"arrangedObjects.textSummary" options:nil];
 
-	[updateBundlesCheckbox bind:NSValueBinding toObject:NSUserDefaultsController.sharedUserDefaultsController withKeyPath:@"values.disableBundleUpdates" options:@{ NSValueTransformerNameBindingOption: NSNegateBooleanTransformerName }];
+	[updateBundlesCheckbox  bind:NSValueBinding toObject:NSUserDefaultsController.sharedUserDefaultsController withKeyPath:@"values.disableBundleUpdates"      options:@{ NSValueTransformerNameBindingOption: NSNegateBooleanTransformerName }];
+	[suggestBundlesCheckbox bind:NSValueBinding toObject:NSUserDefaultsController.sharedUserDefaultsController withKeyPath:@"values.disableBundleSuggestions" options:@{ NSValueTransformerNameBindingOption: NSNegateBooleanTransformerName }];
 
 	[progressIndicator bind:NSAnimateBinding toObject:BundleInstallHelper.sharedInstance withKeyPath:@"busy" options:nil];
 	[statusTextField   bind:NSValueBinding   toObject:BundleInstallHelper.sharedInstance withKeyPath:@"activityText" options:nil];
@@ -413,6 +432,7 @@ static NSUserInterfaceItemIdentifier const kTableColumnIdentifierActions     = @
 - (void)viewWillAppear
 {
 	BundleInstallHelper.sharedInstance.bundleInstallActivityText = nil;
+	[self updateResetDismissedButtonEnabled];
 }
 
 - (void)viewDidAppear
@@ -596,6 +616,25 @@ static NSUserInterfaceItemIdentifier const kTableColumnIdentifierActions     = @
 	[BundlesManager.sharedInstance checkForBundleUpdatesNowWithCompletion:^{
 		BundleInstallHelper.sharedInstance.bundleInstallActivityText = @"Bundle check complete.";
 	}];
+}
+
+// ===================================
+// = Reset dismissed bundle prompts =
+// ===================================
+
+- (void)updateResetDismissedButtonEnabled
+{
+	NSArray* bundles  = [NSUserDefaults.standardUserDefaults stringArrayForKey:kUserDefaultsBundlesToNeverSuggestKey];
+	NSArray* grammars = [NSUserDefaults.standardUserDefaults stringArrayForKey:kUserDefaultsGrammarsToNeverSuggestKey];
+	_resetDismissedButton.enabled = (bundles.count + grammars.count) > 0;
+}
+
+- (void)resetDismissedSuggestions:(id)sender
+{
+	[NSUserDefaults.standardUserDefaults removeObjectForKey:kUserDefaultsBundlesToNeverSuggestKey];
+	[NSUserDefaults.standardUserDefaults removeObjectForKey:kUserDefaultsGrammarsToNeverSuggestKey];
+	[self updateResetDismissedButtonEnabled];
+	BundleInstallHelper.sharedInstance.bundleInstallActivityText = @"Reset dismissed bundle suggestions.";
 }
 
 // ================
