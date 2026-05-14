@@ -13,6 +13,8 @@
 #import <OakAppKit/NSAlert Additions.h>
 #import <TMFileReference/TMFileReference.h>
 #import <BundlesManager/BundlesManager.h>
+#import <BundlesManager/BundleSpec.h>
+#import <BundlesManager/BundleRegistry.h>
 #import <authorization/constants.h>
 #import <cf/run_loop.h>
 #import <ns/ns.h>
@@ -1265,6 +1267,25 @@ static void* kDocumentEditedObserverContext = &kDocumentEditedObserverContext;
 		}
 	}
 	return res;
+}
+
+- (NSArray<BundleSpec*>*)proposedBundleSpecs
+{
+	return [self proposedBundleSpecsUsingRegistry:BundleRegistry.sharedInstance];
+}
+
+- (NSArray<BundleSpec*>*)proposedBundleSpecsUsingRegistry:(BundleRegistry*)registry
+{
+	NSString* path = _virtualPath ?: _path;
+	if(!path.length)
+		return @[];
+
+	NSString* ext = path.pathExtension;
+	if(!ext.length)
+		return @[];
+
+	BundleSpec* spec = [registry bundleSpecForFileExtension:ext];
+	return spec ? @[ spec ] : @[];
 }
 
 - (void)enumerateSymbolsUsingBlock:(void(^)(text::pos_t const& pos, NSString* symbol))block

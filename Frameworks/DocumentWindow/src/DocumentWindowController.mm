@@ -23,6 +23,7 @@
 #import <OakSystem/application.h>
 #import <Find/Find.h>
 #import <BundlesManager/BundlesManager.h>
+#import <BundlesManager/BundleSpec.h>
 #import <BundleEditor/BundleEditor.h>
 #import <file/path_info.h>
 #import <io/entries.h>
@@ -114,6 +115,7 @@ static void show_command_error (std::string const& message, oak::uuid_t const& u
 @property (nonatomic) NSString*                   documentPath;
 
 @property (nonatomic) NSArray<Bundle*>*           bundlesAlreadySuggested;
+@property (nonatomic) NSArray<BundleSpec*>*       bundleSpecsAlreadySuggested;
 
 @property (nonatomic, readwrite) NSArray<OakDocument*>* documents;
 @property (nonatomic, readwrite) OakDocument*           selectedDocument;
@@ -1043,6 +1045,63 @@ static NSArray* const kObservedKeyPaths = @[ @"arrayController.arrangedObjects.p
 						if(id observer = documentCloseObserver)
 							[NSNotificationCenter.defaultCenter removeObserver:observer];
 					}];
+				}
+				else
+				{
+					// Fall back to uninstalled catalogue lookup: an on-disk
+					// document whose extension matches a known bundle that
+					// isn't installed. Phase 2 of on-demand bundles.
+					NSArray<BundleSpec*>* specs = document.proposedBundleSpecs;
+					if(NSArray* excludedBundles = [NSUserDefaults.standardUserDefaults stringArrayForKey:kUserDefaultsBundlesToNeverSuggestKey])
+						specs = [specs filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"NOT (uuid.UUIDString IN %@)", excludedBundles]];
+					if(_bundleSpecsAlreadySuggested.count)
+					{
+						NSArray<NSString*>* suggestedUUIDs = [_bundleSpecsAlreadySuggested valueForKeyPath:@"uuid.UUIDString"];
+						specs = [specs filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"NOT (uuid.UUIDString IN %@)", suggestedUUIDs]];
+					}
+
+					if([specs count] && can_reach_host([[[NSURL URLWithString:@(REST_API)] host] UTF8String]))
+					{
+						BundleSpec* spec = [specs firstObject];
+						self.bundleSpecsAlreadySuggested = [(_bundleSpecsAlreadySuggested ?: @[ ]) arrayByAddingObject:spec];
+
+						SelectGrammarViewController* installer = [[SelectGrammarViewController alloc] init];
+						installer.documentDisplayName = document.path || document.customName ? document.displayName : nil;
+
+						__weak __block id documentCloseObserver = [NSNotificationCenter.defaultCenter addObserverForName:OakDocumentWillCloseNotification object:document queue:nil usingBlock:^(NSNotification*){
+							[installer dismiss];
+							[NSNotificationCenter.defaultCenter removeObserver:documentCloseObserver];
+						}];
+
+						[installer showBundleSpec:spec forView:_documentView completionHandler:^(SelectGrammarResponse response, BundleSpec* installedSpec){
+							if(response == SelectGrammarResponseInstall)
+							{
+								// Bundle is freshly installed; re-resolve
+								// fileType for any open document whose
+								// proposedGrammars now contains a grammar
+								// from this bundle.
+								for(OakDocument* doc in _documents)
+								{
+									for(BundleGrammar* g in [doc proposedGrammars])
+									{
+										if([g.bundle.identifier isEqual:installedSpec.uuid])
+										{
+											doc.fileType = g.fileType;
+											break;
+										}
+									}
+								}
+							}
+							else if(response == SelectGrammarResponseNever)
+							{
+								NSArray* excludedBundles = [NSUserDefaults.standardUserDefaults stringArrayForKey:kUserDefaultsBundlesToNeverSuggestKey] ?: @[ ];
+								[NSUserDefaults.standardUserDefaults setObject:[excludedBundles arrayByAddingObject:installedSpec.uuid.UUIDString] forKey:kUserDefaultsBundlesToNeverSuggestKey];
+							}
+
+							if(id observer = documentCloseObserver)
+								[NSNotificationCenter.defaultCenter removeObserver:observer];
+						}];
+					}
 				}
 
 				std::string const docAttributes = document.path ? "attr.file.unknown-type" : "attr.untitled";

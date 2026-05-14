@@ -24,6 +24,7 @@
 NSString* const kUserDefaultsDisableBundleUpdatesKey       = @"disableBundleUpdates";
 NSString* const kUserDefaultsLastBundleUpdateCheckKey      = @"lastBundleUpdateCheck";
 NSString* const kUserDefaultsBundleUpdateFrequencyKey      = @"bundleUpdateFrequency";
+NSString* const kUserDefaultsBundlesToNeverSuggestKey      = @"BundlesToNeverSuggest";
 
 static NSTimeInterval const kDefaultPollInterval = 3*60*60;
 static char const* kBundleAttributeUpdated = "org.textmate.bundle.updated";
@@ -597,6 +598,78 @@ static NSString* SafeBasename (NSString* name)
 
 	dispatch_group_notify(group, dispatch_get_main_queue(), ^{
 		[self createBundlesIndex:self];
+		callback(installed);
+	});
+	return progress;
+}
+
+- (NSProgress*)installSpecs:(NSArray<BundleSpec*>*)someSpecs completionHandler:(void(^)(NSArray<BundleSpec*>*))callback
+{
+	if(someSpecs.count == 0)
+		return callback(nil), nil;
+
+	NSString* bundlesDirectory = [_installDirectory stringByAppendingPathComponent:@"Bundles"];
+	NSError* error;
+	if(![NSFileManager.defaultManager createDirectoryAtPath:bundlesDirectory withIntermediateDirectories:YES attributes:nil error:&error])
+	{
+		os_log_error(OS_LOG_DEFAULT, "Failed to create directory %{public}@: %{public}@", bundlesDirectory, error.localizedDescription);
+		return callback(nil), nil;
+	}
+
+	NSProgress* progress = [NSProgress discreteProgressWithTotalUnitCount:someSpecs.count];
+	NSMutableArray<BundleSpec*>* installed = [NSMutableArray array];
+	dispatch_group_t group = dispatch_group_create();
+
+	for(BundleSpec* spec in someSpecs)
+	{
+		if(!spec.url)
+		{
+			os_log_error(OS_LOG_DEFAULT, "installSpecs: spec missing url for %{public}@", spec.name);
+			progress.completedUnitCount += 1;
+			continue;
+		}
+
+		// Mirror installBundles: — resolve against the registry's canonical
+		// spec instance so persisted state updates correctly. Skip if the
+		// caller passed a stale spec not registered.
+		BundleSpec* registered = [BundleRegistry.sharedInstance specForUUID:spec.uuid];
+		if(!registered)
+		{
+			os_log_error(OS_LOG_DEFAULT, "installSpecs: spec %{public}@ not registered", spec.name);
+			progress.completedUnitCount += 1;
+			continue;
+		}
+
+		NSURL* destURL = [NSURL fileURLWithPath:[[bundlesDirectory stringByAppendingPathComponent:SafeBasename(registered.name)] stringByAppendingPathExtension:@"tmbundle"] isDirectory:YES];
+
+		dispatch_group_enter(group);
+		[BundleFetcher.sharedInstance fetchAndInstallSpec:registered intoURL:destURL completion:^(NSString* resolvedSHA, NSError* fetchError){
+			progress.completedUnitCount += 1;
+			if(fetchError)
+			{
+				os_log_error(OS_LOG_DEFAULT, "Failed to install %{public}@: %{public}@", registered.name, fetchError.localizedDescription);
+			}
+			else
+			{
+				registered.installedSHA = resolvedSHA;
+				registered.installedAt  = [NSDate date];
+				registered.autoUpdate   = YES;
+				[BundleRegistry.sharedInstance updateSpec:registered];
+				path::set_attr(destURL.path.fileSystemRepresentation, kBundleAttributeUpdated, to_s(resolvedSHA ?: @""));
+				[self reloadPath:destURL.path recursive:YES];
+				[installed addObject:registered];
+			}
+			dispatch_group_leave(group);
+		}];
+	}
+
+	dispatch_group_notify(group, dispatch_get_main_queue(), ^{
+		[self createBundlesIndex:self];
+		// Force the in-memory Bundle* list to re-derive from the registry so
+		// callers querying `bundles` (e.g. OakDocument.proposedGrammars) see
+		// the newly-installed bundle. installBundles: doesn't need this
+		// because it mutates the already-realized Bundle* object directly.
+		self.bundles = [self bundlesByLoadingIndex];
 		callback(installed);
 	});
 	return progress;

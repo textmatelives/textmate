@@ -1,6 +1,8 @@
 #import "OakDocument.h"
 #import <undo/undo.h> // ng::buffer_t and ng::undo_manager_t types
 
+@class BundleRegistry;
+
 @interface OakDocument (Private)
 - (instancetype)initWithPath:(NSString*)aPath;
 
@@ -11,4 +13,8 @@
 - (ng::undo_manager_t&)undoManager;
 
 - (BOOL)performReplacements:(std::multimap<std::pair<size_t, size_t>, std::string> const&)someReplacements checksum:(uint32_t)crc32;
+
+// Test seam for -proposedBundleSpecs. Production callers use the public
+// accessor, which passes BundleRegistry.sharedInstance.
+- (NSArray<BundleSpec*>*)proposedBundleSpecsUsingRegistry:(BundleRegistry*)registry;
 @end

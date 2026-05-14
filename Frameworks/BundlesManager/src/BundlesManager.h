@@ -1,8 +1,16 @@
 #import "Bundle.h"
 #import <bundles/item.h>
 
+@class BundleSpec;
+
 extern NSString* const kUserDefaultsDisableBundleUpdatesKey;
 extern NSString* const kUserDefaultsLastBundleUpdateCheckKey;
+
+// Per-bundle dismissal list for the on-demand bundle prompt (Phase 2).
+// Array of NSString UUIDs. Distinct from kUserDefaultsGrammarsToNeverSuggestKey
+// (declared file-static in DocumentWindowController.mm), which stores grammar
+// UUIDs for the legacy installed-bundle suggestion flow.
+extern NSString* const kUserDefaultsBundlesToNeverSuggestKey;
 
 @interface BundlesManager : NSObject
 @property (class, readonly) BundlesManager* sharedInstance;
@@ -10,6 +18,14 @@ extern NSString* const kUserDefaultsLastBundleUpdateCheckKey;
 @property (nonatomic, readonly) NSArray<Bundle*>* bundles;
 
 - (NSProgress*)installBundles:(NSArray<Bundle*>*)someBundles completionHandler:(void(^)(NSArray<Bundle*>*))callback;
+
+// Install one or more uninstalled catalogue bundles by spec. Mirrors
+// installBundles: but accepts BundleSpec* directly — for callers that have
+// a spec (e.g. via bundleSpecForFileExtension:) but no realized Bundle*.
+// Fetches via BundleFetcher, persists install state through BundleRegistry,
+// then reloads the bundle index. Completion fires on the main queue with
+// the newly-installed specs.
+- (NSProgress*)installSpecs:(NSArray<BundleSpec*>*)someSpecs completionHandler:(void(^)(NSArray<BundleSpec*>*))callback;
 - (void)uninstallBundle:(Bundle*)aBundle;
 // Fully remove a bundle's registry entry in addition to uninstalling it.
 // The bundle disappears from the list until re-added by URL.

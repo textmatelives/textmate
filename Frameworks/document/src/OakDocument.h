@@ -23,6 +23,7 @@ typedef NS_ENUM(NSInteger, OakDocumentIOResult) {
 };
 
 @class BundleGrammar;
+@class BundleSpec;
 @class OakDocument;
 @class OakDocumentEditor;
 
@@ -105,6 +106,15 @@ typedef NS_ENUM(NSInteger, OakDocumentIOResult) {
 @property (nonatomic) NSString* content;
 
 - (NSArray<BundleGrammar*>*)proposedGrammars;
+
+// Uninstalled catalogue bundles that claim the document's path extension.
+// Used by the on-demand bundle prompt (Phase 2) when proposedGrammars returns
+// empty. Returns empty for untitled documents, documents with no extension,
+// or extensions absent from BundleFileTypeIndex.plist. The matching bundle
+// being already installed also produces empty — see
+// -[BundlesManager bundleSpecForFileExtension:].
+- (NSArray<BundleSpec*>*)proposedBundleSpecs;
+
 - (std::map<std::string, std::string>)variables;
 
 @property (nonatomic, readonly) BOOL canUndo;

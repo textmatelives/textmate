@@ -2,6 +2,7 @@
 #import <OakTextView/OakDocumentView.h>
 #import <OakAppKit/OakUIConstructionFunctions.h>
 #import <BundlesManager/BundlesManager.h>
+#import <BundlesManager/BundleSpec.h>
 #import <ns/ns.h>
 
 @interface SelectGrammarViewController ()
@@ -20,8 +21,10 @@
 
 @property (nonatomic) OakDocumentView*     documentView;
 @property (nonatomic) BundleGrammar*       grammar;
+@property (nonatomic) BundleSpec*          spec;
 
-@property (nonatomic, strong) void(^callback)(SelectGrammarResponse, BundleGrammar*);
+@property (nonatomic, strong) void(^grammarCallback)(SelectGrammarResponse, BundleGrammar*);
+@property (nonatomic, strong) void(^specCallback)(SelectGrammarResponse, BundleSpec*);
 @end
 
 static NSButton* OakSmallButton (NSString* title, SEL action, id target, NSInteger tag)
@@ -39,15 +42,25 @@ static NSButton* OakSmallButton (NSString* title, SEL action, id target, NSInteg
 @implementation SelectGrammarViewController
 + (NSSet*)keyPathsForValuesAffectingLabelString
 {
-	return [NSSet setWithObjects:@"grammar", @"documentDisplayName", nil];
+	return [NSSet setWithObjects:@"grammar", @"spec", @"documentDisplayName", nil];
+}
+
+- (NSString*)candidateName
+{
+	if(_grammar)
+		return _grammar.bundle.name;
+	if(_spec)
+		return _spec.name;
+	return nil;
 }
 
 - (NSString*)labelString
 {
-	if(_grammar && _documentDisplayName)
-		return [NSString stringWithFormat:@"Would you like to install the “%@” bundle? This improves support for documents like “%@”.", _grammar.bundle.name, _documentDisplayName];
-	else if(_grammar)
-		return [NSString stringWithFormat:@"Would you like to install the “%@” bundle? This improves support for this document.", _grammar.bundle.name];
+	NSString* name = [self candidateName];
+	if(name && _documentDisplayName)
+		return [NSString stringWithFormat:@"Would you like to install the “%@” bundle? This improves support for documents like “%@”.", name, _documentDisplayName];
+	else if(name)
+		return [NSString stringWithFormat:@"Would you like to install the “%@” bundle? This improves support for this document.", name];
 	else
 		return @"Would you like to install additional support for this document?";
 }
@@ -105,9 +118,18 @@ static NSButton* OakSmallButton (NSString* title, SEL action, id target, NSInteg
 
 - (void)showGrammars:(NSArray<BundleGrammar*>*)grammars forView:(OakDocumentView*)documentView completionHandler:(void(^)(SelectGrammarResponse, BundleGrammar*))callback
 {
+	self.documentView    = documentView;
+	self.grammar         = [grammars firstObject];
+	self.grammarCallback = callback;
+
+	[_documentView addAuxiliaryView:self.view atEdge:NSMaxYEdge];
+}
+
+- (void)showBundleSpec:(BundleSpec*)spec forView:(OakDocumentView*)documentView completionHandler:(void(^)(SelectGrammarResponse, BundleSpec*))callback
+{
 	self.documentView = documentView;
-	self.grammar      = [grammars firstObject];
-	self.callback     = callback;
+	self.spec         = spec;
+	self.specCallback = callback;
 
 	[_documentView addAuxiliaryView:self.view atEdge:NSMaxYEdge];
 }
@@ -123,26 +145,42 @@ static NSButton* OakSmallButton (NSString* title, SEL action, id target, NSInteg
 - (void)didClickButton:(id)sender
 {
 	SelectGrammarResponse tag = [sender respondsToSelector:@selector(tag)] ? (SelectGrammarResponse)[sender tag] : SelectGrammarResponseNotNow;
+
 	if(tag == SelectGrammarResponseInstall)
 	{
-		Bundle* bundle = _grammar.bundle;
+		NSString* name = [self candidateName];
 
 		_installButton.hidden = YES;
 		_notNowButton.hidden  = YES;
 		_neverButton.hidden   = YES;
 
-		_label.stringValue = [NSString stringWithFormat:@"Installing ‘%@’…", bundle.name];
+		_label.stringValue = [NSString stringWithFormat:@"Installing ‘%@’…", name];
 		[_progressIndicator startAnimation:self];
 
-		[BundlesManager.sharedInstance installBundles:@[ bundle ] completionHandler:^(NSArray<Bundle*>* bundles){
-			[_progressIndicator stopAnimation:self];
-			_callback(tag, _grammar);
-			[self dismiss];
-		}];
+		if(_spec)
+		{
+			[BundlesManager.sharedInstance installSpecs:@[ _spec ] completionHandler:^(NSArray<BundleSpec*>* specs){
+				[_progressIndicator stopAnimation:self];
+				_specCallback(tag, _spec);
+				[self dismiss];
+			}];
+		}
+		else
+		{
+			Bundle* bundle = _grammar.bundle;
+			[BundlesManager.sharedInstance installBundles:@[ bundle ] completionHandler:^(NSArray<Bundle*>* bundles){
+				[_progressIndicator stopAnimation:self];
+				_grammarCallback(tag, _grammar);
+				[self dismiss];
+			}];
+		}
 	}
 	else
 	{
-		_callback(tag, _grammar);
+		if(_spec)
+			_specCallback(tag, _spec);
+		else
+			_grammarCallback(tag, _grammar);
 		[self dismiss];
 	}
 }
