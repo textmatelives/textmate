@@ -14,9 +14,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          # PAT required so the tag push triggers release.yml.
-          # GITHUB_TOKEN-pushed tags do not trigger downstream workflows.
-          token: ${{ secrets.RELEASE_PAT }}
+          # Falls back to GITHUB_TOKEN if RELEASE_PAT isn't set so the
+          # workflow can still run (and skip) on repos without the secret.
+          # The push step refuses to tag when RELEASE_PAT is absent, because
+          # tags pushed under GITHUB_TOKEN do not trigger downstream workflows.
+          token: ${{ secrets.RELEASE_PAT || github.token }}
 
       - name: Extract version from Changes.md
         id: version
@@ -34,6 +36,7 @@ jobs:
       - name: Push tag if new
         env:
           VERSION: ${{ steps.version.outputs.version }}
+          HAVE_PAT: ${{ secrets.RELEASE_PAT != '' }}
         run: |
           set -euo pipefail
           TAG="v${VERSION}"
@@ -43,6 +46,10 @@ jobs:
             *-undead*) ;;
             *) echo "Top version '${VERSION}' is not an undead release; skipping"; exit 0 ;;
           esac
+          if [ "${HAVE_PAT}" != "true" ]; then
+            echo "::error::RELEASE_PAT secret is not set; refusing to tag because a GITHUB_TOKEN push would not trigger release.yml"
+            exit 1
+          fi
           if git ls-remote --tags origin "refs/tags/${TAG}" | grep -q "refs/tags/${TAG}$"; then
             echo "Tag ${TAG} already exists on origin; nothing to do"
             exit 0
