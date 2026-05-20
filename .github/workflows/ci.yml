@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [textmate_lives]
+    branches: [main]
   pull_request:
-    branches: [textmate_lives]
+    branches: [main]
 
 jobs:
   build-test:

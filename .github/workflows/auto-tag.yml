@@ -1,0 +1,53 @@
+name: Auto-tag
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          # PAT required so the tag push triggers release.yml.
+          # GITHUB_TOKEN-pushed tags do not trigger downstream workflows.
+          token: ${{ secrets.RELEASE_PAT }}
+
+      - name: Extract version from Changes.md
+        id: version
+        run: |
+          set -euo pipefail
+          VERSION=$(grep -om1 '^## .* (v.*)$' Applications/TextMate/about/Changes.md \
+                    | sed 's/.*(v\(.*\))/\1/')
+          if [ -z "$VERSION" ]; then
+            echo "::error::No version line found in Applications/TextMate/about/Changes.md"
+            exit 1
+          fi
+          echo "Detected: v${VERSION}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Push tag if new
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          TAG="v${VERSION}"
+          # Only release versions carrying the -undead suffix.
+          # Upstream (textmate/textmate) versions never get auto-tagged.
+          case "${VERSION}" in
+            *-undead*) ;;
+            *) echo "Top version '${VERSION}' is not an undead release; skipping"; exit 0 ;;
+          esac
+          if git ls-remote --tags origin "refs/tags/${TAG}" | grep -q "refs/tags/${TAG}$"; then
+            echo "Tag ${TAG} already exists on origin; nothing to do"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "${TAG}" -m "Release ${TAG}"
+          git push origin "${TAG}"

@@ -2,7 +2,7 @@ name: Release
 
 on:
   push:
-    tags: ['v2.0.23-undead.*']
+    tags: ['v*-undead*']
 
 jobs:
   release:
