@@ -6,7 +6,7 @@
 #   <dict>
 #     <key>uuid</key><string>UUID</string>
 #     <key>name</key><string>Name</string>
-#     <key>url</key><string>https://github.com/dayglojesus/repo</string>
+#     <key>url</key><string>https://github.com/textmatelives/repo</string>
 #     <key>ref</key><string>master|remove-legacy-ruby|python3-port|arm64-binaries</string>
 #     <key>autoUpdate</key><true/>
 #     <key>category</key><string>Build|Languages|SCM|Other|Themes|Testing</string>
@@ -28,7 +28,7 @@ DEFERRED_UUIDS = %w[
   F80D3822-6EE8-11D9-BF2D-000D93589AF6
 ].freeze
 
-# Branch ref per fork (keyed by dayglojesus fork name without owner prefix).
+# Branch ref per fork (keyed by textmatelives fork name without owner prefix).
 # Default is 'master' for any fork not listed here.
 ARM64_BRANCH = %w[
   latex.tmbundle
@@ -80,7 +80,7 @@ RUBY18_BRANCH = %w[
   vagrant.tmbundle
 ].freeze
 
-# Upstream basename → dayglojesus fork basename (collision-rename overrides).
+# Upstream basename → textmatelives fork basename (collision-rename overrides).
 FORK_RENAMES = {
   'rspec-tmbundle' => 'rspec.tmbundle',
 }.freeze
@@ -142,7 +142,7 @@ end
 
 def render_entry(uuid:, name:, fork:, ref:, category:, summary:)
   esc = ->(s) { s.gsub('&', '&amp;').gsub('<', '&lt;').gsub('>', '&gt;') }
-  url = "https://github.com/dayglojesus/#{fork}"
+  url = "https://github.com/textmatelives/#{fork}"
   desc_line = summary && !summary.empty? ?
     "\n\t\t\t<key>description</key><string>#{esc.call(summary)}</string>" :
     ''

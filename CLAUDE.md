@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Fork constraints
 
-This is `dayglojesus/textmate`, a fork of `textmate/textmate` targeting macOS 26 / Apple Silicon.
+This is `textmatelives/textmate`, a fork of `textmate/textmate` targeting macOS 26 / Apple Silicon.
 
 Hard constraints declared by the maintainer:
 - arm64 only — do not add x86_64 fallbacks
@@ -60,7 +60,7 @@ Tests that shell out to git must call `git init -b master` (not bare `git init`)
 
 ## Bundle delivery
 
-The fork uses forked bundles under `~/src/github.com/dayglojesus/bundles/` and `bundle-support.tmbundle`, ported to Ruby 2.6.10. Local dev wires them in via symlinks in `~/Library/Application Support/TextMate/Managed/Bundles/` — `bin/reset_bundles.sh` performs that wiring.
+The fork uses forked bundles under `~/src/github.com/textmatelives/bundles/` and `bundle-support.tmbundle`, ported to Ruby 2.6.10. Local dev wires them in via symlinks in `~/Library/Application Support/TextMate/Managed/Bundles/` — `bin/reset_bundles.sh` performs that wiring.
 
 `REST_API` is still hardcoded at `default.rave:12` and `BundlesManager.mm` still polls every 3h via `NSBackgroundActivityScheduler`. The Managed/Bundles symlink approach side-steps this for development; packaging for distribution is unresolved.
 

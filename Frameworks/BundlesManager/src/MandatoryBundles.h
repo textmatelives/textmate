@@ -22,27 +22,27 @@ struct TMMandatoryBundle
 };
 
 static struct TMMandatoryBundle const kTMMandatoryBundles[] = {
-	// branch: remove-legacy-ruby
+	// branch: main
 	{
 		"0BB1F01A-4F0A-475A-ACDD-0F5578F2EFC3",
 		"Bundle Support",
-		"https://github.com/dayglojesus/bundle-support.tmbundle",
+		"https://github.com/textmatelives/bundle-support.tmbundle",
 		"7c779d06bab86a9e0d5d9d7121d43ce9869e9856",
 		"Other",
 	},
-	// branch: remove-legacy-ruby
+	// branch: main
 	{
 		"B7BC3FFD-6E4B-11D9-91AF-000D93589AF6",
 		"Text",
-		"https://github.com/dayglojesus/text.tmbundle",
+		"https://github.com/textmatelives/text.tmbundle",
 		"34ab58910c42f53798f19dd2cba3d7732a3e8d03",
 		"Other",
 	},
-	// branch: remove-legacy-ruby
+	// branch: main
 	{
 		"4F45FDC0-62CA-4786-9134-8BC7C1F5606F",
 		"Source",
-		"https://github.com/dayglojesus/source.tmbundle",
+		"https://github.com/textmatelives/source.tmbundle",
 		"2c873f8382fd11cda4a86b4159bc2977577568d3",
 		"Other",
 	},

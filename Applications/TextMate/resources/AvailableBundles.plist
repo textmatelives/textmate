@@ -9,8 +9,8 @@
 <dict>
 	<key>uuid</key><string>2BF448A1-9742-4137-80D2-C7AD8D7A0064</string>
 	<key>name</key><string>Ant</string>
-	<key>url</key><string>https://github.com/dayglojesus/ant.tmbundle</string>
-	<key>ref</key><string>python3-port</string>
+	<key>url</key><string>https://github.com/textmatelives/ant.tmbundle</string>
+	<key>ref</key><string>main</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Build</string>
 			<key>description</key><string>Ant (http://ant.apache.org/) is a Java-based build tool.</string>
@@ -18,8 +18,8 @@
 <dict>
 	<key>uuid</key><string>766FC6D3-539E-4992-BB95-654636D5F990</string>
 	<key>name</key><string>CMake</string>
-	<key>url</key><string>https://github.com/dayglojesus/cmake.tmbundle</string>
-	<key>ref</key><string>remove-legacy-ruby</string>
+	<key>url</key><string>https://github.com/textmatelives/cmake.tmbundle</string>
+	<key>ref</key><string>main</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Build</string>
 			<key>description</key><string>CMake (http://www.cmake.org/) is an open-source, cross-platform build system.</string>
@@ -27,7 +27,7 @@
 <dict>
 	<key>uuid</key><string>8B9DDBAF-E65C-4E12-FFA7-467D4AA535B1</string>
 	<key>name</key><string>Docker</string>
-	<key>url</key><string>https://github.com/dayglojesus/Docker.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/Docker.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Build</string>
@@ -36,8 +36,8 @@
 <dict>
 	<key>uuid</key><string>ADD9CB84-49C7-4BED-815C-B92340804265</string>
 	<key>name</key><string>Ninja</string>
-	<key>url</key><string>https://github.com/dayglojesus/ninja.tmbundle</string>
-	<key>ref</key><string>remove-legacy-ruby</string>
+	<key>url</key><string>https://github.com/textmatelives/ninja.tmbundle</string>
+	<key>ref</key><string>main</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Build</string>
 			<key>description</key><string>Build command for ninja (https://ninja-build.org/).</string>
@@ -45,7 +45,7 @@
 <dict>
 	<key>uuid</key><string>FF4C85FD-F635-42B7-B15D-2CB2241AF54D</string>
 	<key>name</key><string>Rave</string>
-	<key>url</key><string>https://github.com/dayglojesus/rave.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/rave.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Build</string>
@@ -54,8 +54,8 @@
 <dict>
 	<key>uuid</key><string>31ACFE4A-592A-41C5-9D23-0C315EC5F7A8</string>
 	<key>name</key><string>SCons</string>
-	<key>url</key><string>https://github.com/dayglojesus/scons.tmbundle</string>
-	<key>ref</key><string>python3-port</string>
+	<key>url</key><string>https://github.com/textmatelives/scons.tmbundle</string>
+	<key>ref</key><string>main</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Build</string>
 			<key>description</key><string>SCons (http://www.scons.org/) is an Open Source software construction tool—that is, a next-generation build tool. Think of SCons as an improved, cross-platform substitute for the classic Make utility.</string>
@@ -63,8 +63,8 @@
 <dict>
 	<key>uuid</key><string>46758957-6227-11D9-BFB1-000D93589AF6</string>
 	<key>name</key><string>Ada</string>
-	<key>url</key><string>https://github.com/dayglojesus/ada.tmbundle</string>
-	<key>ref</key><string>remove-legacy-ruby</string>
+	<key>url</key><string>https://github.com/textmatelives/ada.tmbundle</string>
+	<key>ref</key><string>main</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
 			<key>description</key><string>Minimal support for Ada (http://en.wikipedia.org/wiki/Ada_(programming_language)).</string>
@@ -72,7 +72,7 @@
 <dict>
 	<key>uuid</key><string>7F43D670-A808-4D6E-BDE7-8CD71C2396EC</string>
 	<key>name</key><string>ANTLR</string>
-	<key>url</key><string>https://github.com/dayglojesus/antlr.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/antlr.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -81,8 +81,8 @@
 <dict>
 	<key>uuid</key><string>75DD2785-07CA-46DB-A1FE-C3773484A2D9</string>
 	<key>name</key><string>AppleScript</string>
-	<key>url</key><string>https://github.com/dayglojesus/applescript.tmbundle</string>
-	<key>ref</key><string>remove-legacy-ruby</string>
+	<key>url</key><string>https://github.com/textmatelives/applescript.tmbundle</string>
+	<key>ref</key><string>main</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
 			<key>description</key><string>Write and run your AppleScripts (http://www.apple.com/macosx/features/applescript/) with this bundle. Contains lots of useful snippets.</string>
@@ -90,8 +90,8 @@
 <dict>
 	<key>uuid</key><string>756D4112-6F27-4633-A716-66EA39794282</string>
 	<key>name</key><string>Arduino</string>
-	<key>url</key><string>https://github.com/dayglojesus/arduino.tmbundle</string>
-	<key>ref</key><string>remove-legacy-ruby</string>
+	<key>url</key><string>https://github.com/textmatelives/arduino.tmbundle</string>
+	<key>ref</key><string>main</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
 			<key>description</key><string>Syntax highlighting and snippets for Arduino sketches.</string>
@@ -99,7 +99,7 @@
 <dict>
 	<key>uuid</key><string>344D329E-6B21-11D9-B355-000D93589AF6</string>
 	<key>name</key><string>ASP</string>
-	<key>url</key><string>https://github.com/dayglojesus/asp.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/asp.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -108,7 +108,7 @@
 <dict>
 	<key>uuid</key><string>4F07B982-DA8C-49E5-AB47-3C0C79BE562B</string>
 	<key>name</key><string>ASP vb.NET</string>
-	<key>url</key><string>https://github.com/dayglojesus/asp.vb.net.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/asp.vb.net.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -117,7 +117,7 @@
 <dict>
 	<key>uuid</key><string>A8A52DF1-BAFB-4071-B738-16CE26F78B0A</string>
 	<key>name</key><string>Bison</string>
-	<key>url</key><string>https://github.com/dayglojesus/bison.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/bison.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -126,7 +126,7 @@
 <dict>
 	<key>uuid</key><string>5A841EC2-B9E2-4E96-AA2F-D49CAC1F0C4A</string>
 	<key>name</key><string>Bulletin Board</string>
-	<key>url</key><string>https://github.com/dayglojesus/bulletin-board.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/bulletin-board.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -135,7 +135,7 @@
 <dict>
 	<key>uuid</key><string>66623882-73FB-11D9-85C6-000D93589AF6</string>
 	<key>name</key><string>C#</string>
-	<key>url</key><string>https://github.com/dayglojesus/csharp-tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/csharp-tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -144,7 +144,7 @@
 <dict>
 	<key>uuid</key><string>B5EEC818-98AC-486C-B158-966F88511EC0</string>
 	<key>name</key><string>Cap’n Proto</string>
-	<key>url</key><string>https://github.com/dayglojesus/capnproto.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/capnproto.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -153,8 +153,8 @@
 <dict>
 	<key>uuid</key><string>E65BAFA0-39BA-458F-8D85-ECE6BF9EDF69</string>
 	<key>name</key><string>Elixir</string>
-	<key>url</key><string>https://github.com/dayglojesus/elixir-tmbundle</string>
-	<key>ref</key><string>remove-legacy-ruby</string>
+	<key>url</key><string>https://github.com/textmatelives/elixir-tmbundle</string>
+	<key>ref</key><string>main</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
 			<key>description</key><string>A dynamic, functional language designed for building scalable and maintainable applications.</string>
@@ -162,7 +162,7 @@
 <dict>
 	<key>uuid</key><string>A29B280D-8D4C-4416-AC5A-97F50669603A</string>
 	<key>name</key><string>F Sharp</string>
-	<key>url</key><string>https://github.com/dayglojesus/f-sharp.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/f-sharp.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -171,7 +171,7 @@
 <dict>
 	<key>uuid</key><string>AFB88386-F238-4FB6-B476-A6A7E1491A88</string>
 	<key>name</key><string>Forth</string>
-	<key>url</key><string>https://github.com/dayglojesus/forth.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/forth.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -180,8 +180,8 @@
 <dict>
 	<key>uuid</key><string>1F0EE883-C3DA-4AD4-82F2-6795F0B2CA7B</string>
 	<key>name</key><string>Fortran</string>
-	<key>url</key><string>https://github.com/dayglojesus/fortran.tmbundle</string>
-	<key>ref</key><string>remove-legacy-ruby</string>
+	<key>url</key><string>https://github.com/textmatelives/fortran.tmbundle</string>
+	<key>ref</key><string>main</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
 			<key>description</key><string>Support for the Fortran (http://en.wikipedia.org/wiki/Fortran) programming language.</string>
@@ -189,7 +189,7 @@
 <dict>
 	<key>uuid</key><string>191B06AB-47B8-4E72-B0DE-291A35D93B99</string>
 	<key>name</key><string>Gettext</string>
-	<key>url</key><string>https://github.com/dayglojesus/gettext.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/gettext.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -198,8 +198,8 @@
 <dict>
 	<key>uuid</key><string>9A94FED7-9430-410F-9C6A-5B9D48A89180</string>
 	<key>name</key><string>Go</string>
-	<key>url</key><string>https://github.com/dayglojesus/golang.tmbundle</string>
-	<key>ref</key><string>remove-legacy-ruby</string>
+	<key>url</key><string>https://github.com/textmatelives/golang.tmbundle</string>
+	<key>ref</key><string>main</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
 			<key>description</key><string>Support for the Go programming language (http://golang.org).</string>
@@ -207,7 +207,7 @@
 <dict>
 	<key>uuid</key><string>344D1644-6B21-11D9-B355-000D93589AF6</string>
 	<key>name</key><string>Graphviz</string>
-	<key>url</key><string>https://github.com/dayglojesus/graphviz.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/graphviz.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -216,7 +216,7 @@
 <dict>
 	<key>uuid</key><string>47889EBB-6E0F-4D16-ADDE-0616D5795636</string>
 	<key>name</key><string>Gri</string>
-	<key>url</key><string>https://github.com/dayglojesus/gri.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/gri.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -225,8 +225,8 @@
 <dict>
 	<key>uuid</key><string>118557A4-4FEF-406D-A68E-BD191D9CBC83</string>
 	<key>name</key><string>Haskell</string>
-	<key>url</key><string>https://github.com/dayglojesus/haskell.tmbundle</string>
-	<key>ref</key><string>remove-legacy-ruby</string>
+	<key>url</key><string>https://github.com/textmatelives/haskell.tmbundle</string>
+	<key>ref</key><string>main</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
 			<key>description</key><string>Support for Haskell (http://www.haskell.org/), a general purpose, purely functional programming language featuring static typing, higher order functions, polymorphism, type classes, and monadic effects.</string>
@@ -234,7 +234,7 @@
 <dict>
 	<key>uuid</key><string>46779A0A-6227-11D9-BFB1-000D93589AF6</string>
 	<key>name</key><string>iCalendar</string>
-	<key>url</key><string>https://github.com/dayglojesus/icalendar.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/icalendar.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -243,7 +243,7 @@
 <dict>
 	<key>uuid</key><string>77B12BEB-8A90-11D9-BAA4-000A9584EC8C</string>
 	<key>name</key><string>Ini</string>
-	<key>url</key><string>https://github.com/dayglojesus/ini.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/ini.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -252,7 +252,7 @@
 <dict>
 	<key>uuid</key><string>0A5DEA4F-3A77-4CA5-9319-C8F885127572</string>
 	<key>name</key><string>Installer</string>
-	<key>url</key><string>https://github.com/dayglojesus/installer.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/installer.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -261,7 +261,7 @@
 <dict>
 	<key>uuid</key><string>7F48FD99-8480-47CC-8C4B-F6AD17ACF122</string>
 	<key>name</key><string>iPhone</string>
-	<key>url</key><string>https://github.com/dayglojesus/iphone.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/iphone.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -270,7 +270,7 @@
 <dict>
 	<key>uuid</key><string>44339853-BBEB-44BF-9E69-B70E8E040B4C</string>
 	<key>name</key><string>Java Velocity</string>
-	<key>url</key><string>https://github.com/dayglojesus/java-velocity.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/java-velocity.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -279,7 +279,7 @@
 <dict>
 	<key>uuid</key><string>D0C00F56-0B8D-4972-B958-A82E93F95581</string>
 	<key>name</key><string>JavaDoc</string>
-	<key>url</key><string>https://github.com/dayglojesus/javadoc.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/javadoc.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -288,7 +288,7 @@
 <dict>
 	<key>uuid</key><string>DA18BD22-6C7A-4D77-9100-4511229558D9</string>
 	<key>name</key><string>JavaScript jQuery</string>
-	<key>url</key><string>https://github.com/dayglojesus/jquery-tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/jquery-tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -297,7 +297,7 @@
 <dict>
 	<key>uuid</key><string>6FFB94A1-EB29-4A7B-87B7-7E47035CEB79</string>
 	<key>name</key><string>JavaScript JSDoc</string>
-	<key>url</key><string>https://github.com/dayglojesus/javascript-jsdoc.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/javascript-jsdoc.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -306,7 +306,7 @@
 <dict>
 	<key>uuid</key><string>1FB3D538-84E1-4002-AA46-5705529A27E1</string>
 	<key>name</key><string>JavaScript Objective-J</string>
-	<key>url</key><string>https://github.com/dayglojesus/javascript-objective-j.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/javascript-objective-j.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -315,8 +315,8 @@
 <dict>
 	<key>uuid</key><string>F123BC73-9B19-4E03-847E-D7E47D1931A3</string>
 	<key>name</key><string>Julia</string>
-	<key>url</key><string>https://github.com/dayglojesus/Julia.tmbundle</string>
-	<key>ref</key><string>remove-legacy-ruby</string>
+	<key>url</key><string>https://github.com/textmatelives/Julia.tmbundle</string>
+	<key>ref</key><string>main</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
 			<key>description</key><string>Mathematical Computing Language</string>
@@ -324,7 +324,7 @@
 <dict>
 	<key>uuid</key><string>536A270F-F121-4291-9DC4-59B0AEC9281A</string>
 	<key>name</key><string>K</string>
-	<key>url</key><string>https://github.com/dayglojesus/k.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/k.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -333,8 +333,8 @@
 <dict>
 	<key>uuid</key><string>46788DCE-6227-11D9-BFB1-000D93589AF6</string>
 	<key>name</key><string>LaTeX</string>
-	<key>url</key><string>https://github.com/dayglojesus/latex.tmbundle</string>
-	<key>ref</key><string>arm64-binaries</string>
+	<key>url</key><string>https://github.com/textmatelives/latex.tmbundle</string>
+	<key>ref</key><string>main</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
 			<key>description</key><string>Support for the LaTeX (http://www.latex-project.org/) typesetting system, the de facto standard for scientific papers.</string>
@@ -342,7 +342,7 @@
 <dict>
 	<key>uuid</key><string>C473C122-592E-4943-9CB0-44F02C24F780</string>
 	<key>name</key><string>LDIF</string>
-	<key>url</key><string>https://github.com/dayglojesus/LDIF.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/LDIF.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -351,8 +351,8 @@
 <dict>
 	<key>uuid</key><string>D1D51EE5-E89F-4B14-8AE4-FC364E540B47</string>
 	<key>name</key><string>LESS</string>
-	<key>url</key><string>https://github.com/dayglojesus/less.tmbundle</string>
-	<key>ref</key><string>remove-legacy-ruby</string>
+	<key>url</key><string>https://github.com/textmatelives/less.tmbundle</string>
+	<key>ref</key><string>main</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
 			<key>description</key><string>Extends CSS with dynamic behavior such as variables, mixins, operations and functions.</string>
@@ -360,7 +360,7 @@
 <dict>
 	<key>uuid</key><string>408054F2-BF56-439E-B52F-5EC62ED0A849</string>
 	<key>name</key><string>Lex/Flex</string>
-	<key>url</key><string>https://github.com/dayglojesus/lex-flex.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/lex-flex.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -369,7 +369,7 @@
 <dict>
 	<key>uuid</key><string>5D9846C9-EB37-4F56-BD7F-F3A6BF8846A0</string>
 	<key>name</key><string>LilyPond</string>
-	<key>url</key><string>https://github.com/dayglojesus/lilypond.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/lilypond.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -378,7 +378,7 @@
 <dict>
 	<key>uuid</key><string>E61A99D4-248F-4466-BD29-998E6F4E32B7</string>
 	<key>name</key><string>Limbo</string>
-	<key>url</key><string>https://github.com/dayglojesus/limbo.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/limbo.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -387,7 +387,7 @@
 <dict>
 	<key>uuid</key><string>46790904-6227-11D9-BFB1-000D93589AF6</string>
 	<key>name</key><string>Lisp</string>
-	<key>url</key><string>https://github.com/dayglojesus/lisp.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/lisp.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -396,7 +396,7 @@
 <dict>
 	<key>uuid</key><string>72FC431C-997D-4CBF-A4F2-66F6638F9CB6</string>
 	<key>name</key><string>Logo</string>
-	<key>url</key><string>https://github.com/dayglojesus/logo.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/logo.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -405,7 +405,7 @@
 <dict>
 	<key>uuid</key><string>C100CC05-6EDB-11D9-8798-000A95DAA580</string>
 	<key>name</key><string>Logtalk</string>
-	<key>url</key><string>https://github.com/dayglojesus/logtalk.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/logtalk.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -414,7 +414,7 @@
 <dict>
 	<key>uuid</key><string>E6C0E3CA-DDB8-4491-93DA-5BBC04C95951</string>
 	<key>name</key><string>MacPorts</string>
-	<key>url</key><string>https://github.com/dayglojesus/macports.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/macports.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -423,8 +423,8 @@
 <dict>
 	<key>uuid</key><string>69766802-226D-4D14-9B7C-CC8E16455CFD</string>
 	<key>name</key><string>Man Pages</string>
-	<key>url</key><string>https://github.com/dayglojesus/man-pages.tmbundle</string>
-	<key>ref</key><string>remove-legacy-ruby</string>
+	<key>url</key><string>https://github.com/textmatelives/man-pages.tmbundle</string>
+	<key>ref</key><string>main</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
 			<key>description</key><string>Syntax highlight for man pages (http://en.wikipedia.org/wiki/Manual_page_(Unix)) and a few commands.</string>
@@ -432,7 +432,7 @@
 <dict>
 	<key>uuid</key><string>A9CF0E77-E848-417C-90F4-77E1231FF1B9</string>
 	<key>name</key><string>Markdown (GitHub)</string>
-	<key>url</key><string>https://github.com/dayglojesus/GitHub-Markdown.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/GitHub-Markdown.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -441,8 +441,8 @@
 <dict>
 	<key>uuid</key><string>D2B42D16-FDEB-4079-9293-725312736384</string>
 	<key>name</key><string>Mathematica</string>
-	<key>url</key><string>https://github.com/dayglojesus/mathematica-tmbundle</string>
-	<key>ref</key><string>python3-port</string>
+	<key>url</key><string>https://github.com/textmatelives/mathematica-tmbundle</string>
+	<key>ref</key><string>main</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
 			<key>description</key><string>Mathematica is a computational software program used in scientific, engineering, and mathematical fields and other areas of technical computing. It is created by Wolfram Research (http://www.wolfram.com/).</string>
@@ -450,8 +450,8 @@
 <dict>
 	<key>uuid</key><string>AF26E7BD-72FF-11D9-B408-000D93589AF6</string>
 	<key>name</key><string>Matlab</string>
-	<key>url</key><string>https://github.com/dayglojesus/matlab.tmbundle</string>
-	<key>ref</key><string>remove-legacy-ruby</string>
+	<key>url</key><string>https://github.com/textmatelives/matlab.tmbundle</string>
+	<key>ref</key><string>main</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
 			<key>description</key><string>Support for MATLAB (http://www.mathworks.com/products/matlab/), and Octave (http://octave.org), two largely compatible high-level languages that enables you to perform computationally intensive tasks faster than with traditional programming languages.</string>
@@ -459,8 +459,8 @@
 <dict>
 	<key>uuid</key><string>DC431C52-9E0C-49AC-A178-FEF388470627</string>
 	<key>name</key><string>Maude</string>
-	<key>url</key><string>https://github.com/dayglojesus/maude.tmbundle</string>
-	<key>ref</key><string>remove-legacy-ruby</string>
+	<key>url</key><string>https://github.com/textmatelives/maude.tmbundle</string>
+	<key>ref</key><string>main</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
 			<key>description</key><string>Equational and rewriting logic specification and programming.</string>
@@ -468,8 +468,8 @@
 <dict>
 	<key>uuid</key><string>3BF76C5E-8AB7-4F90-9CEE-79F95D289E6F</string>
 	<key>name</key><string>Maven</string>
-	<key>url</key><string>https://github.com/dayglojesus/maven.tmbundle</string>
-	<key>ref</key><string>remove-legacy-ruby</string>
+	<key>url</key><string>https://github.com/textmatelives/maven.tmbundle</string>
+	<key>ref</key><string>main</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
 			<key>description</key><string>Support for working with Maven (http://maven.apache.org/) based projects.</string>
@@ -477,7 +477,7 @@
 <dict>
 	<key>uuid</key><string>64C4222F-7054-4A26-B91E-A82F53166142</string>
 	<key>name</key><string>Mediawiki</string>
-	<key>url</key><string>https://github.com/dayglojesus/mediawiki.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/mediawiki.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -486,8 +486,8 @@
 <dict>
 	<key>uuid</key><string>402D341A-6BE4-11D9-AEC0-0011242E4184</string>
 	<key>name</key><string>MIPS Assembler</string>
-	<key>url</key><string>https://github.com/dayglojesus/mips.tmbundle</string>
-	<key>ref</key><string>remove-legacy-ruby</string>
+	<key>url</key><string>https://github.com/textmatelives/mips.tmbundle</string>
+	<key>ref</key><string>main</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
 			<key>description</key><string>Support for MIPS assembler (http://en.wikibooks.org/wiki/Programming:MIPS_assembly).</string>
@@ -495,7 +495,7 @@
 <dict>
 	<key>uuid</key><string>005ECD5C-8762-4E90-8D8F-C778C91FFB66</string>
 	<key>name</key><string>Movable Type</string>
-	<key>url</key><string>https://github.com/dayglojesus/movable-type.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/movable-type.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -504,7 +504,7 @@
 <dict>
 	<key>uuid</key><string>5B1D8959-F6BB-4F99-9E28-C97BFF447DF6</string>
 	<key>name</key><string>Mx</string>
-	<key>url</key><string>https://github.com/dayglojesus/mx.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/mx.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -513,8 +513,8 @@
 <dict>
 	<key>uuid</key><string>126B2BEF-74BC-4D2F-907F-95C4A05A7A04</string>
 	<key>name</key><string>Nim</string>
-	<key>url</key><string>https://github.com/dayglojesus/nim.tmbundle</string>
-	<key>ref</key><string>remove-legacy-ruby</string>
+	<key>url</key><string>https://github.com/textmatelives/nim.tmbundle</string>
+	<key>ref</key><string>main</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
 			<key>description</key><string>Statically typed, imperative programming language</string>
@@ -522,7 +522,7 @@
 <dict>
 	<key>uuid</key><string>8E974139-4838-4E8E-B70E-0A552EB9760E</string>
 	<key>name</key><string>OpenGL</string>
-	<key>url</key><string>https://github.com/dayglojesus/opengl.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/opengl.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -531,7 +531,7 @@
 <dict>
 	<key>uuid</key><string>2CD058CC-E5E2-41BC-8FF8-0C2BFC043F3E</string>
 	<key>name</key><string>OpenMx</string>
-	<key>url</key><string>https://github.com/dayglojesus/OpenMx.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/OpenMx.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -540,7 +540,7 @@
 <dict>
 	<key>uuid</key><string>3086DFC6-6DEA-461E-9137-257B18408D56</string>
 	<key>name</key><string>Parrot</string>
-	<key>url</key><string>https://github.com/dayglojesus/parrot.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/parrot.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -549,7 +549,7 @@
 <dict>
 	<key>uuid</key><string>46799436-6227-11D9-BFB1-000D93589AF6</string>
 	<key>name</key><string>Pascal</string>
-	<key>url</key><string>https://github.com/dayglojesus/pascal.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/pascal.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -558,8 +558,8 @@
 <dict>
 	<key>uuid</key><string>B3167F84-4734-4693-AA6E-A3EBFB36B9E0</string>
 	<key>name</key><string>PDB</string>
-	<key>url</key><string>https://github.com/dayglojesus/pdb.tmbundle</string>
-	<key>ref</key><string>python3-port</string>
+	<key>url</key><string>https://github.com/textmatelives/pdb.tmbundle</string>
+	<key>ref</key><string>main</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
 			<key>description</key><string>Bundle for the manipulation of RCSB or pseudo-RCSB PDB structure files.</string>
@@ -567,7 +567,7 @@
 <dict>
 	<key>uuid</key><string>5A67ADDC-283A-4E0F-AA36-29E4E95B4A26</string>
 	<key>name</key><string>Perl HTML::Template</string>
-	<key>url</key><string>https://github.com/dayglojesus/perl-html-template.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/perl-html-template.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -576,7 +576,7 @@
 <dict>
 	<key>uuid</key><string>73C53C31-8AFA-4369-A92F-E5D6904EF628</string>
 	<key>name</key><string>Postscript</string>
-	<key>url</key><string>https://github.com/dayglojesus/postscript.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/postscript.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -585,8 +585,8 @@
 <dict>
 	<key>uuid</key><string>DC9271C5-8267-4C5F-93A9-3E3FFC741BEA</string>
 	<key>name</key><string>Processing</string>
-	<key>url</key><string>https://github.com/dayglojesus/processing.tmbundle</string>
-	<key>ref</key><string>remove-legacy-ruby</string>
+	<key>url</key><string>https://github.com/textmatelives/processing.tmbundle</string>
+	<key>ref</key><string>main</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
 			<key>description</key><string>Processing (http://processing.org/) is an open source programming language and environment for people who want to program images, animation, and sound.</string>
@@ -594,8 +594,8 @@
 <dict>
 	<key>uuid</key><string>101B21C6-132C-4811-BDCF-2B028860F681</string>
 	<key>name</key><string>Prolog</string>
-	<key>url</key><string>https://github.com/dayglojesus/prolog.tmbundle</string>
-	<key>ref</key><string>remove-legacy-ruby</string>
+	<key>url</key><string>https://github.com/textmatelives/prolog.tmbundle</string>
+	<key>ref</key><string>main</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
 			<key>description</key><string>Prolog (http://en.wikipedia.org/wiki/Prolog) is a logic programming language. It is a general purpose language, which is especially associated with artificial intelligence and computational linguistics.</string>
@@ -603,8 +603,8 @@
 <dict>
 	<key>uuid</key><string>04734303-952E-44C6-BC53-650D4409E3BE</string>
 	<key>name</key><string>Python Django</string>
-	<key>url</key><string>https://github.com/dayglojesus/python-django.tmbundle</string>
-	<key>ref</key><string>remove-legacy-ruby</string>
+	<key>url</key><string>https://github.com/textmatelives/python-django.tmbundle</string>
+	<key>ref</key><string>main</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
 			<key>description</key><string>Support for the Django web framework (http://www.djangoproject.com/) (Python).</string>
@@ -612,7 +612,7 @@
 <dict>
 	<key>uuid</key><string>230EB053-6E5D-11D9-BE5A-0011242E4184</string>
 	<key>name</key><string>Quake</string>
-	<key>url</key><string>https://github.com/dayglojesus/quake.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/quake.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -621,8 +621,8 @@
 <dict>
 	<key>uuid</key><string>B29D7850-6E70-11D9-A369-000D93B3A10E</string>
 	<key>name</key><string>R</string>
-	<key>url</key><string>https://github.com/dayglojesus/r.tmbundle</string>
-	<key>ref</key><string>remove-legacy-ruby</string>
+	<key>url</key><string>https://github.com/textmatelives/r.tmbundle</string>
+	<key>ref</key><string>main</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
 			<key>description</key><string>R (http://www.r-project.org/) is a free software environment for statistical computing and graphics. This bundle includes a command that sends current line to the R.app environment or to the Rdaemon.</string>
@@ -630,7 +630,7 @@
 <dict>
 	<key>uuid</key><string>CE1CE629-A9D6-4918-94C9-824D527276FD</string>
 	<key>name</key><string>Ragel</string>
-	<key>url</key><string>https://github.com/dayglojesus/ragel.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/ragel.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -639,7 +639,7 @@
 <dict>
 	<key>uuid</key><string>B5254936-065A-4E65-8F58-3540179AC959</string>
 	<key>name</key><string>Rez</string>
-	<key>url</key><string>https://github.com/dayglojesus/rez.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/rez.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -648,7 +648,7 @@
 <dict>
 	<key>uuid</key><string>4618480A-F4C3-40FE-8719-DE54CBDFB92A</string>
 	<key>name</key><string>Ruby Haml</string>
-	<key>url</key><string>https://github.com/dayglojesus/ruby-haml.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/ruby-haml.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -657,8 +657,8 @@
 <dict>
 	<key>uuid</key><string>467A60E0-6227-11D9-BFB1-000D93589AF6</string>
 	<key>name</key><string>Ruby on Rails</string>
-	<key>url</key><string>https://github.com/dayglojesus/ruby-on-rails-tmbundle</string>
-	<key>ref</key><string>remove-legacy-ruby</string>
+	<key>url</key><string>https://github.com/textmatelives/ruby-on-rails-tmbundle</string>
+	<key>ref</key><string>main</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
 			<key>description</key><string>Ruby on Rails (http://www.rubyonrails.com/) is a full-stack framework for developing database-backed web applications, in Ruby, according to the Model-View-Control pattern.</string>
@@ -666,7 +666,7 @@
 <dict>
 	<key>uuid</key><string>176253C8-5D97-4C20-AA34-3BE8BC73FBC9</string>
 	<key>name</key><string>Ruby Sass</string>
-	<key>url</key><string>https://github.com/dayglojesus/ruby-sass.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/ruby-sass.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -675,7 +675,7 @@
 <dict>
 	<key>uuid</key><string>8EDBE2CA-575A-42BC-9F36-BD4C99B4DE56</string>
 	<key>name</key><string>Ruby Shoulda</string>
-	<key>url</key><string>https://github.com/dayglojesus/ruby-shoulda.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/ruby-shoulda.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -684,7 +684,7 @@
 <dict>
 	<key>uuid</key><string>A24283A1-6C91-4CDB-80C5-DC606ED62F04</string>
 	<key>name</key><string>Ruby Slim</string>
-	<key>url</key><string>https://github.com/dayglojesus/ruby-slim.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/ruby-slim.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -693,8 +693,8 @@
 <dict>
 	<key>uuid</key><string>06794A1F-20AC-457C-AD92-A4A8EF83EB0E</string>
 	<key>name</key><string>Rust</string>
-	<key>url</key><string>https://github.com/dayglojesus/rust.tmbundle</string>
-	<key>ref</key><string>remove-legacy-ruby</string>
+	<key>url</key><string>https://github.com/textmatelives/rust.tmbundle</string>
+	<key>ref</key><string>main</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
 			<key>description</key><string>A general-purpose, multi-paradigm, compiled programming language developed by Mozilla Research.</string>
@@ -702,8 +702,8 @@
 <dict>
 	<key>uuid</key><string>D0DEBECD-4A14-485C-B628-7ECB0260A8A1</string>
 	<key>name</key><string>Scala</string>
-	<key>url</key><string>https://github.com/dayglojesus/scala.tmbundle</string>
-	<key>ref</key><string>arm64-binaries</string>
+	<key>url</key><string>https://github.com/textmatelives/scala.tmbundle</string>
+	<key>ref</key><string>main</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
 			<key>description</key><string>A type-safe Java VM language incorporating both object oriented and functional programming.</string>
@@ -711,8 +711,8 @@
 <dict>
 	<key>uuid</key><string>582E3655-382D-47BE-BB71-AB11E4286D0A</string>
 	<key>name</key><string>Scheme</string>
-	<key>url</key><string>https://github.com/dayglojesus/scheme.tmbundle</string>
-	<key>ref</key><string>remove-legacy-ruby</string>
+	<key>url</key><string>https://github.com/textmatelives/scheme.tmbundle</string>
+	<key>ref</key><string>main</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
 			<key>description</key><string>Scheme (http://www-swiss.ai.mit.edu/projects/scheme/) is a statically scoped and properly tail-recursive dialect of the Lisp programming language.</string>
@@ -720,7 +720,7 @@
 <dict>
 	<key>uuid</key><string>C397B72C-7519-44CD-8533-7AB7F701C4E4</string>
 	<key>name</key><string>Scilab</string>
-	<key>url</key><string>https://github.com/dayglojesus/scilab.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/scilab.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -729,7 +729,7 @@
 <dict>
 	<key>uuid</key><string>BCEB5483-E029-479F-95AC-D6AADF98138F</string>
 	<key>name</key><string>SCSS</string>
-	<key>url</key><string>https://github.com/dayglojesus/SCSS.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/SCSS.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -738,7 +738,7 @@
 <dict>
 	<key>uuid</key><string>7471537C-4EC6-4CCF-B93A-F087986CA465</string>
 	<key>name</key><string>Smalltalk</string>
-	<key>url</key><string>https://github.com/dayglojesus/smalltalk-tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/smalltalk-tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -747,7 +747,7 @@
 <dict>
 	<key>uuid</key><string>7A3C2CE9-C65D-4116-92B7-F10D684B1ED6</string>
 	<key>name</key><string>SSH Config</string>
-	<key>url</key><string>https://github.com/dayglojesus/ssh-config.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/ssh-config.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -756,8 +756,8 @@
 <dict>
 	<key>uuid</key><string>D08F016D-1D07-4BD8-8339-9AB5D151DF31</string>
 	<key>name</key><string>Swift</string>
-	<key>url</key><string>https://github.com/dayglojesus/swift.tmbundle</string>
-	<key>ref</key><string>remove-legacy-ruby</string>
+	<key>url</key><string>https://github.com/textmatelives/swift.tmbundle</string>
+	<key>ref</key><string>main</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
 			<key>description</key><string>Swift is a general-purpose programming language developed by Apple and built for safety, clarity, and performance.</string>
@@ -765,7 +765,7 @@
 <dict>
 	<key>uuid</key><string>8C563B34-BE0B-11D9-B4D9-000393A143CC</string>
 	<key>name</key><string>SWIG</string>
-	<key>url</key><string>https://github.com/dayglojesus/swig.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/swig.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -774,7 +774,7 @@
 <dict>
 	<key>uuid</key><string>D587784E-13B0-4090-BF67-42717CC5F89F</string>
 	<key>name</key><string>Tabular</string>
-	<key>url</key><string>https://github.com/dayglojesus/tabular.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/tabular.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -783,8 +783,8 @@
 <dict>
 	<key>uuid</key><string>7298A864-0E56-48F7-B281-EC3CB338EA4D</string>
 	<key>name</key><string>Tads 3</string>
-	<key>url</key><string>https://github.com/dayglojesus/tads3.tmbundle</string>
-	<key>ref</key><string>remove-legacy-ruby</string>
+	<key>url</key><string>https://github.com/textmatelives/tads3.tmbundle</string>
+	<key>ref</key><string>main</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
 			<key>description</key><string>Text Adventure Development System, for creating interactive fiction (IF) games.</string>
@@ -792,7 +792,7 @@
 <dict>
 	<key>uuid</key><string>49882962-7CB7-11D9-875B-000A95E13C98</string>
 	<key>name</key><string>Tcl</string>
-	<key>url</key><string>https://github.com/dayglojesus/tcl.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/tcl.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -801,7 +801,7 @@
 <dict>
 	<key>uuid</key><string>19FB3BCA-1F8A-432D-B201-DE249A121059</string>
 	<key>name</key><string>Terraform</string>
-	<key>url</key><string>https://github.com/dayglojesus/Terraform.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/Terraform.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -810,8 +810,8 @@
 <dict>
 	<key>uuid</key><string>E6858C0B-B2C9-4A39-A2D6-6D8360A923D0</string>
 	<key>name</key><string>Textile</string>
-	<key>url</key><string>https://github.com/dayglojesus/textile.tmbundle</string>
-	<key>ref</key><string>remove-legacy-ruby</string>
+	<key>url</key><string>https://github.com/textmatelives/textile.tmbundle</string>
+	<key>ref</key><string>main</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
 			<key>description</key><string>Textile (http://www.textism.com/tools/textile/) is a lightweight markup language originally developed by Dean Allen and billed as a “humane Web text generator”. Textile converts its marked-up text input to valid, well-formed XHTML.</string>
@@ -819,7 +819,7 @@
 <dict>
 	<key>uuid</key><string>4A6C024E-8B12-4119-B7FF-73B10864C7F7</string>
 	<key>name</key><string>Treetop</string>
-	<key>url</key><string>https://github.com/dayglojesus/treetop.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/treetop.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -828,8 +828,8 @@
 <dict>
 	<key>uuid</key><string>2A796C75-A17D-4EF4-9B1F-2EB6F485E278</string>
 	<key>name</key><string>Txt2tags</string>
-	<key>url</key><string>https://github.com/dayglojesus/txt2tags.tmbundle</string>
-	<key>ref</key><string>python3-port</string>
+	<key>url</key><string>https://github.com/textmatelives/txt2tags.tmbundle</string>
+	<key>ref</key><string>main</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
 			<key>description</key><string>Txt2tags (http://txt2tags.sourceforge.net) converts text files with minimal markup to HTML, XHTML, SGML, LaTeX, Lout, Man page, Wikipedia, Google Code Wiki, DokuWiki, MoinMoin, MagicPoint and PageMaker.</string>
@@ -837,7 +837,7 @@
 <dict>
 	<key>uuid</key><string>1A78F224-6213-41FB-A7AB-8C17F6BC196D</string>
 	<key>name</key><string>Vectorscript</string>
-	<key>url</key><string>https://github.com/dayglojesus/vectorscript.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/vectorscript.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -846,7 +846,7 @@
 <dict>
 	<key>uuid</key><string>49BC43A3-4562-4B87-8B43-38ABDA4C8E6B</string>
 	<key>name</key><string>Verilog</string>
-	<key>url</key><string>https://github.com/dayglojesus/verilog.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/verilog.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -855,7 +855,7 @@
 <dict>
 	<key>uuid</key><string>F5351E61-488E-44A5-BF0B-02FED526B641</string>
 	<key>name</key><string>VHDL</string>
-	<key>url</key><string>https://github.com/dayglojesus/vhdl.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/vhdl.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -864,7 +864,7 @@
 <dict>
 	<key>uuid</key><string>7CF5FE7E-92F6-4E4E-A4CA-6C876E319910</string>
 	<key>name</key><string>XQuery</string>
-	<key>url</key><string>https://github.com/dayglojesus/xquery.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/xquery.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Languages</string>
@@ -873,8 +873,8 @@
 <dict>
 	<key>uuid</key><string>752DC2FC-D3F0-4DA0-A340-82114D999280</string>
 	<key>name</key><string>Licenses</string>
-	<key>url</key><string>https://github.com/dayglojesus/licenses.tmbundle</string>
-	<key>ref</key><string>remove-legacy-ruby</string>
+	<key>url</key><string>https://github.com/textmatelives/licenses.tmbundle</string>
+	<key>ref</key><string>main</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Other</string>
 			<key>description</key><string>Insert various open source licenses</string>
@@ -882,7 +882,7 @@
 <dict>
 	<key>uuid</key><string>4F9ED080-B8B8-11D9-AE51-000393A143CC</string>
 	<key>name</key><string>ODCompletion</string>
-	<key>url</key><string>https://github.com/dayglojesus/odcompletion.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/odcompletion.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Other</string>
@@ -891,7 +891,7 @@
 <dict>
 	<key>uuid</key><string>13FEBB9E-8300-11D9-B216-000D9332809C</string>
 	<key>name</key><string>Outlines</string>
-	<key>url</key><string>https://github.com/dayglojesus/outlines.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/outlines.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Other</string>
@@ -900,8 +900,8 @@
 <dict>
 	<key>uuid</key><string>57D5EDA2-A531-11D9-917B-000D9332809C</string>
 	<key>name</key><string>Regular Expressions</string>
-	<key>url</key><string>https://github.com/dayglojesus/regularexpressions.tmbundle</string>
-	<key>ref</key><string>remove-legacy-ruby</string>
+	<key>url</key><string>https://github.com/textmatelives/regularexpressions.tmbundle</string>
+	<key>ref</key><string>main</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Other</string>
 			<key>description</key><string>Miscellaneous support for working with regular expressions (http://www.regular-expressions.info/).</string>
@@ -909,8 +909,8 @@
 <dict>
 	<key>uuid</key><string>0DCB3E28-8D02-47B0-9D94-2DCC1473A533</string>
 	<key>name</key><string>Unicode</string>
-	<key>url</key><string>https://github.com/dayglojesus/unicode.tmbundle</string>
-	<key>ref</key><string>python3-port</string>
+	<key>url</key><string>https://github.com/textmatelives/unicode.tmbundle</string>
+	<key>ref</key><string>main</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Other</string>
 			<key>description</key><string>Bundle concerning commands, scripts, etc. to deal with general Unicode resp. non-ASCII related tasks such as: Unicode normalizations, conversion to similar characters, Unicode/IPA character inserting, Unicode properties (incl. Japanese and Chinese characters), conversions of Japanese and Chinese characters, highlighting of non-ASCII characters, displaying the character inventory of the current document, etc.</string>
@@ -918,8 +918,8 @@
 <dict>
 	<key>uuid</key><string>62385B90-7E47-4D43-B44D-63B0BC00FAD3</string>
 	<key>name</key><string>Vagrant</string>
-	<key>url</key><string>https://github.com/dayglojesus/vagrant.tmbundle</string>
-	<key>ref</key><string>remove-legacy-ruby</string>
+	<key>url</key><string>https://github.com/textmatelives/vagrant.tmbundle</string>
+	<key>ref</key><string>main</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Other</string>
 			<key>description</key><string>Control a vagrant environment</string>
@@ -927,7 +927,7 @@
 <dict>
 	<key>uuid</key><string>95761F74-1A3D-4B51-BA03-41537C38C792</string>
 	<key>name</key><string>FileMerge</string>
-	<key>url</key><string>https://github.com/dayglojesus/filemerge.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/filemerge.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>SCM</string>
@@ -936,7 +936,7 @@
 <dict>
 	<key>uuid</key><string>9ADE27C6-4432-449C-9D4C-B5FEC8D33ACA</string>
 	<key>name</key><string>CxxTest</string>
-	<key>url</key><string>https://github.com/dayglojesus/cxxtest.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/cxxtest.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Testing</string>
@@ -945,7 +945,7 @@
 <dict>
 	<key>uuid</key><string>64D20B78-A6BB-4120-B794-00D909680D8D</string>
 	<key>name</key><string>Objective-C Unit Testing</string>
-	<key>url</key><string>https://github.com/dayglojesus/objective-c-unit-testing.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/objective-c-unit-testing.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Testing</string>
@@ -954,8 +954,8 @@
 <dict>
 	<key>uuid</key><string>4CEA47CC-2C3A-45FB-80BE-3820828227C2</string>
 	<key>name</key><string>RSpec</string>
-	<key>url</key><string>https://github.com/dayglojesus/rspec.tmbundle</string>
-	<key>ref</key><string>remove-legacy-ruby</string>
+	<key>url</key><string>https://github.com/textmatelives/rspec.tmbundle</string>
+	<key>ref</key><string>main</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Testing</string>
 			<key>description</key><string>Behavior-driven development (BDD) framework for the Ruby programming language.</string>
@@ -963,7 +963,7 @@
 <dict>
 	<key>uuid</key><string>C09480C2-10EC-4076-BC5D-281F96917C6B</string>
 	<key>name</key><string>LaTeX Font Settings</string>
-	<key>url</key><string>https://github.com/dayglojesus/LaTeX-Font-Settings.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/LaTeX-Font-Settings.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Themes</string>
@@ -972,7 +972,7 @@
 <dict>
 	<key>uuid</key><string>BC5DE172-1E1A-457C-8807-0B958DDE5B2D</string>
 	<key>name</key><string>Made of Code</string>
-	<key>url</key><string>https://github.com/dayglojesus/made-of-code-tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/made-of-code-tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Themes</string>
@@ -981,7 +981,7 @@
 <dict>
 	<key>uuid</key><string>91ABC535-7C8F-46B0-92E0-570A73450604</string>
 	<key>name</key><string>Markdown (GitHub) Font Settings</string>
-	<key>url</key><string>https://github.com/dayglojesus/GitHub-Markdown-Font-Settings.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/GitHub-Markdown-Font-Settings.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Themes</string>
@@ -990,7 +990,7 @@
 <dict>
 	<key>uuid</key><string>F019CDBF-4AFC-4CD0-8EFF-A78FAD2FCB5E</string>
 	<key>name</key><string>Monokai</string>
-	<key>url</key><string>https://github.com/dayglojesus/monokai.tmbundle</string>
+	<key>url</key><string>https://github.com/textmatelives/monokai.tmbundle</string>
 	<key>ref</key><string>master</string>
 	<key>autoUpdate</key><true/>
 	<key>category</key><string>Themes</string>
