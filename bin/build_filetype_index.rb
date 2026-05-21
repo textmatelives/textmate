@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# Build BundleFileTypeIndex.plist from the dayglojesus bundle source tree.
+# Build BundleFileTypeIndex.plist from the textmatelives bundle source tree.
 #
 # Walks each *.tmbundle/ directory, reads info.plist (uuid + name) and any
 # Syntaxes/*.{plist,tmLanguage,tmLanguage.json} files for fileTypes + scopeName.
@@ -9,8 +9,8 @@
 # priority. Same-tier collisions abort unless listed in COLLISION_TIEBREAK.
 #
 # Run:
-#   BUNDLES_DIR=~/src/github.com/dayglojesus/bundles \
-#   BUNDLE_SUPPORT_DIR=~/src/github.com/dayglojesus/bundle-support.tmbundle \
+#   BUNDLES_DIR=~/src/github.com/textmatelives/bundles \
+#   BUNDLE_SUPPORT_DIR=~/src/github.com/textmatelives/bundle-support.tmbundle \
 #   ruby bin/build_filetype_index.rb
 
 require 'rexml/document'
@@ -39,11 +39,11 @@ def textmate_root
 end
 
 def bundles_dir
-  ENV['BUNDLES_DIR'] || File.expand_path('~/src/github.com/dayglojesus/bundles')
+  ENV['BUNDLES_DIR'] || File.expand_path('~/src/github.com/textmatelives/bundles')
 end
 
 def bundle_support_dir
-  ENV['BUNDLE_SUPPORT_DIR'] || File.expand_path('~/src/github.com/dayglojesus/bundle-support.tmbundle')
+  ENV['BUNDLE_SUPPORT_DIR'] || File.expand_path('~/src/github.com/textmatelives/bundle-support.tmbundle')
 end
 
 # Parse any .plist file to a Ruby object via `plutil -convert xml1 -o - <file>`.

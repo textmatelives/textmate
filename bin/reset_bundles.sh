@@ -8,8 +8,8 @@
 set -e
 
 MANAGED="$HOME/Library/Application Support/TextMate/Managed/Bundles"
-REPOS="$HOME/src/github.com/dayglojesus/bundles"
-SUPPORT_REPO="$HOME/src/github.com/dayglojesus/bundle-support.tmbundle"
+REPOS="$HOME/src/github.com/textmatelives/bundles"
+SUPPORT_REPO="$HOME/src/github.com/textmatelives/bundle-support.tmbundle"
 
 # Map managed bundle directory names to repo directory names
 map_name() {
