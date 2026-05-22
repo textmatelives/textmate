@@ -74,6 +74,15 @@ for (( i = 0; i < count; i += 5 )); do
 	rm -rf "$dest_dir"
 	mkdir -p "$dest_dir"
 	cp -R "$tmp"/. "$dest_dir"/
+
+	# Scrub artifacts the embedded copy must not carry:
+	#   .github/                              — CI metadata, no runtime use
+	#   Support/shared/bin/CocoaDialog.app/   — Intel-only, blocks notarization
+	#                                            (kept upstream but removed here
+	#                                             per commit 297d39de)
+	rm -rf "$dest_dir/.github"
+	rm -rf "$dest_dir/Support/shared/bin/CocoaDialog.app"
+
 	echo -n "$sha" > "$marker"
 
 	rm -rf "$tmp"
