@@ -2,6 +2,7 @@
 #import "OakMainMenu.h"
 #import "Favorites.h"
 #import "AboutWindowController.h"
+#import "FirstLaunchBundleInstaller.h"
 #import "TMPlugInController.h"
 #import "RMateServer.h"
 #import <BundleEditor/BundleEditor.h>
@@ -578,6 +579,8 @@ BOOL HasDocumentWindow (NSArray* windows)
 	[OakCommitWindowServer sharedInstance]; // Setup server
 
 	self.didFinishLaunching = YES;
+
+	[FirstLaunchBundleInstaller promptIfNeeded];
 }
 
 - (void)applicationWillResignActive:(NSNotification*)aNotification
