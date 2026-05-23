@@ -2,330 +2,650 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>schemaVersion</key>
-	<integer>1</integer>
 	<key>bundles</key>
 	<array>
 		<dict>
-			<key>uuid</key><string>D4FB34BC-80F3-11D9-9D53-00039398C572</string>
-			<key>name</key><string>Apache</string>
-			<key>url</key><string>https://github.com/textmatelives/apache.tmbundle</string>
-			<key>ref</key><string>main</string>
-			<key>autoUpdate</key><true/>
-			<key>category</key><string>Languages</string>
+			<key>autoUpdate</key>
+			<true/>
+			<key>category</key>
+			<string>Languages</string>
+			<key>description</key>
+			<string>Commands to relaunch Apache (http://apache.org/), edit the httpd.conf file etc.</string>
+			<key>name</key>
+			<string>Apache</string>
+			<key>ref</key>
+			<string>main</string>
+			<key>url</key>
+			<string>https://github.com/textmatelives/apache.tmbundle</string>
+			<key>uuid</key>
+			<string>D4FB34BC-80F3-11D9-9D53-00039398C572</string>
 		</dict>
 		<dict>
-			<key>uuid</key><string>679EFB46-5368-47E5-85BA-DEF72709A471</string>
-			<key>name</key><string>Bundle Development</string>
-			<key>url</key><string>https://github.com/textmatelives/bundle-development.tmbundle</string>
-			<key>ref</key><string>main</string>
-			<key>autoUpdate</key><true/>
-			<key>category</key><string>Build</string>
+			<key>autoUpdate</key>
+			<true/>
+			<key>category</key>
+			<string>Build</string>
+			<key>description</key>
+			<string>This bundle has functionality related to developing bundles for TextMate.</string>
+			<key>name</key>
+			<string>Bundle Development</string>
+			<key>ref</key>
+			<string>main</string>
+			<key>url</key>
+			<string>https://github.com/textmatelives/bundle-development.tmbundle</string>
+			<key>uuid</key>
+			<string>679EFB46-5368-47E5-85BA-DEF72709A471</string>
 		</dict>
 		<dict>
-			<key>uuid</key><string>4675A940-6227-11D9-BFB1-000D93589AF6</string>
-			<key>name</key><string>C</string>
-			<key>url</key><string>https://github.com/textmatelives/c.tmbundle</string>
-			<key>ref</key><string>main</string>
-			<key>autoUpdate</key><true/>
-			<key>category</key><string>Languages</string>
+			<key>autoUpdate</key>
+			<true/>
+			<key>category</key>
+			<string>Languages</string>
+			<key>description</key>
+			<string>Support for the venerable C programming language (http://en.wikipedia.org/wiki/C_%28programming_language%29) and for the leaner C++. The bundle has completion (using ⌥⎋) for the standard C functions and, in C++, STL algorithms.</string>
+			<key>name</key>
+			<string>C</string>
+			<key>ref</key>
+			<string>main</string>
+			<key>url</key>
+			<string>https://github.com/textmatelives/c.tmbundle</string>
+			<key>uuid</key>
+			<string>4675A940-6227-11D9-BFB1-000D93589AF6</string>
 		</dict>
 		<dict>
-			<key>uuid</key><string>4675F24E-6227-11D9-BFB1-000D93589AF6</string>
-			<key>name</key><string>CSS</string>
-			<key>url</key><string>https://github.com/textmatelives/css.tmbundle</string>
-			<key>ref</key><string>main</string>
-			<key>autoUpdate</key><true/>
-			<key>category</key><string>Languages</string>
+			<key>autoUpdate</key>
+			<true/>
+			<key>category</key>
+			<string>Languages</string>
+			<key>description</key>
+			<string>The cascading stylesheet language (http://www.w3.org/Style/CSS/) is used in web pages. This bundle has syntax highlight, lots of snippets, validation, and more.</string>
+			<key>name</key>
+			<string>CSS</string>
+			<key>ref</key>
+			<string>main</string>
+			<key>url</key>
+			<string>https://github.com/textmatelives/css.tmbundle</string>
+			<key>uuid</key>
+			<string>4675F24E-6227-11D9-BFB1-000D93589AF6</string>
 		</dict>
 		<dict>
-			<key>uuid</key><string>62FB4173-A31D-41D6-8201-16C7866F567E</string>
-			<key>name</key><string>CVS</string>
-			<key>url</key><string>https://github.com/textmatelives/cvs.tmbundle</string>
-			<key>ref</key><string>main</string>
-			<key>autoUpdate</key><true/>
-			<key>category</key><string>SCM</string>
+			<key>autoUpdate</key>
+			<true/>
+			<key>category</key>
+			<string>SCM</string>
+			<key>description</key>
+			<string>This bundle gives you easy access to most functions of the CVS revision control system (http://www.nongnu.org/cvs/).</string>
+			<key>name</key>
+			<string>CVS</string>
+			<key>ref</key>
+			<string>main</string>
+			<key>url</key>
+			<string>https://github.com/textmatelives/cvs.tmbundle</string>
+			<key>uuid</key>
+			<string>62FB4173-A31D-41D6-8201-16C7866F567E</string>
 		</dict>
 		<dict>
-			<key>uuid</key><string>A46E4382-F1AC-405B-8F22-65FF470F34D7</string>
-			<key>name</key><string>CoffeeScript</string>
-			<key>url</key><string>https://github.com/textmatelives/coffee-script.tmbundle</string>
-			<key>ref</key><string>main</string>
-			<key>autoUpdate</key><true/>
-			<key>category</key><string>Languages</string>
+			<key>autoUpdate</key>
+			<true/>
+			<key>category</key>
+			<string>Languages</string>
+			<key>description</key>
+			<string>A little language that compiles into JavaScript.</string>
+			<key>name</key>
+			<string>CoffeeScript</string>
+			<key>ref</key>
+			<string>main</string>
+			<key>url</key>
+			<string>https://github.com/textmatelives/coffee-script.tmbundle</string>
+			<key>uuid</key>
+			<string>A46E4382-F1AC-405B-8F22-65FF470F34D7</string>
 		</dict>
 		<dict>
-			<key>uuid</key><string>7A8214CC-4D64-492C-91A5-F86C666C26B8</string>
-			<key>name</key><string>Cron</string>
-			<key>url</key><string>https://github.com/textmatelives/cron.tmbundle</string>
-			<key>ref</key><string>main</string>
-			<key>autoUpdate</key><true/>
-			<key>category</key><string>Languages</string>
+			<key>autoUpdate</key>
+			<true/>
+			<key>category</key>
+			<string>Languages</string>
+			<key>description</key>
+			<string>Support for crontab files part of the cron scheduling system used on many Unix-like systems.</string>
+			<key>name</key>
+			<string>Cron</string>
+			<key>ref</key>
+			<string>main</string>
+			<key>url</key>
+			<string>https://github.com/textmatelives/cron.tmbundle</string>
+			<key>uuid</key>
+			<string>7A8214CC-4D64-492C-91A5-F86C666C26B8</string>
 		</dict>
 		<dict>
-			<key>uuid</key><string>C2D2BFF9-708D-11D9-BD09-0011242E4184</string>
-			<key>name</key><string>Diff</string>
-			<key>url</key><string>https://github.com/textmatelives/diff.tmbundle</string>
-			<key>ref</key><string>main</string>
-			<key>autoUpdate</key><true/>
-			<key>category</key><string>Languages</string>
+			<key>autoUpdate</key>
+			<true/>
+			<key>category</key>
+			<string>Languages</string>
+			<key>description</key>
+			<string>Syntax highlight and diff (http://en.wikipedia.org/wiki/Diff) related functionality, for example see differences between document and last saved version, use a diff file as a patch, etc.</string>
+			<key>name</key>
+			<string>Diff</string>
+			<key>ref</key>
+			<string>main</string>
+			<key>url</key>
+			<string>https://github.com/textmatelives/diff.tmbundle</string>
+			<key>uuid</key>
+			<string>C2D2BFF9-708D-11D9-BD09-0011242E4184</string>
 		</dict>
 		<dict>
-			<key>uuid</key><string>065A8821-DD83-4753-90E3-AA70EC12E150</string>
-			<key>name</key><string>Erlang</string>
-			<key>url</key><string>https://github.com/textmatelives/erlang.tmbundle</string>
-			<key>ref</key><string>main</string>
-			<key>autoUpdate</key><true/>
-			<key>category</key><string>Languages</string>
+			<key>autoUpdate</key>
+			<true/>
+			<key>category</key>
+			<string>Languages</string>
+			<key>description</key>
+			<string>Support for the Erlang (http://www.erlang.org/) programming language.</string>
+			<key>name</key>
+			<string>Erlang</string>
+			<key>ref</key>
+			<string>main</string>
+			<key>url</key>
+			<string>https://github.com/textmatelives/erlang.tmbundle</string>
+			<key>uuid</key>
+			<string>065A8821-DD83-4753-90E3-AA70EC12E150</string>
 		</dict>
 		<dict>
-			<key>uuid</key><string>EADD4718-EE11-4ABF-A7E6-13351FB3799D</string>
-			<key>name</key><string>Git</string>
-			<key>url</key><string>https://github.com/textmatelives/git.tmbundle</string>
-			<key>ref</key><string>main</string>
-			<key>autoUpdate</key><true/>
-			<key>category</key><string>SCM</string>
+			<key>autoUpdate</key>
+			<true/>
+			<key>category</key>
+			<string>SCM</string>
+			<key>description</key>
+			<string>Support for the Git version control system.</string>
+			<key>name</key>
+			<string>Git</string>
+			<key>ref</key>
+			<string>main</string>
+			<key>url</key>
+			<string>https://github.com/textmatelives/git.tmbundle</string>
+			<key>uuid</key>
+			<string>EADD4718-EE11-4ABF-A7E6-13351FB3799D</string>
 		</dict>
 		<dict>
-			<key>uuid</key><string>D9D34536-A9FC-4DC2-8AF4-30D1ACC4B5F4</string>
-			<key>name</key><string>Groovy</string>
-			<key>url</key><string>https://github.com/textmatelives/groovy.tmbundle</string>
-			<key>ref</key><string>main</string>
-			<key>autoUpdate</key><true/>
-			<key>category</key><string>Languages</string>
+			<key>autoUpdate</key>
+			<true/>
+			<key>category</key>
+			<string>Languages</string>
+			<key>description</key>
+			<string>An object-oriented programming language for the Java platform.</string>
+			<key>name</key>
+			<string>Groovy</string>
+			<key>ref</key>
+			<string>main</string>
+			<key>url</key>
+			<string>https://github.com/textmatelives/groovy.tmbundle</string>
+			<key>uuid</key>
+			<string>D9D34536-A9FC-4DC2-8AF4-30D1ACC4B5F4</string>
 		</dict>
 		<dict>
-			<key>uuid</key><string>4676FC6D-6227-11D9-BFB1-000D93589AF6</string>
-			<key>name</key><string>HTML</string>
-			<key>url</key><string>https://github.com/textmatelives/html.tmbundle</string>
-			<key>ref</key><string>main</string>
-			<key>autoUpdate</key><true/>
-			<key>category</key><string>Languages</string>
+			<key>autoUpdate</key>
+			<true/>
+			<key>category</key>
+			<string>Languages</string>
+			<key>description</key>
+			<string>Hypertext Markup Language support.</string>
+			<key>name</key>
+			<string>HTML</string>
+			<key>ref</key>
+			<string>main</string>
+			<key>url</key>
+			<string>https://github.com/textmatelives/html.tmbundle</string>
+			<key>uuid</key>
+			<string>4676FC6D-6227-11D9-BFB1-000D93589AF6</string>
 		</dict>
 		<dict>
-			<key>uuid</key><string>7592B521-FC5E-4D69-A6DD-5A0DD7529CB4</string>
-			<key>name</key><string>Hyperlink Helper</string>
-			<key>url</key><string>https://github.com/textmatelives/hyperlink-helper.tmbundle</string>
-			<key>ref</key><string>main</string>
-			<key>autoUpdate</key><true/>
-			<key>category</key><string>Other</string>
+			<key>autoUpdate</key>
+			<true/>
+			<key>category</key>
+			<string>Other</string>
+			<key>description</key>
+			<string>The commands in this bundle makes it easy to create hyper links for example by searching for the current word or using the clipboard contents. This bundle is much more useful than it sounds!</string>
+			<key>name</key>
+			<string>Hyperlink Helper</string>
+			<key>ref</key>
+			<string>main</string>
+			<key>url</key>
+			<string>https://github.com/textmatelives/hyperlink-helper.tmbundle</string>
+			<key>uuid</key>
+			<string>7592B521-FC5E-4D69-A6DD-5A0DD7529CB4</string>
 		</dict>
 		<dict>
-			<key>uuid</key><string>8BB0DBAF-E65C-4E14-A6A7-467D4AA535E0</string>
-			<key>name</key><string>JSON</string>
-			<key>url</key><string>https://github.com/textmatelives/json.tmbundle</string>
-			<key>ref</key><string>main</string>
-			<key>autoUpdate</key><true/>
-			<key>category</key><string>Languages</string>
+			<key>autoUpdate</key>
+			<true/>
+			<key>category</key>
+			<string>Languages</string>
+			<key>description</key>
+			<string>Syntax highlight for JavaScript Object Notation (http://json.org/) files, often used as a lightweight serialization format.</string>
+			<key>name</key>
+			<string>JSON</string>
+			<key>ref</key>
+			<string>main</string>
+			<key>url</key>
+			<string>https://github.com/textmatelives/json.tmbundle</string>
+			<key>uuid</key>
+			<string>8BB0DBAF-E65C-4E14-A6A7-467D4AA535E0</string>
 		</dict>
 		<dict>
-			<key>uuid</key><string>4677FEB2-6227-11D9-BFB1-000D93589AF6</string>
-			<key>name</key><string>Java</string>
-			<key>url</key><string>https://github.com/textmatelives/java.tmbundle</string>
-			<key>ref</key><string>main</string>
-			<key>autoUpdate</key><true/>
-			<key>category</key><string>Languages</string>
+			<key>autoUpdate</key>
+			<true/>
+			<key>category</key>
+			<string>Languages</string>
+			<key>description</key>
+			<string>A bundle for the Java (http://java.sun.com/) programming language.</string>
+			<key>name</key>
+			<string>Java</string>
+			<key>ref</key>
+			<string>main</string>
+			<key>url</key>
+			<string>https://github.com/textmatelives/java.tmbundle</string>
+			<key>uuid</key>
+			<string>4677FEB2-6227-11D9-BFB1-000D93589AF6</string>
 		</dict>
 		<dict>
-			<key>uuid</key><string>AAB4FD74-73F9-11D9-B89A-000D93589AF6</string>
-			<key>name</key><string>JavaScript</string>
-			<key>url</key><string>https://github.com/textmatelives/javascript.tmbundle</string>
-			<key>ref</key><string>main</string>
-			<key>autoUpdate</key><true/>
-			<key>category</key><string>Languages</string>
+			<key>autoUpdate</key>
+			<true/>
+			<key>category</key>
+			<string>Languages</string>
+			<key>description</key>
+			<string>Support for JavaScript (http://developer.mozilla.org/en/docs/About_JavaScript).</string>
+			<key>name</key>
+			<string>JavaScript</string>
+			<key>ref</key>
+			<string>main</string>
+			<key>url</key>
+			<string>https://github.com/textmatelives/javascript.tmbundle</string>
+			<key>uuid</key>
+			<string>AAB4FD74-73F9-11D9-B89A-000D93589AF6</string>
 		</dict>
 		<dict>
-			<key>uuid</key><string>5217EA86-3153-4568-B5FD-05917BCE46B3</string>
-			<key>name</key><string>Lua</string>
-			<key>url</key><string>https://github.com/textmatelives/lua.tmbundle</string>
-			<key>ref</key><string>main</string>
-			<key>autoUpdate</key><true/>
-			<key>category</key><string>Languages</string>
+			<key>autoUpdate</key>
+			<true/>
+			<key>category</key>
+			<string>Languages</string>
+			<key>description</key>
+			<string>A powerful, efficient, lightweight, embeddable scripting language.</string>
+			<key>name</key>
+			<string>Lua</string>
+			<key>ref</key>
+			<string>main</string>
+			<key>url</key>
+			<string>https://github.com/textmatelives/lua.tmbundle</string>
+			<key>uuid</key>
+			<string>5217EA86-3153-4568-B5FD-05917BCE46B3</string>
 		</dict>
 		<dict>
-			<key>uuid</key><string>385A8908-0733-408E-AFA5-9576D2E3A16B</string>
-			<key>name</key><string>Mail</string>
-			<key>url</key><string>https://github.com/textmatelives/mail.tmbundle</string>
-			<key>ref</key><string>main</string>
-			<key>autoUpdate</key><true/>
-			<key>category</key><string>Other</string>
+			<key>autoUpdate</key>
+			<true/>
+			<key>category</key>
+			<string>Other</string>
+			<key>description</key>
+			<string>Support for writing email messages (http://www.faqs.org/rfcs/rfc822.html).</string>
+			<key>name</key>
+			<string>Mail</string>
+			<key>ref</key>
+			<string>main</string>
+			<key>url</key>
+			<string>https://github.com/textmatelives/mail.tmbundle</string>
+			<key>uuid</key>
+			<string>385A8908-0733-408E-AFA5-9576D2E3A16B</string>
 		</dict>
 		<dict>
-			<key>uuid</key><string>4679297D-6227-11D9-BFB1-000D93589AF6</string>
-			<key>name</key><string>Make</string>
-			<key>url</key><string>https://github.com/textmatelives/make.tmbundle</string>
-			<key>ref</key><string>main</string>
-			<key>autoUpdate</key><true/>
-			<key>category</key><string>Build</string>
+			<key>autoUpdate</key>
+			<true/>
+			<key>category</key>
+			<string>Build</string>
+			<key>description</key>
+			<string>Minimal syntax highlight and a build (make (http://www.gnu.org/software/make/)) command.</string>
+			<key>name</key>
+			<string>Make</string>
+			<key>ref</key>
+			<string>main</string>
+			<key>url</key>
+			<string>https://github.com/textmatelives/make.tmbundle</string>
+			<key>uuid</key>
+			<string>4679297D-6227-11D9-BFB1-000D93589AF6</string>
 		</dict>
 		<dict>
-			<key>uuid</key><string>D99E8C0C-792F-11D9-A212-000D93B3A10E</string>
-			<key>name</key><string>Markdown</string>
-			<key>url</key><string>https://github.com/textmatelives/markdown.tmbundle</string>
-			<key>ref</key><string>main</string>
-			<key>autoUpdate</key><true/>
-			<key>category</key><string>Languages</string>
+			<key>autoUpdate</key>
+			<true/>
+			<key>category</key>
+			<string>Languages</string>
+			<key>description</key>
+			<string>Markdown (http://daringfireball.net/projects/markdown/) allows you to write using an easy-to-read, easy-to-write plain text format, then convert it to structurally valid XHTML. This bundle provides preview functionality, syntax highlighting, and several useful commands.</string>
+			<key>name</key>
+			<string>Markdown</string>
+			<key>ref</key>
+			<string>main</string>
+			<key>url</key>
+			<string>https://github.com/textmatelives/markdown.tmbundle</string>
+			<key>uuid</key>
+			<string>D99E8C0C-792F-11D9-A212-000D93B3A10E</string>
 		</dict>
 		<dict>
-			<key>uuid</key><string>8A9DDCA2-77E8-11D9-B5A8-000D93589AF6</string>
-			<key>name</key><string>Math</string>
-			<key>url</key><string>https://github.com/textmatelives/math.tmbundle</string>
-			<key>ref</key><string>main</string>
-			<key>autoUpdate</key><true/>
-			<key>category</key><string>Other</string>
+			<key>autoUpdate</key>
+			<true/>
+			<key>category</key>
+			<string>Other</string>
+			<key>description</key>
+			<string>Support for performing different calculations inside TextMate.</string>
+			<key>name</key>
+			<string>Math</string>
+			<key>ref</key>
+			<string>main</string>
+			<key>url</key>
+			<string>https://github.com/textmatelives/math.tmbundle</string>
+			<key>uuid</key>
+			<string>8A9DDCA2-77E8-11D9-B5A8-000D93589AF6</string>
 		</dict>
 		<dict>
-			<key>uuid</key><string>162DCB4D-4227-11DA-A523-000D93C89990</string>
-			<key>name</key><string>Mercurial</string>
-			<key>url</key><string>https://github.com/textmatelives/mercurial.tmbundle</string>
-			<key>ref</key><string>main</string>
-			<key>autoUpdate</key><true/>
-			<key>category</key><string>SCM</string>
+			<key>autoUpdate</key>
+			<true/>
+			<key>category</key>
+			<string>SCM</string>
+			<key>description</key>
+			<string>Mercurial (http://www.selenic.com/mercurial/) is a source Control Management system designed for efficient handling of very large distributed projects.</string>
+			<key>name</key>
+			<string>Mercurial</string>
+			<key>ref</key>
+			<string>main</string>
+			<key>url</key>
+			<string>https://github.com/textmatelives/mercurial.tmbundle</string>
+			<key>uuid</key>
+			<string>162DCB4D-4227-11DA-A523-000D93C89990</string>
 		</dict>
 		<dict>
-			<key>uuid</key><string>90AA78D6-178B-4B6A-AC19-3E5945E2AD82</string>
-			<key>name</key><string>Nix</string>
-			<key>url</key><string>https://github.com/textmatelives/nix.tmbundle</string>
-			<key>ref</key><string>main</string>
-			<key>autoUpdate</key><true/>
-			<key>category</key><string>Languages</string>
+			<key>autoUpdate</key>
+			<true/>
+			<key>category</key>
+			<string>Languages</string>
+			<key>description</key>
+			<string>Syntax highlighting and utilities for the Nix expression language</string>
+			<key>name</key>
+			<string>Nix</string>
+			<key>ref</key>
+			<string>main</string>
+			<key>url</key>
+			<string>https://github.com/textmatelives/nix.tmbundle</string>
+			<key>uuid</key>
+			<string>90AA78D6-178B-4B6A-AC19-3E5945E2AD82</string>
 		</dict>
 		<dict>
-			<key>uuid</key><string>4679484F-6227-11D9-BFB1-000D93589AF6</string>
-			<key>name</key><string>Objective-C</string>
-			<key>url</key><string>https://github.com/textmatelives/objective-c.tmbundle</string>
-			<key>ref</key><string>main</string>
-			<key>autoUpdate</key><true/>
-			<key>category</key><string>Languages</string>
+			<key>autoUpdate</key>
+			<true/>
+			<key>category</key>
+			<string>Languages</string>
+			<key>description</key>
+			<string>The language used for writing Cocoa applications. This bundle supports documentation lookups, method completion, and more.</string>
+			<key>name</key>
+			<string>Objective-C</string>
+			<key>ref</key>
+			<string>main</string>
+			<key>url</key>
+			<string>https://github.com/textmatelives/objective-c.tmbundle</string>
+			<key>uuid</key>
+			<string>4679484F-6227-11D9-BFB1-000D93589AF6</string>
 		</dict>
 		<dict>
-			<key>uuid</key><string>467A1966-6227-11D9-BFB1-000D93589AF6</string>
-			<key>name</key><string>PHP</string>
-			<key>url</key><string>https://github.com/textmatelives/php.tmbundle</string>
-			<key>ref</key><string>main</string>
-			<key>autoUpdate</key><true/>
-			<key>category</key><string>Languages</string>
+			<key>autoUpdate</key>
+			<true/>
+			<key>category</key>
+			<string>Languages</string>
+			<key>description</key>
+			<string>PHP (http://www.php.net/) is a widely-used general-purpose scripting language that is especially suited for web development and can be embedded into HTML.</string>
+			<key>name</key>
+			<string>PHP</string>
+			<key>ref</key>
+			<string>main</string>
+			<key>url</key>
+			<string>https://github.com/textmatelives/php.tmbundle</string>
+			<key>uuid</key>
+			<string>467A1966-6227-11D9-BFB1-000D93589AF6</string>
 		</dict>
 		<dict>
-			<key>uuid</key><string>4679B572-6227-11D9-BFB1-000D93589AF6</string>
-			<key>name</key><string>Perl</string>
-			<key>url</key><string>https://github.com/textmatelives/perl.tmbundle</string>
-			<key>ref</key><string>main</string>
-			<key>autoUpdate</key><true/>
-			<key>category</key><string>Languages</string>
+			<key>autoUpdate</key>
+			<true/>
+			<key>category</key>
+			<string>Languages</string>
+			<key>description</key>
+			<string>Support for the Perl (http://www.perl.org/) programming language.</string>
+			<key>name</key>
+			<string>Perl</string>
+			<key>ref</key>
+			<string>main</string>
+			<key>url</key>
+			<string>https://github.com/textmatelives/perl.tmbundle</string>
+			<key>uuid</key>
+			<string>4679B572-6227-11D9-BFB1-000D93589AF6</string>
 		</dict>
 		<dict>
-			<key>uuid</key><string>467A3CB0-6227-11D9-BFB1-000D93589AF6</string>
-			<key>name</key><string>Property List</string>
-			<key>url</key><string>https://github.com/textmatelives/property-list.tmbundle</string>
-			<key>ref</key><string>main</string>
-			<key>autoUpdate</key><true/>
-			<key>category</key><string>Languages</string>
+			<key>autoUpdate</key>
+			<true/>
+			<key>category</key>
+			<string>Languages</string>
+			<key>description</key>
+			<string>Support for the various forms of Apple’s Property List format (http://developer.apple.com/documentation/Cocoa/Conceptual/PropertyLists/index.html) (originally from NeXT).</string>
+			<key>name</key>
+			<string>Property List</string>
+			<key>ref</key>
+			<string>main</string>
+			<key>url</key>
+			<string>https://github.com/textmatelives/property-list.tmbundle</string>
+			<key>uuid</key>
+			<string>467A3CB0-6227-11D9-BFB1-000D93589AF6</string>
 		</dict>
 		<dict>
-			<key>uuid</key><string>E3BADC20-6B0E-11D9-9DC9-000D93589AF6</string>
-			<key>name</key><string>Python</string>
-			<key>url</key><string>https://github.com/textmatelives/python.tmbundle</string>
-			<key>ref</key><string>main</string>
-			<key>autoUpdate</key><true/>
-			<key>category</key><string>Languages</string>
+			<key>autoUpdate</key>
+			<true/>
+			<key>category</key>
+			<string>Languages</string>
+			<key>description</key>
+			<string>Support for the Python (http://www.python.org/) programming language.</string>
+			<key>name</key>
+			<string>Python</string>
+			<key>ref</key>
+			<string>main</string>
+			<key>url</key>
+			<string>https://github.com/textmatelives/python.tmbundle</string>
+			<key>uuid</key>
+			<string>E3BADC20-6B0E-11D9-9DC9-000D93589AF6</string>
 		</dict>
 		<dict>
-			<key>uuid</key><string>FF4C85FD-F635-42B7-B15D-2CB2241AF54D</string>
-			<key>name</key><string>Rave</string>
-			<key>url</key><string>https://github.com/textmatelives/rave.tmbundle</string>
-			<key>ref</key><string>main</string>
-			<key>autoUpdate</key><true/>
-			<key>category</key><string>Build</string>
+			<key>autoUpdate</key>
+			<true/>
+			<key>category</key>
+			<string>Build</string>
+			<key>description</key>
+			<string>Rave (https://macromates.com/rave/) is a build file generator for the Ninja build system (https://ninja-build.org/).</string>
+			<key>name</key>
+			<string>Rave</string>
+			<key>ref</key>
+			<string>main</string>
+			<key>url</key>
+			<string>https://github.com/textmatelives/rave.tmbundle</string>
+			<key>uuid</key>
+			<string>FF4C85FD-F635-42B7-B15D-2CB2241AF54D</string>
 		</dict>
 		<dict>
-			<key>uuid</key><string>467B298F-6227-11D9-BFB1-000D93589AF6</string>
-			<key>name</key><string>Ruby</string>
-			<key>url</key><string>https://github.com/textmatelives/ruby.tmbundle</string>
-			<key>ref</key><string>main</string>
-			<key>autoUpdate</key><true/>
-			<key>category</key><string>Languages</string>
+			<key>autoUpdate</key>
+			<true/>
+			<key>category</key>
+			<string>Languages</string>
+			<key>description</key>
+			<string>Support for the Ruby (http://www.ruby-lang.org/) programming language.</string>
+			<key>name</key>
+			<string>Ruby</string>
+			<key>ref</key>
+			<string>main</string>
+			<key>url</key>
+			<string>https://github.com/textmatelives/ruby.tmbundle</string>
+			<key>uuid</key>
+			<string>467B298F-6227-11D9-BFB1-000D93589AF6</string>
 		</dict>
 		<dict>
-			<key>uuid</key><string>3BDF79F4-94AE-46C0-BFBF-D5572AD2F515</string>
-			<key>name</key><string>SCM</string>
-			<key>url</key><string>https://github.com/textmatelives/scm.tmbundle</string>
-			<key>ref</key><string>main</string>
-			<key>autoUpdate</key><true/>
-			<key>category</key><string>SCM</string>
+			<key>autoUpdate</key>
+			<true/>
+			<key>category</key>
+			<string>SCM</string>
+			<key>description</key>
+			<string>Provides support for the various SCM (source control management) bundles.</string>
+			<key>name</key>
+			<string>SCM</string>
+			<key>ref</key>
+			<string>main</string>
+			<key>url</key>
+			<string>https://github.com/textmatelives/scm.tmbundle</string>
+			<key>uuid</key>
+			<string>3BDF79F4-94AE-46C0-BFBF-D5572AD2F515</string>
 		</dict>
 		<dict>
-			<key>uuid</key><string>AAB4CBF7-73F9-11D9-B89A-000D93589AF6</string>
-			<key>name</key><string>SQL</string>
-			<key>url</key><string>https://github.com/textmatelives/sql.tmbundle</string>
-			<key>ref</key><string>main</string>
-			<key>autoUpdate</key><true/>
-			<key>category</key><string>Languages</string>
+			<key>autoUpdate</key>
+			<true/>
+			<key>category</key>
+			<string>Languages</string>
+			<key>description</key>
+			<string>Database query language with support for MySQL and PostgreSQL.</string>
+			<key>name</key>
+			<string>SQL</string>
+			<key>ref</key>
+			<string>main</string>
+			<key>url</key>
+			<string>https://github.com/textmatelives/sql.tmbundle</string>
+			<key>uuid</key>
+			<string>AAB4CBF7-73F9-11D9-B89A-000D93589AF6</string>
 		</dict>
 		<dict>
-			<key>uuid</key><string>4694B05E-6227-11D9-BFB1-000D93589AF6</string>
-			<key>name</key><string>Shell Script</string>
-			<key>url</key><string>https://github.com/textmatelives/shellscript.tmbundle</string>
-			<key>ref</key><string>main</string>
-			<key>autoUpdate</key><true/>
-			<key>category</key><string>Languages</string>
+			<key>autoUpdate</key>
+			<true/>
+			<key>category</key>
+			<string>Languages</string>
+			<key>description</key>
+			<string>Support for running and editing shell scripts (using the bash dialect).</string>
+			<key>name</key>
+			<string>Shell Script</string>
+			<key>ref</key>
+			<string>main</string>
+			<key>url</key>
+			<string>https://github.com/textmatelives/shellscript.tmbundle</string>
+			<key>uuid</key>
+			<string>4694B05E-6227-11D9-BFB1-000D93589AF6</string>
 		</dict>
 		<dict>
-			<key>uuid</key><string>AEAF4DD4-74CD-11D9-BAD4-000A95A89C98</string>
-			<key>name</key><string>Subversion</string>
-			<key>url</key><string>https://github.com/textmatelives/subversion.tmbundle</string>
-			<key>ref</key><string>main</string>
-			<key>autoUpdate</key><true/>
-			<key>category</key><string>SCM</string>
+			<key>autoUpdate</key>
+			<true/>
+			<key>category</key>
+			<string>SCM</string>
+			<key>description</key>
+			<string>Provides a nice interface to a multitude of Subversion (http://subversion.tigris.org/) commands.</string>
+			<key>name</key>
+			<string>Subversion</string>
+			<key>ref</key>
+			<string>main</string>
+			<key>url</key>
+			<string>https://github.com/textmatelives/subversion.tmbundle</string>
+			<key>uuid</key>
+			<string>AEAF4DD4-74CD-11D9-BAD4-000A95A89C98</string>
 		</dict>
 		<dict>
-			<key>uuid</key><string>0B296803-7D51-11D9-859D-000D93B6E43C</string>
-			<key>name</key><string>TODO</string>
-			<key>url</key><string>https://github.com/textmatelives/todo.tmbundle</string>
-			<key>ref</key><string>main</string>
-			<key>autoUpdate</key><true/>
-			<key>category</key><string>Other</string>
+			<key>autoUpdate</key>
+			<true/>
+			<key>category</key>
+			<string>Other</string>
+			<key>description</key>
+			<string>If you tag your comments with TODO, FIXME, or similar, this bundle provides functionality to list all your tagged items, with the ability to jump to either of them.</string>
+			<key>name</key>
+			<string>TODO</string>
+			<key>ref</key>
+			<string>main</string>
+			<key>url</key>
+			<string>https://github.com/textmatelives/todo.tmbundle</string>
+			<key>uuid</key>
+			<string>0B296803-7D51-11D9-859D-000D93B6E43C</string>
 		</dict>
 		<dict>
-			<key>uuid</key><string>13A041AB-28AA-4170-8DCE-912B90E11C35</string>
-			<key>name</key><string>TOML</string>
-			<key>url</key><string>https://github.com/textmatelives/toml.tmbundle</string>
-			<key>ref</key><string>main</string>
-			<key>autoUpdate</key><true/>
-			<key>category</key><string>Languages</string>
+			<key>autoUpdate</key>
+			<true/>
+			<key>category</key>
+			<string>Languages</string>
+			<key>description</key>
+			<string>Tom's Obvious, Minimal Language: A minimal configuration file format that's easy to read due to obvious semantics.</string>
+			<key>name</key>
+			<string>TOML</string>
+			<key>ref</key>
+			<string>main</string>
+			<key>url</key>
+			<string>https://github.com/textmatelives/toml.tmbundle</string>
+			<key>uuid</key>
+			<string>13A041AB-28AA-4170-8DCE-912B90E11C35</string>
 		</dict>
 		<dict>
-			<key>uuid</key><string>5A9D4FC6-6CBE-11D9-A21B-000D93589AF6</string>
-			<key>name</key><string>TextMate</string>
-			<key>url</key><string>https://github.com/textmatelives/textmate.tmbundle</string>
-			<key>ref</key><string>main</string>
-			<key>autoUpdate</key><true/>
-			<key>category</key><string>Other</string>
+			<key>autoUpdate</key>
+			<true/>
+			<key>category</key>
+			<string>Other</string>
+			<key>description</key>
+			<string>This bundle has functionality which add to the application but is not related to a specific task (bundle).</string>
+			<key>name</key>
+			<string>TextMate</string>
+			<key>ref</key>
+			<string>main</string>
+			<key>url</key>
+			<string>https://github.com/textmatelives/textmate.tmbundle</string>
+			<key>uuid</key>
+			<string>5A9D4FC6-6CBE-11D9-A21B-000D93589AF6</string>
 		</dict>
 		<dict>
-			<key>uuid</key><string>4694D53F-6227-11D9-BFB1-000D93589AF6</string>
-			<key>name</key><string>XML</string>
-			<key>url</key><string>https://github.com/textmatelives/xml.tmbundle</string>
-			<key>ref</key><string>main</string>
-			<key>autoUpdate</key><true/>
-			<key>category</key><string>Languages</string>
+			<key>autoUpdate</key>
+			<true/>
+			<key>category</key>
+			<string>Languages</string>
+			<key>description</key>
+			<string>Support for the eXtensible Markup Language (http://www.w3.org/XML/).</string>
+			<key>name</key>
+			<string>XML</string>
+			<key>ref</key>
+			<string>main</string>
+			<key>url</key>
+			<string>https://github.com/textmatelives/xml.tmbundle</string>
+			<key>uuid</key>
+			<string>4694D53F-6227-11D9-BFB1-000D93589AF6</string>
 		</dict>
 		<dict>
-			<key>uuid</key><string>AC506ECC-4F1F-11DA-AFF2-000A95AF0064</string>
-			<key>name</key><string>YAML</string>
-			<key>url</key><string>https://github.com/textmatelives/yaml.tmbundle</string>
-			<key>ref</key><string>main</string>
-			<key>autoUpdate</key><true/>
-			<key>category</key><string>Languages</string>
+			<key>autoUpdate</key>
+			<true/>
+			<key>category</key>
+			<string>Languages</string>
+			<key>description</key>
+			<string>A human-readable data serialization language.</string>
+			<key>name</key>
+			<string>YAML</string>
+			<key>ref</key>
+			<string>main</string>
+			<key>url</key>
+			<string>https://github.com/textmatelives/yaml.tmbundle</string>
+			<key>uuid</key>
+			<string>AC506ECC-4F1F-11DA-AFF2-000A95AF0064</string>
 		</dict>
 		<dict>
-			<key>uuid</key><string>473243BE-85DC-4FE3-A8B1-6DF9C4295FEB</string>
-			<key>name</key><string>YAML (ERB)</string>
-			<key>url</key><string>https://github.com/textmatelives/yaml-erb.tmbundle</string>
-			<key>ref</key><string>main</string>
-			<key>autoUpdate</key><true/>
-			<key>category</key><string>Languages</string>
+			<key>autoUpdate</key>
+			<true/>
+			<key>category</key>
+			<string>Languages</string>
+			<key>description</key>
+			<string>YAML syntax highlighting with embedded ERB support</string>
+			<key>name</key>
+			<string>YAML (ERB)</string>
+			<key>ref</key>
+			<string>main</string>
+			<key>url</key>
+			<string>https://github.com/textmatelives/yaml-erb.tmbundle</string>
+			<key>uuid</key>
+			<string>473243BE-85DC-4FE3-A8B1-6DF9C4295FEB</string>
 		</dict>
 	</array>
+	<key>schemaVersion</key>
+	<integer>1</integer>
 </dict>
 </plist>
