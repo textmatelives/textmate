@@ -18,8 +18,8 @@
 	<string>${TARGET_NAME} Help</string>
 	<key>CFBundleHelpBookName</key>
 	<string>${TARGET_NAME} 2 Help</string>
-	<key>CFBundleIconFile</key>
-	<string>TextMate</string>
+	<key>CFBundleIconName</key>
+	<string>textmate_lives</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundlePackageType</key>

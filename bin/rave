@@ -673,6 +673,19 @@ class CompileAssetCatalog < Compiler
   end
 end
 
+class CompileIcon < Compiler
+  transforms '.icon' => '.car'
+
+  def transform(file, config, builddir)
+    super.merge(
+      out:          File.join(builddir, "_#{self.class}", File.dirname(file), 'Assets.car'),
+      command:      "#{__dir__}/build_app_icon.sh $in $out",
+      description:  'AppIcon ‘${in}’…',
+      dependencies: Dir.glob("#{file}/**/*") + [ "#{__dir__}/build_app_icon.sh" ],
+    )
+  end
+end
+
 class ConvertToUTF16 < Compiler
   transforms '.strings' => '.strings'
 
