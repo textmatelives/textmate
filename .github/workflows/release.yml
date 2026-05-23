@@ -2,7 +2,15 @@ name: Release
 
 on:
   push:
-    tags: ['v*-undead*']
+    branches: [main]
+    paths:
+      - Applications/TextMate/about/Changes.md
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: Rationale for running manually
+        required: false
+        default: manual release
 
 jobs:
   release:
@@ -21,10 +29,56 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
+      - name: Extract version from Changes.md
+        id: version
+        run: |
+          set -euo pipefail
+          VERSION=$(grep -om1 '^## .* (v.*)$' Applications/TextMate/about/Changes.md \
+                    | sed 's/.*(v\(.*\))/\1/')
+          if [ -z "$VERSION" ]; then
+            echo "::error::No version line found in Applications/TextMate/about/Changes.md"
+            exit 1
+          fi
+          echo "Detected: v${VERSION}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Skip if not an -undead release
+        id: guard
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          case "${VERSION}" in
+            *-undead*)
+              echo "should_release=true" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "::notice::Top version '${VERSION}' is not an undead release; skipping"
+              echo "should_release=false" >> "$GITHUB_OUTPUT"
+              ;;
+          esac
+
+      - name: Skip if tag already exists
+        if: steps.guard.outputs.should_release == 'true'
+        id: tagcheck
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          TAG="v${VERSION}"
+          if git ls-remote --tags origin "refs/tags/${TAG}" | grep -q "refs/tags/${TAG}$"; then
+            echo "::notice::Tag ${TAG} already exists on origin; nothing to do"
+            echo "should_release=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_release=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Install build dependencies
+        if: steps.tagcheck.outputs.should_release == 'true'
         run: brew install boost google-sparsehash multimarkdown ninja ragel
 
       - name: Import signing certificate into temporary keychain
+        if: steps.tagcheck.outputs.should_release == 'true'
         env:
           P12_B64: ${{ secrets.MAC_CERTIFICATE_P12 }}
           P12_PWD: ${{ secrets.MAC_CERTIFICATE_PWD }}
@@ -55,6 +109,7 @@ jobs:
           echo "CS_IDENTITY=$IDENTITY" >> "$GITHUB_ENV"
 
       - name: Pre-seed local.rave (arm64 + signing identity + hardened runtime)
+        if: steps.tagcheck.outputs.should_release == 'true'
         run: |
           cat > local.rave <<EOF
           add FLAGS    "-I/opt/homebrew/include"
@@ -64,12 +119,15 @@ jobs:
           EOF
 
       - name: Configure
+        if: steps.tagcheck.outputs.should_release == 'true'
         run: ./configure
 
       - name: Build signed TextMate.app
+        if: steps.tagcheck.outputs.should_release == 'true'
         run: ninja TextMate
 
       - name: Locate built app
+        if: steps.tagcheck.outputs.should_release == 'true'
         id: app
         run: |
           set -euo pipefail
@@ -83,6 +141,7 @@ jobs:
           echo "app_path=$APP_PATH" >> "$GITHUB_OUTPUT"
 
       - name: Re-sign every embedded Mach-O asset
+        if: steps.tagcheck.outputs.should_release == 'true'
         run: |
           set -euo pipefail
           APP="${{ steps.app.outputs.app_path }}"
@@ -103,6 +162,7 @@ jobs:
           echo "Re-signed $count Mach-O files"
 
       - name: Re-sign outer .app with entitlements (after modifying contents)
+        if: steps.tagcheck.outputs.should_release == 'true'
         run: |
           set -euo pipefail
           APP="${{ steps.app.outputs.app_path }}"
@@ -115,6 +175,7 @@ jobs:
             --entitlements "$ENT" "$APP"
 
       - name: Verify codesign + hardened runtime
+        if: steps.tagcheck.outputs.should_release == 'true'
         run: |
           codesign --verify --deep --strict --verbose=2 "${{ steps.app.outputs.app_path }}"
           codesign -dvv "${{ steps.app.outputs.app_path }}" 2>&1 | tee /tmp/codesign.out
@@ -122,6 +183,7 @@ jobs:
             || { echo "ERROR: hardened runtime flag missing"; exit 1; }
 
       - name: Notarize via notarytool
+        if: steps.tagcheck.outputs.should_release == 'true'
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_ID_PWD: ${{ secrets.APPLE_ID_PWD }}
@@ -152,6 +214,7 @@ jobs:
           fi
 
       - name: Staple ticket onto .app
+        if: steps.tagcheck.outputs.should_release == 'true'
         run: |
           set -euo pipefail
           # notarytool --wait returns once Apple accepts, but stapler reads from
@@ -169,26 +232,31 @@ jobs:
           done
 
       - name: Verify Gatekeeper acceptance
+        if: steps.tagcheck.outputs.should_release == 'true'
         run: spctl --assess --type execute --verbose=4 "${{ steps.app.outputs.app_path }}"
 
       - name: Build distribution .tbz
+        if: steps.tagcheck.outputs.should_release == 'true'
         id: archive
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
           set -euo pipefail
-          VERSION="${GITHUB_REF_NAME#v}"
           ARCHIVE="$RUNNER_TEMP/TextMate-${VERSION}.tbz"
           /usr/bin/tar --disable-copyfile -cjf "$ARCHIVE" \
             -C "$(dirname '${{ steps.app.outputs.app_path }}')" \
             "$(basename '${{ steps.app.outputs.app_path }}')"
           echo "archive=$ARCHIVE" >> "$GITHUB_OUTPUT"
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub release
+        if: steps.tagcheck.outputs.should_release == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
-          gh release create "$GITHUB_REF_NAME" \
-            --title "TextMate ${{ steps.archive.outputs.version }}" \
+          gh release create "v${VERSION}" \
+            --target "${GITHUB_SHA}" \
+            --title "TextMate ${VERSION}" \
             --generate-notes \
             "${{ steps.archive.outputs.archive }}"
 
