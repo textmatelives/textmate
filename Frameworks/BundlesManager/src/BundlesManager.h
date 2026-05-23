@@ -12,6 +12,11 @@ extern NSString* const kUserDefaultsLastBundleUpdateCheckKey;
 // UUIDs for the legacy installed-bundle suggestion flow.
 extern NSString* const kUserDefaultsBundlesToNeverSuggestKey;
 
+// One-shot flag for the first-launch default-bundle install sheet. Set to
+// YES after the sheet has been shown (regardless of user choice) so we never
+// re-prompt. Cleared by "Reset all warnings" in Bundles preferences.
+extern NSString* const kUserDefaultsDidPromptForDefaultBundlesKey;
+
 @interface BundlesManager : NSObject
 @property (class, readonly) BundlesManager* sharedInstance;
 

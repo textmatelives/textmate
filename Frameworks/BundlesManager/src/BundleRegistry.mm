@@ -10,10 +10,12 @@ static NSString* const kKeyBundles      = @"bundles";
 static NSString* const kKeySchemaVersion = @"schemaVersion";
 static NSInteger const kCurrentSchemaVersion = 1;
 
-static NSString* const kFileTypeIndexResourceName = @"BundleFileTypeIndex";
-static NSString* const kFileTypeIndexResourceType = @"plist";
+static NSString* const kFileTypeIndexResourceName = @"BundleFileTypeIndex.plist";
 static NSString* const kFileTypeIndexKeyByExt     = @"byExtension";
 static NSString* const kFileTypeIndexKeyBundleUUID = @"bundleUUID";
+
+static NSString* const kBundleSupportName = @"Bundle Support.tmbundle";
+static NSString* const kBundleSupportSupportSubpath = @"Support";
 
 @interface BundleRegistry ()
 {
@@ -141,7 +143,7 @@ static NSString* const kFileTypeIndexKeyBundleUUID = @"bundleUUID";
 
 - (void)seedShippedDefaults
 {
-	NSString* path = [NSBundle.mainBundle pathForResource:@"DefaultBundles" ofType:@"plist"];
+	NSString* path = [[self class] pathForCatalogueResource:@"DefaultBundles.plist"];
 	if(!path)
 		return;
 
@@ -178,7 +180,7 @@ static NSString* const kFileTypeIndexKeyBundleUUID = @"bundleUUID";
 
 - (void)seedAvailableBundles
 {
-	NSString* path = [NSBundle.mainBundle pathForResource:@"AvailableBundles" ofType:@"plist"];
+	NSString* path = [[self class] pathForCatalogueResource:@"AvailableBundles.plist"];
 	if(!path)
 		return;
 
@@ -399,6 +401,34 @@ static NSString* const kFileTypeIndexKeyBundleUUID = @"bundleUUID";
 	return self;
 }
 
++ (NSString*)pathForCatalogueResource:(NSString*)basename
+{
+	if(!basename.length)
+		return nil;
+
+	NSFileManager* fm = NSFileManager.defaultManager;
+
+	NSString* appSupport = [NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES) firstObject];
+	NSString* managed = [[[[[appSupport
+	                            stringByAppendingPathComponent:@"TextMate/Managed"]
+	                            stringByAppendingPathComponent:@"Bundles"]
+	                            stringByAppendingPathComponent:kBundleSupportName]
+	                            stringByAppendingPathComponent:kBundleSupportSupportSubpath]
+	                            stringByAppendingPathComponent:basename];
+	if([fm fileExistsAtPath:managed])
+		return managed;
+
+	NSString* embedded = [[[[NSBundle.mainBundle.sharedSupportPath
+	                            stringByAppendingPathComponent:@"Bundles"]
+	                            stringByAppendingPathComponent:kBundleSupportName]
+	                            stringByAppendingPathComponent:kBundleSupportSupportSubpath]
+	                            stringByAppendingPathComponent:basename];
+	if([fm fileExistsAtPath:embedded])
+		return embedded;
+
+	return nil;
+}
+
 + (NSDictionary<NSString*, NSUUID*>*)loadFileTypeIndexFromPath:(NSString*)path
 {
 	if(!path.length)
@@ -439,7 +469,7 @@ static NSString* const kFileTypeIndexKeyBundleUUID = @"bundleUUID";
 	NSString* path = _fileTypeIndexPath;
 	if(!path.length)
 	{
-		path = [NSBundle.mainBundle pathForResource:kFileTypeIndexResourceName ofType:kFileTypeIndexResourceType];
+		path = [[self class] pathForCatalogueResource:kFileTypeIndexResourceName];
 	}
 
 	if(!path.length || ![NSFileManager.defaultManager fileExistsAtPath:path])

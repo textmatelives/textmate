@@ -25,6 +25,7 @@ NSString* const kUserDefaultsDisableBundleUpdatesKey       = @"disableBundleUpda
 NSString* const kUserDefaultsLastBundleUpdateCheckKey      = @"lastBundleUpdateCheck";
 NSString* const kUserDefaultsBundleUpdateFrequencyKey      = @"bundleUpdateFrequency";
 NSString* const kUserDefaultsBundlesToNeverSuggestKey      = @"BundlesToNeverSuggest";
+NSString* const kUserDefaultsDidPromptForDefaultBundlesKey = @"DidPromptForDefaultBundles";
 
 static NSTimeInterval const kDefaultPollInterval = 3*60*60;
 static char const* kBundleAttributeUpdated = "org.textmate.bundle.updated";
@@ -313,7 +314,7 @@ static NSString* SafeBasename (NSString* name)
 	static dispatch_once_t once;
 	dispatch_once(&once, ^{
 		NSMutableDictionary* res = [NSMutableDictionary dictionary];
-		NSString* path = [NSBundle.mainBundle pathForResource:@"DefaultBundles" ofType:@"plist"];
+		NSString* path = [BundleRegistry pathForCatalogueResource:@"DefaultBundles.plist"];
 		for(NSDictionary* entry in [[NSDictionary dictionaryWithContentsOfFile:path] objectForKey:@"bundles"])
 		{
 			if(NSString* uuidStr = entry[@"uuid"])

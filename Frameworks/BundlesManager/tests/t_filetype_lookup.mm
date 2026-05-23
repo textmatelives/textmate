@@ -4,8 +4,9 @@
 
 // Phase 1: BundleRegistry.bundleSpecForFileExtension: lookup.
 //
-// The index ships as Applications/TextMate/resources/BundleFileTypeIndex.plist
-// in the .app bundle. Tests synthesise small index files in a jail directory
+// The index ships inside Bundle Support.tmbundle/Support/BundleFileTypeIndex.plist
+// (managed install preferred; embedded copy under <App>/Contents/SharedSupport
+// is the fallback). Tests synthesise small index files in a jail directory
 // and exercise the loader + lookup through a non-singleton init seam.
 
 static NSString* const kPythonUUID = @"E12C1C8B-25B0-4A28-9E9D-1D2C9E5C49A5";

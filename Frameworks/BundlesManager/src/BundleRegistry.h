@@ -65,6 +65,14 @@
 // lowercase already.
 + (NSDictionary<NSString*, NSUUID*>*)loadFileTypeIndexFromPath:(NSString*)path;
 
+// Resolve a catalogue resource (DefaultBundles.plist, AvailableBundles.plist,
+// BundleFileTypeIndex.plist) to an on-disk path. The files live in
+// Bundle Support.tmbundle/Support/; preference goes to the managed install
+// under ~/Library/Application Support/TextMate/Managed/Bundles/, falling
+// back to the embedded copy under <App>/Contents/SharedSupport/Bundles/
+// for first launch and offline. Returns nil if neither exists.
++ (NSString*)pathForCatalogueResource:(NSString*)basename;
+
 // Test seam: construct a registry against an explicit spec list and index
 // path, bypassing the singleton's seeding pipeline. Not for production
 // callers.

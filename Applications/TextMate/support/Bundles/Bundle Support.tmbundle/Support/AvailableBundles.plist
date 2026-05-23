@@ -43,15 +43,6 @@
 			<key>description</key><string>Build command for ninja (https://ninja-build.org/).</string>
 </dict>
 <dict>
-	<key>uuid</key><string>FF4C85FD-F635-42B7-B15D-2CB2241AF54D</string>
-	<key>name</key><string>Rave</string>
-	<key>url</key><string>https://github.com/textmatelives/rave.tmbundle</string>
-	<key>ref</key><string>main</string>
-	<key>autoUpdate</key><true/>
-	<key>category</key><string>Build</string>
-			<key>description</key><string>Rave (https://macromates.com/rave/) is a build file generator for the Ninja build system (https://ninja-build.org/).</string>
-</dict>
-<dict>
 	<key>uuid</key><string>31ACFE4A-592A-41C5-9D23-0C315EC5F7A8</string>
 	<key>name</key><string>SCons</string>
 	<key>url</key><string>https://github.com/textmatelives/scons.tmbundle</string>
