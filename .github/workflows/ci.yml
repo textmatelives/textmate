@@ -8,7 +8,7 @@ on:
 
 jobs:
   build-test:
-    runs-on: macos-14   # Apple Silicon
+    runs-on: macos-26   # Xcode 26.4.1 default → actool .icon support
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
