@@ -2,6 +2,64 @@ Title: Release Notes
 
 # Changes
 
+## 2026-05-23 (v2.1.0-undead)
+
+First release of the `textmatelives/textmate` fork. TextMate builds and ships against macOS 26 on Apple Silicon, with refreshed bundle delivery, an in-process SCM gutter diff, and a signed-and-notarized release pipeline. Commit and PR references throughout. See [all changes since v2.0.23](https://github.com/textmatelives/textmate/compare/v2.0.23...v2.1.0-undead).
+
+### App and UI
+
+* **New Liquid Glass app icon**, sourced from an Icon Composer `.icon` bundle and compiled at build time. The system handles light, dark, and tinted variants on its own. (`0c6319f8`)
+* **HTML output backed by `WKWebView`** (replaces the deprecated `WebView`). The git bundle's commit dialog and other bundle-driven HTML windows load on modern macOS again. (`a20abe94`, `f045c65b`, `c9d831a6`, `0c058b4f`)
+* **macOS 26 compatibility fixes**: removed `FSEventStreamFlushSync` to prevent a main-thread hang (`78529a60`); resolved a deadlock between `NSUserDefaults` notification and FSEvents flush (`2510f3dc`); fixed `OakBackgroundFillView` drawing beyond its bounds on macOS 15+ (`72a15176`).
+* **Apple Silicon only.** Intel binaries removed; deployment target raised to macOS 26.
+* `mate` CLI now declares `disable-library-validation` so injected dylibs from launching processes don't get rejected. (`fd48bae5`)
+
+### Bundles
+
+* **Catalogue hosted in Bundle Support.tmbundle.** `DefaultBundles.plist`, `AvailableBundles.plist`, and `BundleFileTypeIndex.plist` move out of the app and into the bundle. Adding a bundle or fixing an extension association no longer requires cutting an app release. ([#3](https://github.com/textmatelives/textmate/pull/3), `2b828aa0`)
+* **First-launch sheet** lets you batch-install (or skip) the 40 default-tier bundles. Return installs the checked rows, Esc skips, Space toggles a row. (`0932d14a`)
+* **On-demand install**: opening a file whose extension matches an uninstalled catalogue bundle now offers to install just that bundle. Bundles you decline are remembered and won't re-prompt. (`47d03525`, `94d24276`, `7b0793c7`, `9f59b9a1`)
+* **110 opt-in bundles** wired into the Bundles preference pane as an `AvailableBundles` tier alongside the defaults. (`3d342b89`, `7b8d7002`)
+* **Bundles pane refresh**: gear-icon action menu (`4ea36df6`), hovered-row highlight (`11a8b2db`), restored category headers (`e6277292`).
+* **SCM and Diff bundles ship by default**; the now-redundant SCM Diff Gutter bundle was dropped. (`49aa933e`)
+* **12 additional bundles** ship by default alongside the existing core set. (`7e66f138`)
+* **Themes bundle embedded** as a 4th mandatory bundle so a fresh install picks up themes without a network round-trip. (`5fbb7f6c`)
+* **`api.textmate.org` bundle manager replaced** with git-URL-driven subscriptions. The legacy `DefaultBundles.tbz` extraction on first launch is gone. (`4994d2ec`, `c438a993`)
+* **Ruby bundles ported to Ruby 2.6.10** (the system Ruby on macOS 26). Bundled Ruby 1.8 removed entirely from `bundle-support.tmbundle`; `TM_RUBY` remains the override hook. Bundle-Support's `plist` gem submodule dropped (`6243eef4`); Java/Groovy/CVS bundles pinned at their `remove-legacy-ruby` branches (`4b609eac`).
+
+### SCM
+
+* **In-process gutter diff.** TextMate no longer relies on the SCM Diff Gutter bundle (or any external git invocation per gutter update). Vendored git's `xdiff` and built a self-contained gutter-diff component. (`d7f71a64`, `fd48a081`, `49fbfca0`, `7e47d36f`)
+* **Per-repository serial queue** for `scm::shared_info_t`, eliminating cross-repo lock contention on multi-repo workspaces. (`7e5a2db1`)
+* **Half as many `git` subprocesses per SCM update**: `collect_all_paths` was over-shelling and re-running probes inside untracked directories. (`7d78a7ab`, `62f86db9`)
+* **Duplicate driver invocation removed** in `SCMRepository`. (`ebe57b52`)
+* **Transient `.git/` paths** filtered from the SCM watcher so unrelated index updates don't trigger spurious status refreshes. (`b1af6215`)
+* **`wait_for_status` race** linearized in the per-repo queue test. (`e56d4f77`)
+
+### Build system
+
+* **Cap'n Proto removed.** Encoding classifier now uses ICU (`4e45d3b6`); bundle index cache uses `NSKeyedArchiver` (`0062e083`); `configure`/`bin/rave`/CI no longer require it (`9ab4f001`). No Homebrew runtime dependencies remain in the shipped `.app`.
+* **CxxTest emission wired up in `bin/rave`** so framework tests build alongside everything else. (`04e6c4d8`)
+* **`.mm` test runners forced to `--no-parallel`** on the main thread for fixtures that need `NSThread.isMainThread`. (`602b3a24`)
+* **Ruby UTF-8 encoding** fixed in build helpers under modern locales. (`aef4231a`)
+
+### CI, signing, and release
+
+* **CI pipeline** added: builds the app and runs framework test suites on every push. ([#3](https://github.com/textmatelives/textmate/pull/3) test infrastructure work spans `940a9157`, `598f1da0`, `0fde8c4e`, `e9fdde7c`, `fb734a9a`, `8966eb60`, `07a6d384`, `ef442001`, `d89fc688`.)
+* **Signed-and-notarized release pipeline.** Tag a release by bumping `Changes.md` on `main`. The workflow extracts the version, builds, signs every embedded Mach-O with Developer ID, re-signs the outer `.app` with entitlements, notarizes via `notarytool`, retries `stapler` until the ticket propagates, runs Gatekeeper assessment, and `gh release create`s the asset. (`940a9157`, `00c49bb6`, `75ca6517`, `b8f84419`, `4f01e338`, `20dcd938`, `c201fb6a`)
+* **Intel-only `CocoaDialog.app`** scrubbed from the embedded `bundle-support` tree (blocked notarization). (`297d39de`)
+* **Release flow consolidation**: tag-pushing workflow folded into `release.yml`; `RELEASE_PAT` requirement dropped in favour of `${{ github.token }}`. ([#2](https://github.com/textmatelives/textmate/pull/2), `9ab13123`, `1a2872a7`, `ba397573`)
+
+### Repository
+
+* **Migrated from `dayglojesus` to `textmatelives` org**; bundle catalogue and submodule URLs updated; default branch is now `main` (was `master`). ([#1](https://github.com/textmatelives/textmate/pull/1), `d5f2ec39`, `e6677d1a`)
+* **README rewritten** for the fork: requirements, fork-specific download/feedback, build instructions point at `textmatelives`. (`2f7c510d`)
+* **`CLAUDE.md`** added to capture fork-specific constraints for contributors. (`8359a11a`)
+
+### Versioning
+
+* Version bumped to **2.1.0** so the auto-update channel sorts the fork above upstream's v2.0.23 and can't downgrade fork installs.
+
 ## 2021-10-12 (v2.0.23)
 
 * Miscellaneous improvements, [see changes since v2.0.22 on GitHub](https://github.com/textmate/textmate/compare/v2.0.22...v2.0.23)

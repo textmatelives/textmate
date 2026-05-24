@@ -4,7 +4,7 @@ target "${dirname}" {
 	set HTML_HEADER     "${dir}/templates/header.html"
 	set HTML_FOOTER     "${dir}/templates/footer.html"
 
-	set     TEXTMATE_CHANGES "${dir}/about/Changes.md"
+	set     TEXTMATE_CHANGES "${dir}/../../CHANGELOG.md"
 	capture TEXTMATE_VERSION "grep -om1 '^## .* (v.*)$' '${TEXTMATE_CHANGES}'|sed 's/.*(v\\(.*\))/\\1/'"
 
 	config "debug" {
@@ -25,7 +25,7 @@ target "${dirname}" {
 
 	files resources/* icons/*.icns @PrivilegedTool "Resources"
 	files @mate @tm_query    "MacOS"
-	files about/*            "Resources/About"
+	files about/* ../../CHANGELOG.md "Resources/About"
 	files Info.plist         "."
 	copy  support/*          "SharedSupport"
 	copy  @Dialog @Dialog2   "PlugIns"
