@@ -1,20 +1,44 @@
 # TextMate
 
+<p align="center">
+  <img src="docs/images/tml_banner_800px.png" alt="TextMate Lives" width="1000">
+</p>
+
+## About this fork
+
+I ❤️ TextMate.
+
+I have been using it almost everyday since I bought it (way back in I think 2008?) and while many friends and colleagues moved on to Sublime, then Atom then VS Code etc. I stayed with TextMate. I just like TextMate. Even with its many quirks over the last few years, I stuck with it -- it is a trusted ally. I still think when it comes to editing, it has features that many folks fail to appreciate.
+
+I have always wanted to contribute and help get it back up to speed, but to be honest, I am not much of a macOS programmer and TextMate is a fairly sophisticated app. You can probably see where this is heading: *vibe coded fixes.*
+
+Now, I recognize that some folks may not be keen on this practice and so I make no assumptions or prognostications and I will not storm Allan Odgaard with unsolicited PRs, but I have a bunch of changes that I think could help put TM back in a great place for the other folks out there that still enjoy using it.
+
+@sorbits if you are still out there, thank you for TextMate. I hope that this message finds you well and that you do not find the work distasteful or offensive.
+
+Long live TextMate!
+
+## Requirements
+
+- Apple Silicon (arm64); Intel Macs are not supported.
+- macOS 26 or later.
+- System Ruby 2.6.10 (`/usr/bin/ruby`) for bundle commands. Override with `TM_RUBY` if needed.
+
 ## Download
 
-You can [download TextMate from here](https://macromates.com/download).
+Grab the latest signed and notarized build from the [Releases page](https://github.com/textmatelives/textmate/releases).
 
 ## Feedback
 
-You can use [the TextMate mailing list](https://lists.macromates.com/listinfo/textmate) or [#textmate][] IRC channel on [freenode.net][] for questions, comments, and bug reports.
+For fork-specific bugs, feature requests, and discussion, [file an issue](https://github.com/textmatelives/textmate/issues). Patches are welcome too — [open a pull request](https://github.com/textmatelives/textmate/pulls), with or without a matching issue.
 
-You can also [contact MacroMates](https://macromates.com/support).
-
-Before you submit a bug report please read the [writing bug reports](https://github.com/textmate/textmate/wiki/writing-bug-reports) instructions.
+For questions about TextMate proper (history, design, upstream behaviour), see the [upstream project](https://github.com/textmate/textmate).
 
 ## Screenshot
 
-![textmate](https://raw.github.com/textmate/textmate/gh-pages/images/screenshot.png)
+<p align="center">
+  <img src="docs/images/screenshot.png" alt="textmate" width="1000">
+</p>
 
 # Building
 
@@ -22,27 +46,26 @@ Before you submit a bug report please read the [writing bug reports](https://git
 
 To build TextMate, you need the following:
 
- * [boost][]            — portable C++ source libraries
- * [Cap’n Proto][capnp] — serialization library
- * [multimarkdown][]    — marked-up plain text compiler
- * [ninja][]            — build system similar to `make`
- * [ragel][]            — state machine compiler
- * [sparsehash][]       — a cache friendly `hash_map`
+ * [boost][]         — portable C++ source libraries
+ * [multimarkdown][] — marked-up plain text compiler
+ * [ninja][]         — build system similar to `make`
+ * [ragel][]         — state machine compiler
+ * [sparsehash][]    — a cache friendly `hash_map`
 
 All this can be installed using either [Homebrew][] or [MacPorts][]:
 
 ```sh
 # Homebrew
-brew install boost capnp google-sparsehash multimarkdown ninja ragel
+brew install boost google-sparsehash multimarkdown ninja ragel
 
 # MacPorts
-sudo port install boost capnproto multimarkdown ninja ragel sparsehash
+sudo port install boost multimarkdown ninja ragel sparsehash
 ```
 
 After installing dependencies, make sure you have a full checkout (including submodules) and then run `./configure` followed by `ninja`, for example:
 
 ```sh
-git clone --recursive https://github.com/textmate/textmate.git
+git clone --recursive https://github.com/textmatelives/textmate.git
 cd textmate
 ./configure && ninja TextMate/run
 ```
@@ -53,7 +76,7 @@ The `./configure` script simply checks that all dependencies can be found, and t
 
 You should install the [Ninja][NinjaBundle] bundle which can be installed via _Preferences_ → _Bundles_.
 
-After this you can press ⌘B to build from within TextMate. In case you haven't already you also need to set up the `PATH` variable either in _Preferences_ → _Variables_ or `~/.tm_properties` so it can find `ninja` and related tools; an example could be `$PATH:/usr/local/bin`.
+After this you can press ⌘B to build from within TextMate. In case you haven't already you also need to set up the `PATH` variable either in _Preferences_ → _Variables_ or `~/.tm_properties` so it can find `ninja` and related tools; an example could be `$PATH:/opt/homebrew/bin`.
 
 The default target (set in `.tm_properties`) is `TextMate/run`. This will relaunch TextMate but when called from within TextMate, a dialog will appear before the current instance is killed. As there is full session restore, it is safe to relaunch even with unsaved changes.
 
@@ -88,10 +111,7 @@ TextMate is a trademark of Allan Odgaard.
 [ninja]:         https://ninja-build.org/
 [multimarkdown]: http://fletcherpenney.net/multimarkdown/
 [ragel]:         http://www.complang.org/ragel/
-[capnp]:         https://github.com/capnproto/capnproto.git
 [MacPorts]:      http://www.macports.org/
 [Homebrew]:      http://brew.sh/
 [NinjaBundle]:   https://github.com/textmate/ninja.tmbundle
 [sparsehash]:    https://code.google.com/p/sparsehash/
-[#textmate]:     irc://irc.freenode.net/#textmate
-[freenode.net]:  http://freenode.net/
