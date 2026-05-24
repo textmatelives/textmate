@@ -161,6 +161,25 @@ jobs:
                      -o -path "*/PlugIns/*" \) -print0)
           echo "Re-signed $count Mach-O files"
 
+      - name: Re-seal nested bundles (after modifying their contents)
+        if: steps.tagcheck.outputs.should_release == 'true'
+        run: |
+          set -euo pipefail
+          APP="${{ steps.app.outputs.app_path }}"
+          # Re-signing Mach-O binaries inside a signed bundle (e.g.
+          # Dialog.tmplugin/Contents/Resources/tm_dialog) invalidates the
+          # bundle's CodeResources seal. Each enclosing bundle must be
+          # codesigned again, inside-out, before we re-sign the outer .app.
+          count=0
+          while IFS= read -r -d '' b; do
+            codesign --force --sign "$CS_IDENTITY" --options runtime --timestamp "$b"
+            count=$((count+1))
+          done < <(find "$APP/Contents" \
+                     \( -name "*.tmplugin" -o -name "*.framework" \
+                     -o -name "*.qlgenerator" -o -name "*.appex" \) \
+                     -type d -print0)
+          echo "Re-sealed $count nested bundles"
+
       - name: Re-sign outer .app with entitlements (after modifying contents)
         if: steps.tagcheck.outputs.should_release == 'true'
         run: |
