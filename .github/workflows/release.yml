@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - Applications/TextMate/about/Changes.md
+      - CHANGELOG.md
   workflow_dispatch:
     inputs:
       reason:
@@ -29,14 +29,14 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
-      - name: Extract version from Changes.md
+      - name: Extract version from CHANGELOG.md
         id: version
         run: |
           set -euo pipefail
-          VERSION=$(grep -om1 '^## .* (v.*)$' Applications/TextMate/about/Changes.md \
+          VERSION=$(grep -om1 '^## .* (v.*)$' CHANGELOG.md \
                     | sed 's/.*(v\(.*\))/\1/')
           if [ -z "$VERSION" ]; then
-            echo "::error::No version line found in Applications/TextMate/about/Changes.md"
+            echo "::error::No version line found in CHANGELOG.md"
             exit 1
           fi
           echo "Detected: v${VERSION}"
@@ -248,6 +248,20 @@ jobs:
             "$(basename '${{ steps.app.outputs.app_path }}')"
           echo "archive=$ARCHIVE" >> "$GITHUB_OUTPUT"
 
+      - name: Extract release notes for v${VERSION}
+        if: steps.tagcheck.outputs.should_release == 'true'
+        id: notes
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          NOTES_FILE="$RUNNER_TEMP/release-notes.md"
+          bin/extract_changes -v "$VERSION" -o "$NOTES_FILE" CHANGELOG.md
+          echo "::group::Extracted release notes"
+          cat "$NOTES_FILE"
+          echo "::endgroup::"
+          echo "notes_file=$NOTES_FILE" >> "$GITHUB_OUTPUT"
+
       - name: Create GitHub release
         if: steps.tagcheck.outputs.should_release == 'true'
         env:
@@ -257,6 +271,7 @@ jobs:
           gh release create "v${VERSION}" \
             --target "${GITHUB_SHA}" \
             --title "TextMate ${VERSION}" \
+            --notes-file "${{ steps.notes.outputs.notes_file }}" \
             --generate-notes \
             "${{ steps.archive.outputs.archive }}"
 
