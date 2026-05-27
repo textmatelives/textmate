@@ -487,13 +487,16 @@ BOOL HasDocumentWindow (NSArray* windows)
 	if(NSMenu* menu = [self mainMenu])
 		NSApp.mainMenu = menu;
 
-	NSOperatingSystemVersion osVersion = NSProcessInfo.processInfo.operatingSystemVersion;
-	NSString* parms = [NSString stringWithFormat:@"v=%@&os=%ld.%ld.%ld", [[[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleShortVersionString"] stringByAddingPercentEncodingWithAllowedCharacters:NSCharacterSet.URLQueryAllowedCharacterSet], osVersion.majorVersion, osVersion.minorVersion, osVersion.patchVersion];
-
+	// Fork update feed: the GitHub Releases API for textmatelives/textmate.
+	// SoftwareUpdate adapts the API's JSON (tag_name + .tbz asset) into the
+	// { url, version } shape it expects. The fork publishes a single release
+	// stream, so all channels point at the same endpoint; the prefs UI only
+	// exposes "Normal releases" anyway.
+	NSString* const feedURL = @"https://api.github.com/repos/textmatelives/textmate/releases/latest";
 	SoftwareUpdate.sharedInstance.channels = @{
-		kSoftwareUpdateChannelRelease:    [NSURL URLWithString:[NSString stringWithFormat:@"" REST_API "/releases/release?%@", parms]],
-		kSoftwareUpdateChannelPrerelease: [NSURL URLWithString:[NSString stringWithFormat:@"" REST_API "/releases/beta?%@", parms]],
-		kSoftwareUpdateChannelCanary:     [NSURL URLWithString:[NSString stringWithFormat:@"" REST_API "/releases/nightly?%@", parms]],
+		kSoftwareUpdateChannelRelease:    [NSURL URLWithString:feedURL],
+		kSoftwareUpdateChannelPrerelease: [NSURL URLWithString:feedURL],
+		kSoftwareUpdateChannelCanary:     [NSURL URLWithString:feedURL],
 	};
 
 	settings_t::set_default_settings_path([[[NSBundle mainBundle] pathForResource:@"Default" ofType:@"tmProperties"] fileSystemRepresentation]);
