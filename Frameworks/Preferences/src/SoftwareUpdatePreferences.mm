@@ -21,7 +21,8 @@
 {
 	if(self = [super initWithNibName:nil label:@"Software Update" image:[NSImage imageNamed:@"Software Update" inSameBundleAsClass:[self class]]])
 	{
-		[OakStringListTransformer createTransformerWithName:@"OakSoftwareUpdateChannelTransformer" andObjectsArray:@[ kSoftwareUpdateChannelRelease, kSoftwareUpdateChannelPrerelease ]];
+		// Single release stream for now; prerelease reinstated with a beta stream (see WISHLIST.md).
+		[OakStringListTransformer createTransformerWithName:@"OakSoftwareUpdateChannelTransformer" andObjectsArray:@[ kSoftwareUpdateChannelRelease ]];
 	}
 	return self;
 }
@@ -140,7 +141,6 @@
 
 	MBMenu const updateChannelMenuItems = {
 		{ @"Normal releases", .tag = 0 },
-		{ @"Prereleases",     .tag = 1 },
 	};
 	MBCreateMenu(updateChannelMenuItems, updateChannelPopUp.menu);
 
