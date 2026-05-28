@@ -37,7 +37,7 @@ For questions about TextMate proper (history, design, upstream behaviour), see t
 ## Screenshot
 
 <p align="center">
-  <img src="docs/images/screenshot.png" alt="textmate" width="1000">
+  <img src="docs/images/screenshot_undead.png" alt="textmate" width="1000">
 </p>
 
 # Building
