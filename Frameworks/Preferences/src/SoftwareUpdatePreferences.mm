@@ -124,21 +124,6 @@
 	NSTextField* lastCheckTextField        = OakCreateLabel(@"Some time ago");
 	NSButton* checkNowButton               = [NSButton buttonWithTitle:@"Check Now" target:self.softwareUpdateController action:@selector(checkForUpdate:)];
 
-	NSButton* submitCrashReportsCheckBox   = OakCreateCheckBox(@"Submit to MacroMates");
-
-	NSTextField* contactTextField          = [NSTextField textFieldWithString:@"Anonymous"];
-
-	NSFont* smallFont = [NSFont messageFontOfSize:[NSFont systemFontSizeForControlSize:NSControlSizeSmall]];
-	contactTextField.font        = smallFont;
-	contactTextField.controlSize = NSControlSizeSmall;
-
-	NSStackView* contactStackView = [NSStackView stackViewWithViews:@[
-		OakCreateLabel(@"Contact:", smallFont), contactTextField
-	]];
-	contactStackView.alignment  = NSLayoutAttributeFirstBaseline;
-	contactStackView.edgeInsets = { .left = 18 };
-	[contactStackView setHuggingPriority:NSLayoutPriorityDefaultHigh-1 forOrientation:NSLayoutConstraintOrientationVertical];
-
 	MBMenu const updateChannelMenuItems = {
 		{ @"Normal releases", .tag = 0 },
 	};
@@ -150,25 +135,17 @@
 		@[ ],
 		@[ OakCreateLabel(@"Last check:"),             lastCheckTextField                ],
 		@[ NSGridCell.emptyContentView,                checkNowButton                    ],
-		@[ ],
-		@[ OakCreateLabel(@"Crash reports:"),          submitCrashReportsCheckBox        ],
-		@[ NSGridCell.emptyContentView,                contactStackView                  ],
 	]];
 
-	[contactTextField.trailingAnchor constraintEqualToAnchor:updateChannelPopUp.trailingAnchor].active = YES;
-
-	self.view = OakSetupGridViewWithSeparators(gridView, { 2, 5 });
+	self.view = OakSetupGridViewWithSeparators(gridView, { 2 });
 
 	[watchForUpdatesCheckBox      bind:NSValueBinding       toObject:NSUserDefaultsController.sharedUserDefaultsController withKeyPath:[NSString stringWithFormat:@"values.%@", kUserDefaultsDisableSoftwareUpdateKey]   options:@{ NSValueTransformerNameBindingOption: NSNegateBooleanTransformerName }];
 	[updateChannelPopUp           bind:NSSelectedTagBinding toObject:NSUserDefaultsController.sharedUserDefaultsController withKeyPath:[NSString stringWithFormat:@"values.%@", kUserDefaultsSoftwareUpdateChannelKey]   options:@{ NSValueTransformerNameBindingOption: @"OakSoftwareUpdateChannelTransformer" }];
 	[askBeforeDownloadingCheckBox bind:NSValueBinding       toObject:NSUserDefaultsController.sharedUserDefaultsController withKeyPath:[NSString stringWithFormat:@"values.%@", kUserDefaultsAskBeforeUpdatingKey]       options:nil];
 	[lastCheckTextField           bind:NSValueBinding       toObject:self                                                  withKeyPath:@"lastCheckDescription"                                                           options:nil];
-	[submitCrashReportsCheckBox   bind:NSValueBinding       toObject:NSUserDefaultsController.sharedUserDefaultsController withKeyPath:[NSString stringWithFormat:@"values.%@", kUserDefaultsDisableCrashReportingKey]   options:@{ NSValueTransformerNameBindingOption: NSNegateBooleanTransformerName }];
-	[contactTextField             bind:NSValueBinding       toObject:NSUserDefaultsController.sharedUserDefaultsController withKeyPath:[NSString stringWithFormat:@"values.%@", kUserDefaultsCrashReportsContactInfoKey] options:nil];
 
 	[updateChannelPopUp           bind:NSEnabledBinding     toObject:NSUserDefaultsController.sharedUserDefaultsController withKeyPath:[NSString stringWithFormat:@"values.%@", kUserDefaultsDisableSoftwareUpdateKey]   options:@{ NSValueTransformerNameBindingOption: NSNegateBooleanTransformerName }];
 	[askBeforeDownloadingCheckBox bind:NSEnabledBinding     toObject:NSUserDefaultsController.sharedUserDefaultsController withKeyPath:[NSString stringWithFormat:@"values.%@", kUserDefaultsDisableSoftwareUpdateKey]   options:@{ NSValueTransformerNameBindingOption: NSNegateBooleanTransformerName }];
 	[checkNowButton               bind:NSEnabledBinding     toObject:self.softwareUpdateController                         withKeyPath:@"checking"                                                                       options:@{ NSValueTransformerNameBindingOption: NSNegateBooleanTransformerName }];
-	[contactTextField             bind:NSEnabledBinding     toObject:NSUserDefaultsController.sharedUserDefaultsController withKeyPath:[NSString stringWithFormat:@"values.%@", kUserDefaultsDisableCrashReportingKey]   options:@{ NSValueTransformerNameBindingOption: NSNegateBooleanTransformerName }];
 }
 @end

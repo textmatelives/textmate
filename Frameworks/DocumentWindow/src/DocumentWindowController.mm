@@ -1015,7 +1015,7 @@ static NSArray* const kObservedKeyPaths = @[ @"arrayController.arrangedObjects.p
 				if(_bundlesAlreadySuggested)
 					grammars = [grammars filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"NOT (bundle IN %@)", _bundlesAlreadySuggested]];
 
-				if([grammars count] && can_reach_host([[[NSURL URLWithString:@(REST_API)] host] UTF8String]))
+				if([grammars count] && can_reach_host("github.com"))
 				{
 					self.bundlesAlreadySuggested = [(_bundlesAlreadySuggested ?: @[ ]) arrayByAddingObject:[grammars firstObject].bundle];
 
@@ -1060,7 +1060,7 @@ static NSArray* const kObservedKeyPaths = @[ @"arrayController.arrangedObjects.p
 						specs = [specs filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"NOT (uuid.UUIDString IN %@)", suggestedUUIDs]];
 					}
 
-					if([specs count] && can_reach_host([[[NSURL URLWithString:@(REST_API)] host] UTF8String]))
+					if([specs count] && can_reach_host("github.com"))
 					{
 						BundleSpec* spec = [specs firstObject];
 						self.bundleSpecsAlreadySuggested = [(_bundleSpecsAlreadySuggested ?: @[ ]) arrayByAddingObject:spec];
