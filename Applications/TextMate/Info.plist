@@ -26,6 +26,10 @@
 	<string>APPL</string>
 	<key>CFBundleSignature</key>
 	<string>avin</string>
+	<key>CFBundleSupportedPlatforms</key>
+	<array>
+		<string>MacOSX</string>
+	</array>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.developer-tools</string>
 	<key>LSMinimumSystemVersion</key>
