@@ -13,7 +13,14 @@ on:
         default: manual release
 
 jobs:
+  # Fresh build + test gate. A release must not ship an untested build, so the
+  # publish job below depends on this. Reuses the same isolated build/test jobs
+  # as CI via the reusable workflow (`build` and `test`, each on macos-26).
+  verify:
+    uses: ./.github/workflows/build-and-test.yml
+
   release:
+    needs: verify   # publish only if build AND test passed
     runs-on: macos-26
     timeout-minutes: 60
     permissions:
