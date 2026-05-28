@@ -15,7 +15,7 @@ Hard constraints declared by the maintainer:
 
 `./configure` checks dependencies (`capnp ninja ragel multimarkdown pgrep pkill`) and bootstraps `build.ninja` by invoking `bin/rave -crelease -tTextMate`. `bin/rave` is a Ruby DSL parser that walks `Applications/*/`, `Frameworks/*/`, `PlugIns/*/`, `vendor/*/` for `default.rave` files (see `default.rave:46`) and emits ninja rules. After `./configure`, all builds go through `ninja`.
 
-The compiler config is C++20 (`-std=c++2a`), ObjC ARC, deployment target 10.12 (`default.rave:1-7`). Precompiled headers live in `Shared/PCH/prelude.{c,cc,m,mm}`. `NULL_STR` and `REST_API` are passed via `-D` (`default.rave:12`); `REST_API` is still hardcoded to `https://api.textmate.org` even though forked bundles bypass it (see "Bundle delivery" below).
+The compiler config is C++20 (`-std=c++2a`), ObjC ARC, deployment target 10.12 (`default.rave:1-7`). Precompiled headers live in `Shared/PCH/prelude.{c,cc,m,mm}`. `NULL_STR` is passed via `-D` (`default.rave:12`). The legacy `REST_API` macro (formerly `https://api.textmate.org`) was removed in PR #9; the fork makes no `api.textmate.org` calls (see "Bundle delivery" below).
 
 Common commands:
 
@@ -62,6 +62,6 @@ Tests that shell out to git must call `git init -b master` (not bare `git init`)
 
 The fork uses forked bundles under `~/src/github.com/textmatelives/bundles/` and `bundle-support.tmbundle`, ported to Ruby 2.6.10. Local dev wires them in via symlinks in `~/Library/Application Support/TextMate/Managed/Bundles/` — `bin/reset_bundles.sh` performs that wiring.
 
-`REST_API` is still hardcoded at `default.rave:12` and `BundlesManager.mm` still polls every 3h via `NSBackgroundActivityScheduler`. The Managed/Bundles symlink approach side-steps this for development; packaging for distribution is unresolved.
+The `REST_API` macro and its `api.textmate.org` source were removed in PR #9; bundle delivery is now git-URL/codeload-based (`BundlesManager.mm` fetches via `BundleFetcher` from `codeload.github.com`). `BundlesManager.mm` still polls every 3h via `NSBackgroundActivityScheduler`. The Managed/Bundles symlink approach side-steps this for development; packaging for distribution is unresolved.
 
 Ruby in bundles resolves through `${TM_RUBY:-/usr/bin/ruby}` via `Support/shared/bin/ruby` in the forked `bundle-support.tmbundle`. `TM_RUBY` is the long-standing override hook — do not introduce a new Ruby discovery scheme.
