@@ -2,6 +2,28 @@ Title: Release Notes
 
 # Changes
 
+## 2026-05-28 (v2.1.1-undead)
+
+Maintenance release: the software-update mechanism is rebuilt on GitHub Releases, all remaining calls to the retired `api.textmate.org` are removed, and the app is classified as a macOS application again. See [all changes since v2.1.0-undead](https://github.com/textmatelives/textmate/compare/v2.1.0-undead...v2.1.1-undead).
+
+### Software Update
+
+* **Update feed served from GitHub Releases** instead of `api.textmate.org`. The check reads the repository's `releases/latest`, and a downloaded build is trusted only if it carries a valid Apple Developer ID signature whose Team Identifier matches the running app — an update signed by a different team, or unsigned, is refused. ([#9](https://github.com/textmatelives/textmate/pull/9), `96a7e0f7`)
+* **Prereleases channel removed** until a beta stream exists, so the updater no longer offers builds that aren't published. (`d69723f4`)
+
+### Privacy
+
+* **No more calls to `api.textmate.org`.** Removed the silent launch-time crash-report upload and the "Submit to MacroMates" checkbox and contact field from the Software Update preferences; the app no longer transmits crash logs or contact details. Bundle-suggestion reachability probes now target `github.com`. ([#9](https://github.com/textmatelives/textmate/pull/9), `e4ee811c`)
+* **Removed the `bl` command-line tool and the `updater` framework**, whose only remaining dependency was the retired bundle catalogue on `api.textmate.org`. (`e4ee811c`)
+
+### Fixed
+
+* **App no longer misreported as an iOS app.** System Profiler classified TextMate.app as `arch_ios` on Apple Silicon because the bundle declared no supported platform; it now declares `CFBundleSupportedPlatforms = [MacOSX]` and is classified as a macOS (Apple Silicon) application. ([#8](https://github.com/textmatelives/textmate/issues/8), [#10](https://github.com/textmatelives/textmate/pull/10), `9e610a8d`)
+
+### Build
+
+* **`configure` works against Homebrew on Apple Silicon out of the box.** It derives the dependency prefix from `brew --prefix` (covering `/opt/homebrew` and Intel `/usr/local`) instead of hardcoding `/usr/local`, so the documented `./configure && ninja` build no longer fails to find boost and sparsehash. CI now exercises this path on a clean runner. ([#11](https://github.com/textmatelives/textmate/pull/11), `bd3013da`)
+
 ## 2026-05-23 (v2.1.0-undead)
 
 First release of the `textmatelives/textmate` fork. TextMate builds and ships against macOS 26 on Apple Silicon, with refreshed bundle delivery, an in-process SCM gutter diff, and a signed-and-notarized release pipeline. Commit and PR references throughout. See [all changes since v2.0.23](https://github.com/textmatelives/textmate/compare/v2.0.23...v2.1.0-undead).
