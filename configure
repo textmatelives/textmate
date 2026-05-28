@@ -10,14 +10,22 @@ for dep in ninja ragel multimarkdown pgrep pkill; do
 	which -s "$dep" || error "*** dependency missing: ‘${dep}’."
 done
 
+# Resolve the dependency prefix. Homebrew installs under /opt/homebrew on Apple
+# Silicon and /usr/local on Intel; query it when available, otherwise default to
+# /usr/local (MacPorts users may need to adjust ‘local.rave’ by hand).
+prefix="/usr/local"
+if which -s brew; then
+	prefix="$(brew --prefix 2>/dev/null || echo /usr/local)"
+fi
+
 if [[ -e local.rave ]]; then
 	echo >&2 "Skipping writing ‘local.rave’: File already exists"
 else
-	echo >> local.rave 'add FLAGS    "-I/usr/local/include"'
-	echo >> local.rave 'add LN_FLAGS "-L/usr/local/lib"'
+	echo >> local.rave "add FLAGS    \"-I${prefix}/include\""
+	echo >> local.rave "add LN_FLAGS \"-L${prefix}/lib\""
 
 	for hdr in boost/{crc,variant}.hpp sparsehash/dense_hash_map; do
-		test -f "/usr/local/include/${hdr}" || error "*** dependency missing: ‘/usr/local/include/${hdr}’. Install dependency and/or update ‘local.rave’ with correct path."
+		test -f "${prefix}/include/${hdr}" || error "*** dependency missing: ‘${prefix}/include/${hdr}’. Install dependency and/or update ‘local.rave’ with correct path."
 	done
 fi
 
