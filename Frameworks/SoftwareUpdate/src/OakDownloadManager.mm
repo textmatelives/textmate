@@ -236,11 +236,11 @@ static NSString* GetHardwareInfo (int field, BOOL isInteger = NO)
 		os_log_error(OS_LOG_DEFAULT, "Failed to download %{public}@: %{public}@", dataTask.originalRequest.URL, error.localizedDescription);
 		_completionHandler(nil, error);
 	}
-	else if(![OakDownloadManager.sharedInstance data:_data hasValidBase64EncodedSignature:_signature usingPublicKeyString:_publicKeys[_signee]])
-	{
-		os_log_error(OS_LOG_DEFAULT, "Unable to verify signature");
-		_completionHandler(nil, [NSError errorWithDomain:@"OakDownloadManager" code:0 userInfo:@{ NSLocalizedDescriptionKey: @"Unable to verify signature." }]);
-	}
+	// Note: the upstream DSA header-signature check (x-amz-meta-x-signee /
+	// x-amz-meta-x-signature against TMSigningKeys) is intentionally not
+	// performed for the fork. Update trust is enforced at install time by
+	// validating the extracted bundle's Apple Developer ID signature against the
+	// running app's Team Identifier (see -[SoftwareUpdate takeURLToInstallFrom:]).
 	else
 	{
 		dispatch_group_notify(_extractorDispatchGroup, dispatch_get_main_queue(), ^{

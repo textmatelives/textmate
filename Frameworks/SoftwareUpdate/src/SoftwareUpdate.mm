@@ -5,6 +5,7 @@
 #import <OakAppKit/OakSound.h>
 #import <OakAppKit/OakTransitionViewController.h>
 #import <OakAppKit/OakUIConstructionFunctions.h>
+#import <Security/Security.h>
 
 NSString* const kUserDefaultsLastSoftwareUpdateCheckKey                        = @"SoftwareUpdateLastPoll";
 NSString* const kUserDefaultsSoftwareUpdateSuspendUntilKey                     = @"SoftwareUpdateSuspendUntil";
@@ -16,6 +17,81 @@ NSString* const kUserDefaultsSoftwareUpdateDisableReadOnlyFileSystemWarningKey =
 NSString* const kSoftwareUpdateChannelRelease                                  = @"release";
 NSString* const kSoftwareUpdateChannelPrerelease                               = @"beta";
 NSString* const kSoftwareUpdateChannelCanary                                   = @"nightly";
+
+// Maps a parsed feed dictionary to (url, version). Handles the GitHub Releases
+// API schema (tag_name + the .tbz entry in assets[].browser_download_url) and
+// the legacy { url, version } shape.
+static void OakExtractUpdateInfo (NSDictionary* dict, NSURL** outURL, NSString** outVersion)
+{
+	if(![dict isKindOfClass:NSDictionary.class])
+		return;
+
+	if(NSString* tag = dict[@"tag_name"]) // GitHub Releases API
+	{
+		*outVersion = [tag hasPrefix:@"v"] ? [tag substringFromIndex:1] : tag;
+		for(NSDictionary* asset in dict[@"assets"])
+		{
+			if([asset isKindOfClass:NSDictionary.class] && [[asset[@"name"] pathExtension] isEqualToString:@"tbz"])
+			{
+				if(NSString* downloadURL = asset[@"browser_download_url"])
+					*outURL = [NSURL URLWithString:downloadURL];
+				break;
+			}
+		}
+	}
+	else // legacy { url, version }
+	{
+		*outURL     = dict[@"url"] ? [NSURL URLWithString:dict[@"url"]] : nil;
+		*outVersion = dict[@"version"];
+	}
+}
+
+// Team Identifier of the currently running application, or nil if unsigned /
+// ad-hoc signed (e.g. a local development build).
+static NSString* OakRunningApplicationTeamIdentifier ()
+{
+	SecCodeRef selfCode = NULL;
+	if(SecCodeCopySelf(kSecCSDefaultFlags, &selfCode) != errSecSuccess)
+		return nil;
+
+	NSString* teamID = nil;
+	CFDictionaryRef info = NULL;
+	if(SecCodeCopySigningInformation((SecStaticCodeRef)selfCode, kSecCSSigningInformation, &info) == errSecSuccess && info)
+		teamID = [(__bridge NSString*)CFDictionaryGetValue(info, kSecCodeInfoTeamIdentifier) copy];
+
+	if(info)     CFRelease(info);
+	if(selfCode) CFRelease(selfCode);
+	return teamID;
+}
+
+// YES iff the bundle at appURL carries a valid Developer ID Application
+// signature whose Team Identifier equals expectedTeamID. Fails closed when
+// expectedTeamID is empty. Requirement string + flags validated by the
+// 2026-05-26 Option B spike (see PLAN-eliminate-api-textmate-org.md).
+static BOOL OakBundleIsSignedByTeam (NSURL* appURL, NSString* expectedTeamID)
+{
+	if(!expectedTeamID.length)
+		return NO;
+
+	SecStaticCodeRef code = NULL;
+	if(SecStaticCodeCreateWithPath((__bridge CFURLRef)appURL, kSecCSDefaultFlags, &code) != errSecSuccess)
+		return NO;
+
+	NSString* requirement = [NSString stringWithFormat:
+		@"anchor apple generic and "
+		 "certificate 1[field.1.2.840.113635.100.6.2.6] exists and "      // Developer ID intermediate
+		 "certificate leaf[field.1.2.840.113635.100.6.1.13] exists and "  // Developer ID Application leaf
+		 "certificate leaf[subject.OU] = \"%@\"", expectedTeamID];
+
+	SecRequirementRef req = NULL;
+	OSStatus status = SecRequirementCreateWithString((__bridge CFStringRef)requirement, kSecCSDefaultFlags, &req);
+	if(status == errSecSuccess)
+		status = SecStaticCodeCheckValidityWithErrors(code, kSecCSCheckAllArchitectures | kSecCSCheckNestedCode | kSecCSStrictValidate, req, NULL);
+
+	if(req)  CFRelease(req);
+	if(code) CFRelease(code);
+	return status == errSecSuccess;
+}
 
 // ============================
 // = SUDownloadViewController =
@@ -152,14 +228,13 @@ NSString* const kSoftwareUpdateChannelCanary                                   =
 				if(NSString* contentType = ((NSHTTPURLResponse*)response).allHeaderFields[@"Content-Type"])
 				{
 					NSDictionary* plist;
-					if([contentType isEqualToString:@"application/json"])
+					if([contentType hasPrefix:@"application/json"]) // GitHub sends "application/json; charset=utf-8"
 							plist = [NSJSONSerialization JSONObjectWithData:data options:0 error:nullptr];
 					else	plist = [NSPropertyListSerialization propertyListWithData:data options:NSPropertyListImmutable format:nil error:nil];
 
-					if(plist)
+					if([plist isKindOfClass:NSDictionary.class])
 					{
-						remoteURL     = plist[@"url"] ? [NSURL URLWithString:plist[@"url"]] : nil;
-						remoteVersion = plist[@"version"];
+						OakExtractUpdateInfo(plist, &remoteURL, &remoteVersion);
 						if(!remoteURL || !remoteVersion)
 							error = [NSError errorWithDomain:@"SoftwareUpdate" code:0 userInfo:@{ NSLocalizedDescriptionKey: @"Incomplete server response." }];
 					}
@@ -540,6 +615,20 @@ NSString* const kSoftwareUpdateChannelCanary                                   =
 
 	if([self isInstallableApplicationAtURL:applicationURL])
 	{
+		// Trust gate: the update must carry a valid Developer ID Application
+		// signature whose Team Identifier matches the running app. Distinct from
+		// the integrity (incomplete-download) failure below — a trust failure is
+		// not fixed by redownloading, so we do not offer that here.
+		NSString* expectedTeamID = OakRunningApplicationTeamIdentifier();
+		if(!OakBundleIsSignedByTeam(applicationURL, expectedTeamID))
+		{
+			os_log_error(OS_LOG_DEFAULT, "Software update rejected: %{public}@ is not signed by the expected Developer ID team (%{public}@)", applicationURL.path, expectedTeamID ?: @"<none>");
+			[self presentAlertWithMessage:@"Update Could Not Be Verified" informativeText:@"The downloaded update is not signed by the expected developer, so it will not be installed.\n\nDownload the latest version manually from the project’s Releases page." buttonTitles:@[ @"OK" ] completionHandler:^BOOL(NSModalResponse returnCode){
+				return YES; // close the update window
+			}];
+			return;
+		}
+
 		self.progressViewController.messageTextField.stringValue     = [NSString stringWithFormat:@"Installing %@…", [NSBundle.mainBundle objectForInfoDictionaryKey:@"CFBundleName"]];
 		self.progressViewController.informativeTextField.stringValue = @"";
 		self.progressViewController.progressIndicator.indeterminate  = YES;

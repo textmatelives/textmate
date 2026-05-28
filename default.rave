@@ -9,7 +9,7 @@ set OBJCXX_FLAGS  "${OBJC_FLAGS} ${CXX_FLAGS} -fobjc-call-cxx-cdtors"
 add FLAGS         "-funsigned-char"
 add FLAGS         "-Wall -Wwrite-strings -Wformat -Winit-self -Wmissing-include-dirs"
 add FLAGS         "-Wno-parentheses -Wno-sign-compare -Wno-switch -Wno-c99-designator"
-add FLAGS         "-D'NULL_STR=\"\\uFFFF\"' -D'REST_API=\"https://api.textmate.org\"'"
+add FLAGS         "-D'NULL_STR=\"\\uFFFF\"'"
 add FLAGS         "-IShared/include"
 add FLAGS         "-mmacosx-version-min=${APP_MIN_OS}"
 
