@@ -1,5 +1,5 @@
 target "${dirname}" {
-	require BundleEditor BundleMenu BundlesManager CommitWindow CrashReporter DocumentWindow Find HTMLOutputWindow MenuBuilder OakAppKit OakCommand OakFilterList OakFoundation OakSystem OakTextView Preferences SoftwareUpdate authorization bundles cf command crash document io kvdb license network ns plist regexp scm settings text theme
+	require BundleEditor BundleMenu BundlesManager CommitWindow CrashReporter DocumentWindow Find HTMLOutputWindow MenuBuilder OakAppKit OakCommand OakFilterList OakFoundation OakSystem OakTextView Preferences SoftwareUpdate authorization bundles cf command crash document io kvdb network ns plist regexp scm settings text theme
 
 	set HTML_HEADER     "${dir}/templates/header.html"
 	set HTML_FOOTER     "${dir}/templates/footer.html"
