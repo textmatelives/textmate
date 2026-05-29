@@ -1,0 +1,63 @@
+name: Build and Test
+
+# Reusable workflow: isolates build and test into two independent jobs so a
+# caller (ci.yml on PRs, release.yml as a release gate) can require BOTH to
+# pass. Invoked via `uses: ./.github/workflows/build-and-test.yml`.
+on:
+  workflow_call:
+
+jobs:
+  build:
+    runs-on: macos-26   # Xcode 26.4.1 default → actool .icon support
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install build dependencies
+        run: brew install boost google-sparsehash multimarkdown ninja ragel mercurial subversion
+
+      # No local.rave pre-seed: configure now derives the Homebrew prefix itself,
+      # so this step exercises that path on a clean arm64 runner.
+      - name: Configure
+        run: ./configure
+
+      - name: Build TextMate.app
+        run: ninja TextMate
+
+  test:
+    runs-on: macos-26   # Xcode 26.4.1 default → actool .icon support
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install build dependencies
+        run: brew install boost google-sparsehash multimarkdown ninja ragel mercurial subversion
+
+      # No local.rave pre-seed: configure now derives the Homebrew prefix itself,
+      # so this step exercises that path on a clean arm64 runner.
+      - name: Configure
+        run: ./configure
+
+      - name: Discover and run all framework tests
+        run: |
+          # Excluded:
+          #   buffer  - 3 spellcheck tests need NSSpellChecker dictionary (no headless support)
+          #   cf,
+          #   layout  - pure C++ data-structure tests trap/segfault under parallel runner on
+          #             macos-14 (.cc tests run parallel; .mm get --no-parallel via rave:1454)
+          #   command,
+          #   editor  - both call runner_t::launch() + wait_for_command(); wait() polls NSApp
+          #             events and a worker-thread runloop. With NSApp nil in a CLI binary the
+          #             completion path never fires and the test hangs to job timeout.
+          #   file    - test_save_translit relies on iconv //TRANSLIT behavior that differs
+          #             between macOS 14.5 (runner SDK) and macOS 26 (local).
+          TESTS=$(grep -lE '^[[:space:]]*tests[[:space:]]' Frameworks/*/default.rave \
+                  | xargs -n1 dirname | xargs -n1 basename \
+                  | grep -vE '^(buffer|cf|command|editor|file|layout)$' \
+                  | sed 's|$|/test|')
+          echo "Running tests: $TESTS"
+          ninja $TESTS
