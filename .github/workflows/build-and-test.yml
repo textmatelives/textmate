@@ -11,7 +11,7 @@ jobs:
     runs-on: macos-26   # Xcode 26.4.1 default → actool .icon support
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           submodules: recursive
 
@@ -30,7 +30,7 @@ jobs:
     runs-on: macos-26   # Xcode 26.4.1 default → actool .icon support
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           submodules: recursive
 
