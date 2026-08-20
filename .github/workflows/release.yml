@@ -22,6 +22,10 @@ jobs:
   release:
     needs: verify   # publish only if build AND test passed
     runs-on: macos-26
+    # Gates the Apple signing secrets behind a required reviewer. Without
+    # this, release.yml is reachable by workflow_dispatch, which needs only
+    # write access, and the signing identity is exposed to anyone holding it.
+    environment: release
     timeout-minutes: 60
     permissions:
       contents: write
