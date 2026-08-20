@@ -1,0 +1,16 @@
+# Code owners for textmatelives/textmate.
+#
+# Ownership drives automatic review requests on every pull request. It is not
+# by itself an enforcement mechanism: the `protect-default-branch` ruleset
+# currently has `require_code_owner_review: false`, and merging is already
+# limited to OrganizationAdmin by that ruleset's `update` rule.
+#
+# Flip `require_code_owner_review` to true once there is more than one
+# maintainer, so ownership becomes a gate rather than a notification.
+#
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+*                        @dayglojesus
+
+# Anything that can reach the Apple signing identity.
+/.github/workflows/      @dayglojesus
