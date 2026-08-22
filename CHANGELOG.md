@@ -2,6 +2,38 @@ Title: Release Notes
 
 # Changes
 
+## 2026-08-21 (v2.1.5-undead)
+
+Maintenance release: seven stalled community fixes adopted from the upstream PR queue, the Ruby build helpers brought up to Ruby 3, and the unused SyntaxMate XPC service removed. See [all changes since v2.1.4-undead](https://github.com/textmatelives/textmate/compare/v2.1.4-undead...v2.1.5-undead).
+
+### Editor
+
+* **File browser and document view backgrounds render correctly again.** ([#39](https://github.com/textmatelives/textmate/pull/39), `b87d4641`)
+* **`attr.filebrowser` is now set while the file browser pane has focus,** so scoped settings and key bindings can target it. ([#39](https://github.com/textmatelives/textmate/pull/39), `5e39c5ee`)
+* **Corrected a "toggleing" typo in Preferences.** ([#39](https://github.com/textmatelives/textmate/pull/39), `6236dcb0`)
+
+### Stability
+
+* **Avoided a clang 15 crash in Find** caused by an incorrect array size. ([#39](https://github.com/textmatelives/textmate/pull/39), `d115b6f7`)
+* **Fixed an incorrect number of seconds in a day** in `format_string`. ([#39](https://github.com/textmatelives/textmate/pull/39), `9a41ea5c`)
+* **Fixed a cast of a non-Objective-C pointer in `shared_ptr`** in RMateServer. ([#39](https://github.com/textmatelives/textmate/pull/39), `62ad24f4`)
+* **Silenced the `vfork` deprecation warning on macOS Monterey,** pending migration to `posix_spawn`. ([#39](https://github.com/textmatelives/textmate/pull/39), `bb047ecb`)
+
+### Build tooling
+
+* **The Ruby helper scripts are Ruby 3 compatible.** ERB usage was modernized to eliminate deprecation warnings. ([#38](https://github.com/textmatelives/textmate/pull/38), `fc835f67`)
+* **`gen_credits.rb` uses a JSON cache instead of DBM,** which is no longer bundled with Ruby 3. ([#38](https://github.com/textmatelives/textmate/pull/38), `c187e5dc`)
+
+### Housekeeping
+
+* **Removed the unused SyntaxMate XPC service.** ([#40](https://github.com/textmatelives/textmate/pull/40), `129c1b03`)
+
+### Release infrastructure
+
+* **The Apple signing identity is gated behind a required reviewer.** The signing secrets moved from repository scope into a `release` environment, so a signed build cannot be produced without explicit approval. ([#34](https://github.com/textmatelives/textmate/pull/34), `b00a4ee7`)
+* **`actions/checkout` is pinned to a full commit SHA** in every workflow, with SHA pinning now enforced repository-wide. ([#35](https://github.com/textmatelives/textmate/pull/35), `4c8f75dc`)
+* **Added `CODEOWNERS`.** ([#36](https://github.com/textmatelives/textmate/pull/36), `8b1c6b8b`)
+
 ## 2026-06-11 (v2.1.4-undead)
 
 Bugfix release: the GitHub Markdown preview no longer dies with a `LoadError` on installs that predate 2026-06-08 ([#29](https://github.com/textmatelives/textmate/issues/29)). See [all changes since v2.1.3-undead](https://github.com/textmatelives/textmate/compare/v2.1.3-undead...v2.1.4-undead).
