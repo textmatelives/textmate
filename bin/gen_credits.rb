@@ -1,4 +1,4 @@
-#!/System/Library/Frameworks/Ruby.framework/Versions/Current/usr/bin/ruby
+#!/usr/bin/env ruby
 # == Synopsis
 #
 # Module to assist in building the Contributors page using git commit history.
@@ -8,10 +8,61 @@ require 'fileutils'
 require 'net/https'
 require 'uri'
 require 'cgi'
-require 'dbm'
 require 'date'
 require 'json'
 require 'set'
+
+# Persistent string -> string map backing the lookup cache below.
+#
+# This used to be DBM. Ruby 3.4 dropped dbm from the standard library, so a
+# script with `#!/usr/bin/env ruby` fails to even load on a machine whose PATH
+# Ruby is 3.4+. JSON is core, gives identical semantics for this cache, and has
+# the side benefit of being readable when the cache needs inspecting.
+#
+# Writes are buffered and flushed once at exit rather than on every assignment,
+# since initialize() seeds several dozen entries in a row.
+class CacheStore
+  def initialize(path)
+    @path  = "#{path}.json"
+    @dirty = false
+    FileUtils.mkdir_p(File.dirname(@path))
+    @entries = load_entries
+    at_exit { save }
+  end
+
+  def [](key)
+    @entries[key]
+  end
+
+  def []=(key, value)
+    value = value.to_s
+    return if @entries[key] == value
+    @entries[key] = value
+    @dirty = true
+  end
+
+  def has_key?(key)
+    @entries.has_key?(key)
+  end
+
+  def save
+    return unless @dirty
+    tmp = "#{@path}~"
+    File.open(tmp, 'w') { |io| io << JSON.pretty_generate(@entries) }
+    File.rename(tmp, @path)
+    @dirty = false
+  end
+
+  private
+
+  def load_entries
+    return {} unless File.exist?(@path)
+    parsed = JSON.parse(File.read(@path))
+    parsed.is_a?(Hash) ? parsed : {}
+  rescue JSON::ParserError, SystemCallError
+    {}  # unreadable or corrupt cache is not fatal; it just gets rebuilt
+  end
+end
 
 # Helper class to handle searching for GitHub users
 # by their email address. Caches mappings to a file
@@ -19,9 +70,8 @@ require 'set'
 # anonymous requests.
 class GitHubLookup
 
-  def self.initialize(dbm_file)
-    FileUtils.mkdir_p(File.dirname(dbm_file))
-    @db = DBM.new(dbm_file, 0644, DBM::WRCREAT)
+  def self.initialize(cache_file)
+    @db = CacheStore.new(cache_file)
     # seed with some contributors that don't have an email
     # address assigned publicly in their account
     @db['1178ce2f664a6cee9a05a3e11af5d8d2'] = 'aaronbrethorst'
@@ -67,7 +117,6 @@ class GitHubLookup
     # textmatelives fork contributors
     @db['8c31c603c339e672556eb6a80755b790'] = 'dayglojesus'  # dayglojesus@gmail.com
     @db['01209ad974dd6086f1275ba21ccf8e2e'] = 'dayglojesus'  # dayglojesus@users.noreply.github.com
-    ObjectSpace.define_finalizer(@db, proc {|id| db.close })
   end
 
   # Resolve a commit author's GitHub login. The legacy "search user by
@@ -130,8 +179,8 @@ def detect_log_ref
   %w[origin/main main HEAD].find { |r| system("git rev-parse --verify --quiet #{r} >/dev/null") } || 'HEAD'
 end
 
-def generate_credits(dbm_file, warn=false)
-  GitHubLookup.initialize(dbm_file)
+def generate_credits(cache_file, warn=false)
+  GitHubLookup.initialize(cache_file)
   did_warn_db = Set.new
   repo = detect_github_repo
   log_ref = detect_log_ref

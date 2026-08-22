@@ -110,7 +110,7 @@ TextMate is a trademark of Allan Odgaard.
 [boost]:         http://www.boost.org/
 [ninja]:         https://ninja-build.org/
 [multimarkdown]: http://fletcherpenney.net/multimarkdown/
-[ragel]:         http://www.complang.org/ragel/
+[ragel]:         https://www.colm.net/open-source/ragel/
 [MacPorts]:      http://www.macports.org/
 [Homebrew]:      http://brew.sh/
 [NinjaBundle]:   https://github.com/textmate/ninja.tmbundle
