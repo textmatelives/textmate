@@ -86,7 +86,7 @@ jobs:
 
       - name: Install build dependencies
         if: steps.tagcheck.outputs.should_release == 'true'
-        run: brew install boost google-sparsehash multimarkdown ninja ragel
+        run: brew install multimarkdown ninja
 
       - name: Import signing certificate into temporary keychain
         if: steps.tagcheck.outputs.should_release == 'true'

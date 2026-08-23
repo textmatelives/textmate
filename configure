@@ -6,7 +6,7 @@ function error () { printf >&2 "%s\n\nPlease see README.md for build instruction
 # = Check required dependencies =
 # ===============================
 
-for dep in ninja ragel multimarkdown pgrep pkill; do
+for dep in ninja multimarkdown pgrep pkill; do
 	which -s "$dep" || error "*** dependency missing: ‘${dep}’."
 done
 
@@ -23,10 +23,6 @@ if [[ -e local.rave ]]; then
 else
 	echo >> local.rave "add FLAGS    \"-I${prefix}/include\""
 	echo >> local.rave "add LN_FLAGS \"-L${prefix}/lib\""
-
-	for hdr in boost/{crc,variant}.hpp sparsehash/dense_hash_map; do
-		test -f "${prefix}/include/${hdr}" || error "*** dependency missing: ‘${prefix}/include/${hdr}’. Install dependency and/or update ‘local.rave’ with correct path."
-	done
 fi
 
 # ========================

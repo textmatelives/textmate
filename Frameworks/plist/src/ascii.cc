@@ -2,52 +2,6 @@
 #include <text/format.h>
 #include <oak/debug.h>
 
-/*
-array:    '(' (element ',')* (element)? ')'
-dict:     '{' (key '=' value ';')* '}'
-integer:  ('-'|'+')? ('0x'|'0')? [0-9]+
-float:    '-'? [0-9]* '.' [0-9]+
-boolean:  :true | :false
-string:   ["] … ["] | ['] … ['] | [a-zA-Z_-]+
-data:     <DEADBEEF>
-date:     @2010-05-10 20:34:12 +0000
-*/
-
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunused-const-variable"
-%%{
-
-	machine string;
-
-	action clear_str       { strBuf.clear(); }
-	action push_char       { strBuf.push_back(fc); }
-	action push_esc        { strBuf.push_back('\\'); }
-	action matched         { matched = true; }
-
-	BARE      = ([a-zA-Z_] [a-zA-Z0-9_\-.]*) >clear_str $push_char;
-
-	S_ESCAPE  = '\'' '\'' @push_char;
-	S_ANY     = [^'] $push_char;
-	SINGLE    = '\'' (S_ESCAPE | S_ANY)* >clear_str '\'';
-
-	D_ESCAPE  = '\\' ([\\"] | [^\\"] >push_esc) $push_char;
-	D_ANY     = [^\\"] $push_char;
-	DOUBLE    = '"' (D_ESCAPE | D_ANY)* >clear_str '"';
-
-	string   := (BARE | SINGLE | DOUBLE) @matched;
-
-	write data;
-
-	machine comment;
-	SINGLE   = '//' [^\n]* '\n';
-	DOUBLE   = '/*' ([^*] | '*' [^/])* '*/';
-	WS       = [ \t\n]+;
-	comment := (SINGLE | DOUBLE | WS)+;
-	write data;
-
-}%%
-#pragma clang diagnostic pop
-
 static bool backtrack (char const*& p, char const* bt, plist::any_t& res)
 {
 	return (res = plist::any_t()), (p = bt), false;
@@ -55,14 +9,118 @@ static bool backtrack (char const*& p, char const* bt, plist::any_t& res)
 
 static bool parse_ws (char const*& p, char const* pe)
 {
-	int cs;
-	%% machine comment; write init; write exec;
+	while(p < pe)
+	{
+		if(*p == ' ' || *p == '\t' || *p == '\n')
+		{
+			++p;
+		}
+		else if(pe - p >= 2 && p[0] == '/' && p[1] == '/')
+		{
+			p += 2;
+			while(p < pe && *p != '\n')
+				++p;
+			if(p < pe)
+				++p;
+		}
+		else if(pe - p >= 2 && p[0] == '/' && p[1] == '*')
+		{
+			p += 2;
+			while(pe - p >= 2 && !(p[0] == '*' && p[1] == '/'))
+				++p;
+			if(pe - p >= 2)
+				p += 2;
+		}
+		else
+		{
+			break;
+		}
+	}
 	return true;
 }
 
 static bool parse_char (char const*& p, char const*& pe, char ch)
 {
 	return parse_ws(p, pe) && p != pe && *p == ch ? (++p, true) : false;
+}
+
+static bool parse_string (char const*& p, char const* pe, plist::any_t& res)
+{
+	char const* bt = p;
+	parse_ws(p, pe);
+	if(p >= pe)
+		return backtrack(p, bt, res);
+
+	std::string strBuf;
+
+	if(*p == '"')
+	{
+		++p;
+		while(p < pe && *p != '"')
+		{
+			if(*p == '\\')
+			{
+				++p;
+				if(p < pe)
+				{
+					if(*p == '\\' || *p == '"')
+						strBuf.push_back(*p++);
+					else
+					{
+						strBuf.push_back('\\');
+						strBuf.push_back(*p++);
+					}
+				}
+			}
+			else
+			{
+				strBuf.push_back(*p++);
+			}
+		}
+		if(p < pe && *p == '"')
+		{
+			++p;
+			res = strBuf;
+			return true;
+		}
+		return backtrack(p, bt, res);
+	}
+	else if(*p == '\'')
+	{
+		++p;
+		while(p < pe)
+		{
+			if(*p == '\'')
+			{
+				if(pe - p >= 2 && p[1] == '\'')
+				{
+					strBuf.push_back('\'');
+					p += 2;
+				}
+				else
+				{
+					++p;
+					res = strBuf;
+					return true;
+				}
+			}
+			else
+			{
+				strBuf.push_back(*p++);
+			}
+		}
+		return backtrack(p, bt, res);
+	}
+	else if(isalpha(*p) || *p == '_')
+	{
+		strBuf.push_back(*p++);
+		while(p < pe && (isalnum(*p) || *p == '_' || *p == '-' || *p == '.'))
+			strBuf.push_back(*p++);
+		res = strBuf;
+		return true;
+	}
+
+	return backtrack(p, bt, res);
 }
 
 static bool parse_int (char const*& p, char const* pe, plist::any_t& res)
@@ -92,18 +150,6 @@ static bool parse_bool (char const*& p, char const* pe, plist::any_t& res)
 	if(bytes >= 6 && strncmp(p, ":false", 6) == 0)
 		return (res = false), (p += 6), true;
 	return backtrack(p, bt, res);
-}
-
-static bool parse_string (char const*& p, char const* pe, plist::any_t& res)
-{
-	int cs;
-	char const* bt = p;
-	bool matched = false;
-	std::string& strBuf = boost::get<std::string>(res = std::string());
-
-	parse_ws(p, pe);
-	%% machine string; write init; write exec;
-	return matched || backtrack(p, bt, res);
 }
 
 static bool parse_date (char const*& p, char const* pe, plist::any_t& res)
@@ -136,7 +182,7 @@ static bool parse_array (char const*& p, char const* pe, plist::any_t& res)
 		return backtrack(p, bt, res);
 
 	plist::any_t element;
-	std::vector<plist::any_t>& ref = boost::get< std::vector<plist::any_t> >(res = std::vector<plist::any_t>());
+	std::vector<plist::any_t>& ref = plist::get< std::vector<plist::any_t> >(res = std::vector<plist::any_t>());
 	while(parse_element(p, pe, element))
 	{
 		ref.push_back(element);
@@ -151,8 +197,8 @@ static bool parse_key (char const*& p, char const* pe, plist::any_t& res)
 	plist::any_t tmp;
 	if(!parse_element(p, pe, tmp))
 		return false;
-	res = plist::get<std::string>(tmp);
-	return !boost::get<std::string>(res).empty();
+	res = plist::convert<std::string>(tmp);
+	return !plist::get<std::string>(res).empty();
 }
 
 static bool parse_dict (char const*& p, char const* pe, plist::any_t& res)
@@ -163,9 +209,9 @@ static bool parse_dict (char const*& p, char const* pe, plist::any_t& res)
 		return backtrack(p, bt, res);
 
 	plist::any_t key, value;
-	std::map<std::string, plist::any_t>& ref = boost::get< std::map<std::string, plist::any_t> >(res = std::map<std::string, plist::any_t>());
+	std::map<std::string, plist::any_t>& ref = plist::get< std::map<std::string, plist::any_t> >(res = std::map<std::string, plist::any_t>());
 	for(char const* lp = p; parse_key(lp, pe, key) && parse_char(lp, pe, '=') && parse_element(lp, pe, value) && parse_char(lp, pe, ';'); p = lp)
-		ref.emplace(boost::get<std::string>(key), value);
+		ref.emplace(plist::get<std::string>(key), value);
 
 	return parse_char(p, pe, '}') || backtrack(p, bt, res);
 }

@@ -16,7 +16,7 @@ jobs:
           submodules: recursive
 
       - name: Install build dependencies
-        run: brew install boost google-sparsehash multimarkdown ninja ragel mercurial subversion
+        run: brew install multimarkdown ninja mercurial subversion
 
       # No local.rave pre-seed: configure now derives the Homebrew prefix itself,
       # so this step exercises that path on a clean arm64 runner.
@@ -35,7 +35,7 @@ jobs:
           submodules: recursive
 
       - name: Install build dependencies
-        run: brew install boost google-sparsehash multimarkdown ninja ragel mercurial subversion
+        run: brew install multimarkdown ninja mercurial subversion
 
       # No local.rave pre-seed: configure now derives the Homebrew prefix itself,
       # so this step exercises that path on a clean arm64 runner.

@@ -1,7 +1,7 @@
 target "${dirname}" {
 	require text cf io
 	headers src/*.h
-	sources src/*.{cc,rl,mm}
+	sources src/*.{cc,mm}
 	tests tests/*.cc
 	frameworks CoreFoundation Foundation
 }

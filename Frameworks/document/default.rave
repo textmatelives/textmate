@@ -3,5 +3,6 @@ target "${dirname}" {
 	headers src/OakDocument.h src/OakDocumentController.h src/OakDocumentEditor.h
 	sources src/*.{mm,cc}
 	tests tests/t_*.{mm,cc}
+	libraries z
 	frameworks ApplicationServices
 }
