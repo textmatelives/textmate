@@ -235,6 +235,32 @@ def generate_credits(cache_file, warn=false)
   }
 end
 
+# Aggregates generate_credits into one entry per contributor.
+#
+# The old Contributions view listed every commit — 739 of them, 1.1 MB of HTML
+# that changed on every push. This collapses that to one row per person.
+#
+# Identity is keyed on the GitHub login where we have one, so the same person
+# is not split across the several e-mail addresses they may have committed
+# under; only where no login resolves do we fall back to the author name.
+#
+# Yields hashes { name:, user:, userpic:, commits:, first:, last: }, ordered by
+# commit count descending then name.
+def generate_authors(cache_file, warn = false)
+  authors = {}
+
+  generate_credits(cache_file, warn) do |_hash, name, _subject, _body, userpic, date, user|
+    key = (user && !user.empty?) ? "gh:#{user}" : "nm:#{name}"
+    a = authors[key] ||= { name: name, user: user, userpic: userpic, commits: 0, first: date, last: date }
+    a[:commits] += 1
+    a[:first]    = date if date < a[:first]
+    a[:last]     = date if date > a[:last]
+    a[:user]   ||= user
+  end
+
+  authors.values.sort_by { |a| [ -a[:commits], a[:name].downcase ] }.each { |a| yield a }
+end
+
 __END__
 # Contributions
 
