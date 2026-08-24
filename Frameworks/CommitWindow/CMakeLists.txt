@@ -1,6 +1,6 @@
 # Framework
 add_library(CommitWindow STATIC)
-file(GLOB _src src/*.mm)
+file(GLOB _src CONFIGURE_DEPENDS src/*.mm)
 target_sources(CommitWindow PRIVATE ${_src})
 textmate_framework(CommitWindow)
 target_link_libraries(CommitWindow PUBLIC

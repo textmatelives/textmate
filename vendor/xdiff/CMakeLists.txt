@@ -1,6 +1,6 @@
 add_library(xdiff STATIC)
 
-file(GLOB _src src/*.c)
+file(GLOB _src CONFIGURE_DEPENDS src/*.c)
 target_sources(xdiff PRIVATE ${_src})
 
 # This tree includes it as <xdiff/xdiff.h> (rave's convention), where tectiv3

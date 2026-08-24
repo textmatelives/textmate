@@ -1,5 +1,5 @@
 add_library(DocumentWindow STATIC)
-file(GLOB _src src/*.mm)
+file(GLOB _src CONFIGURE_DEPENDS src/*.mm)
 target_sources(DocumentWindow PRIVATE ${_src})
 textmate_framework(DocumentWindow)
 target_link_libraries(DocumentWindow PUBLIC

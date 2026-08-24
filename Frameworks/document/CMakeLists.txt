@@ -1,5 +1,5 @@
 add_library(document STATIC)
-file(GLOB _src src/*.mm src/*.cc)
+file(GLOB _src CONFIGURE_DEPENDS src/*.mm src/*.cc)
 target_sources(document PRIVATE ${_src})
 textmate_framework(document)
 target_link_libraries(document PUBLIC

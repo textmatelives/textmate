@@ -48,7 +48,7 @@ endfunction()
 
 # Asset catalog compilation (.xcassets → .car via actool)
 function(target_asset_catalog TARGET XCASSETS_DIR)
-  file(GLOB_RECURSE _assets "${CMAKE_CURRENT_SOURCE_DIR}/${XCASSETS_DIR}/*")
+  file(GLOB_RECURSE _assets CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/${XCASSETS_DIR}/*")
   set(_car "${CMAKE_CURRENT_BINARY_DIR}/Assets.car")
   add_custom_command(
     OUTPUT "${_car}"
@@ -124,7 +124,7 @@ function(textmate_add_tests FRAMEWORK_TARGET)
   if(NOT BUILD_TESTING)
     return()
   endif()
-  file(GLOB _test_sources
+  file(GLOB _test_sources CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/tests/t_*.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/tests/t_*.mm")
   if(NOT _test_sources)
@@ -134,7 +134,7 @@ function(textmate_add_tests FRAMEWORK_TARGET)
   set(_test_target "${FRAMEWORK_TARGET}_tests")
 
   # Use .mm extension when any test source is ObjC++ so runner compiles correctly
-  file(GLOB _mm_tests "${CMAKE_CURRENT_SOURCE_DIR}/tests/t_*.mm")
+  file(GLOB _mm_tests CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/tests/t_*.mm")
   if(_mm_tests)
     set(_runner "${CMAKE_CURRENT_BINARY_DIR}/test_runner.mm")
     # rave ran every ObjC++ suite with --no-parallel, and bin/gen_test's serial

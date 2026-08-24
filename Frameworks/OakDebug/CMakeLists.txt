@@ -1,6 +1,6 @@
 # rave: require_headers text, frameworks Cocoa ExceptionHandling
 add_library(OakDebug STATIC)
-file(GLOB _src src/*.cc src/*.mm)
+file(GLOB _src CONFIGURE_DEPENDS src/*.cc src/*.mm)
 target_sources(OakDebug PRIVATE ${_src})
 textmate_framework(OakDebug)
 # require_headers = include dirs only, no linking

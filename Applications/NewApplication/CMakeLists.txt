@@ -1,5 +1,5 @@
 add_executable(NewApplication MACOSX_BUNDLE)
-file(GLOB _src src/*.cc src/*.mm)
+file(GLOB _src CONFIGURE_DEPENDS src/*.cc src/*.mm)
 target_sources(NewApplication PRIVATE ${_src})
 target_link_libraries(NewApplication PRIVATE
   OakFoundation OakAppKit MenuBuilder OakDebug "-framework Cocoa")

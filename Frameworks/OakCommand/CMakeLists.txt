@@ -1,5 +1,5 @@
 add_library(OakCommand STATIC)
-file(GLOB _src src/*.mm)
+file(GLOB _src CONFIGURE_DEPENDS src/*.mm)
 target_sources(OakCommand PRIVATE ${_src})
 textmate_framework(OakCommand)
 target_link_libraries(OakCommand PUBLIC
