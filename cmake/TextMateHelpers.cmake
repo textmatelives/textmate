@@ -137,8 +137,14 @@ function(textmate_add_tests FRAMEWORK_TARGET)
   file(GLOB _mm_tests "${CMAKE_CURRENT_SOURCE_DIR}/tests/t_*.mm")
   if(_mm_tests)
     set(_runner "${CMAKE_CURRENT_BINARY_DIR}/test_runner.mm")
+    # rave ran every ObjC++ suite with --no-parallel, and bin/gen_test's serial
+    # path runs on the main thread. Cocoa APIs that assert NSThread.isMainThread
+    # abort otherwise — Frameworks/FileBrowser reaches TMFileReference through
+    # SCMRepository and dies without this.
+    set(_runner_args --no-parallel)
   else()
     set(_runner "${CMAKE_CURRENT_BINARY_DIR}/test_runner.cc")
+    set(_runner_args "")
   endif()
 
   add_custom_command(
@@ -151,13 +157,30 @@ function(textmate_add_tests FRAMEWORK_TARGET)
   add_executable(${_test_target} "${_runner}")
   target_link_libraries(${_test_target} PRIVATE ${FRAMEWORK_TARGET} ${TEXTMATE_DEBUG_LIBS})
   target_include_directories(${_test_target} PRIVATE "${CMAKE_SOURCE_DIR}/Shared/include")
-  add_test(NAME ${FRAMEWORK_TARGET} COMMAND ${_test_target})
+  add_test(NAME ${FRAMEWORK_TARGET} COMMAND ${_test_target} ${_runner_args})
+  # CMake has no built-in "build every test" target, and ctest only runs
+  # tests, it does not build them. Collect them under one target so CI can
+  # build the suites without building the whole application.
+  if(NOT TARGET tests)
+    add_custom_target(tests)
+  endif()
+  add_dependencies(tests ${_test_target})
+
+  # rave offered a `<framework>/test` target that built and ran one suite, and
+  # .tm_properties still binds ⌘B on a test file to it. ctest can select a
+  # single test but will not build it, so keep a target that does both.
+  add_custom_target(${FRAMEWORK_TARGET}_test
+    COMMAND "$<TARGET_FILE:${_test_target}>" ${_runner_args}
+    DEPENDS ${_test_target}
+    USES_TERMINAL
+    VERBATIM)
 endfunction()
 
 # Markdown -> HTML via bin/gen_html (multimarkdown).
 # Mirrors rave's CompileMarkdown rule. WRAP ON passes the header/footer
-# templates for whole documents (the About window); WRAP OFF renders bare
-# fragments (the in-app Help pages), which is what rave produced for those.
+# templates, which is what rave did for every page it rendered, because
+# MD_FLAGS was set on the whole TextMate target. WRAP OFF renders a bare
+# fragment and is currently unused.
 function(textmate_markdown TARGET SRC DEST_DIR WRAP)
   get_filename_component(_name "${SRC}" NAME_WE)
   set(_out "${CMAKE_CURRENT_BINARY_DIR}/md/${DEST_DIR}/${_name}.html")
@@ -195,16 +218,30 @@ function(textmate_copy_tree TARGET SRC_DIR DEST)
     VERBATIM)
 endfunction()
 
-# .strings -> UTF-16, mirroring rave's ConvertToUTF16. Files already in UTF-16
-# are passed through unchanged.
+# .strings -> expanded + UTF-16, mirroring rave's ExpandVariables followed by
+# ConvertToUTF16. Reusing bin/expand_variables is what keeps the output
+# byte-identical: it preserves the source's UTF-16 byte order and adds no
+# trailing newline, neither of which configure_file or a plain iconv pipeline
+# gets right.
 function(textmate_strings TARGET SRC DEST_DIR)
   get_filename_component(_name "${SRC}" NAME)
-  set(_out "${CMAKE_CURRENT_BINARY_DIR}/strings/${DEST_DIR}/${_name}")
+  # Keyed on the target: two targets in one directory (the Dialog plug-ins)
+  # would otherwise claim the same output path.
+  set(_dir "${CMAKE_CURRENT_BINARY_DIR}/strings/${TARGET}/${DEST_DIR}")
+  set(_expanded "${_dir}/expanded-${_name}")
+  set(_out "${_dir}/${_name}")
+  string(TIMESTAMP _year "%Y")
   add_custom_command(
     OUTPUT "${_out}"
-    COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_BINARY_DIR}/strings/${DEST_DIR}"
-    COMMAND sh -c "if [ \"$(head -c2 '${SRC}' | xxd -p)\" = fffe ] || [ \"$(head -c2 '${SRC}' | xxd -p)\" = feff ]; then cp '${SRC}' '${_out}'; else iconv -f utf-8 -t utf-16 < '${SRC}' > '${_out}'; fi"
-    DEPENDS "${SRC}"
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${_dir}"
+    COMMAND "${CMAKE_SOURCE_DIR}/bin/expand_variables" -o "${_expanded}"
+            "-dYEAR=${_year}" "-dTARGET_NAME=${TARGET}"
+            "-dAPP_MIN_OS=${CMAKE_OSX_DEPLOYMENT_TARGET}" "${SRC}"
+    # rave's ConvertToUTF16 passes through anything that already carries a
+    # UTF-16 BOM, which is how the plug-in strings keep their little-endian
+    # byte order; iconv would re-encode them as big-endian.
+    COMMAND sh -c "if [ \"$(head -c2 '${_expanded}' | xxd -p)\" = fffe ] || [ \"$(head -c2 '${_expanded}' | xxd -p)\" = feff ]; then cp '${_expanded}' '${_out}'; else iconv -f utf-8 -t utf-16 < '${_expanded}' > '${_out}'; fi"
+    DEPENDS "${SRC}" "${CMAKE_SOURCE_DIR}/bin/expand_variables"
     COMMENT "Strings ${_name}"
     VERBATIM)
   target_sources(${TARGET} PRIVATE "${_out}")

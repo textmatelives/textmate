@@ -26,6 +26,16 @@ target_include_directories(Onigmo PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}"
   "${CMAKE_CURRENT_SOURCE_DIR}/vendor")
 
+# src/setup.c is nothing but an __attribute__((constructor)) that calls
+# onig_init() and installs a Ruby syntax with ONIG_OPTION_ASCII_RANGE cleared,
+# which is what makes \w, \b and \p{...} Unicode-aware everywhere in the
+# editor. rave linked object files directly, so it always ran; linking a static
+# archive instead, the member has no referenced symbol and the linker drops it,
+# silently reverting every pattern to ASCII semantics. Force the whole archive
+# in so the constructor survives.
+target_link_options(Onigmo INTERFACE
+  "LINKER:-force_load,$<TARGET_FILE:Onigmo>")
+
 target_compile_options(Onigmo PRIVATE
   $<$<COMPILE_LANGUAGE:C>:-Wno-incompatible-pointer-types>
   $<$<COMPILE_LANGUAGE:C>:-Wno-char-subscripts>)

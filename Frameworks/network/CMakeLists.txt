@@ -27,6 +27,15 @@ target_link_libraries(network PUBLIC
   text cf io plist OakSystem regexp -lcurl
   "-framework SystemConfiguration" "-framework Security")
 
+# src/network.cc holds nothing but an __attribute__((constructor)) that calls
+# curl_global_init. rave linked object files directly, so it was always
+# present; linking a static archive instead, the member has no referenced
+# symbol and the linker drops it, leaving libcurl to initialise itself lazily
+# on first use, which libcurl documents as not thread-safe. Force the whole
+# archive in so the constructor survives.
+target_link_options(network INTERFACE
+  "LINKER:-force_load,$<TARGET_FILE:network>")
+
 textmate_add_tests(network)
 if(TARGET network_tests)
   target_include_directories(network_tests PRIVATE "${NETWORK_INCLUDE_DIR}")

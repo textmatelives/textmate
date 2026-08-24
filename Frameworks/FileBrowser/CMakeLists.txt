@@ -5,3 +5,5 @@ textmate_framework(FileBrowser)
 target_link_libraries(FileBrowser PUBLIC
   MenuBuilder OakAppKit OakCommand OakFoundation TMFileReference Preferences
   bundles io ns regexp scm settings text "-framework Cocoa")
+
+textmate_add_tests(FileBrowser)

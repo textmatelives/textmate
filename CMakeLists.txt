@@ -40,9 +40,18 @@ set(CMAKE_C_FLAGS_RELEASE "-Os -DNDEBUG -flto=thin" CACHE STRING "" FORCE)
 set(CMAKE_CXX_FLAGS_RELEASE "-Os -DNDEBUG -flto=thin" CACHE STRING "" FORCE)
 set(CMAKE_OBJC_FLAGS_RELEASE "-Os -DNDEBUG -flto=thin" CACHE STRING "" FORCE)
 set(CMAKE_OBJCXX_FLAGS_RELEASE "-Os -DNDEBUG -flto=thin" CACHE STRING "" FORCE)
-set(CMAKE_EXE_LINKER_FLAGS_RELEASE
-  "-flto=thin -Wl,-dead_strip -Wl,-dead_strip_dylibs -Wl,-cache_path_lto,${CMAKE_BINARY_DIR}/.lto-cache"
-  CACHE STRING "" FORCE)
+# Dead stripping is not something rave did. It is kept because it makes the
+# shipped binaries smaller, and it is exposed as a cache variable so a build
+# can be compared against rave's output with it turned off.
+set(TEXTMATE_DEAD_STRIP_FLAGS "-Wl,-dead_strip -Wl,-dead_strip_dylibs"
+  CACHE STRING "Linker flags used for dead stripping; set empty to disable")
+set(_release_link_flags
+  "-flto=thin ${TEXTMATE_DEAD_STRIP_FLAGS} -Wl,-cache_path_lto,${CMAKE_BINARY_DIR}/.lto-cache")
+set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${_release_link_flags}" CACHE STRING "" FORCE)
+# Plug-in bundles and the QuickLook generator are MODULE libraries, which take
+# their flags from a different variable and would otherwise link without LTO.
+set(CMAKE_MODULE_LINKER_FLAGS_RELEASE "${_release_link_flags}" CACHE STRING "" FORCE)
+set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "${_release_link_flags}" CACHE STRING "" FORCE)
 
 # ObjC runtime linking + force-load ObjC categories from static libraries
 add_link_options(-fobjc-link-runtime -ObjC)
@@ -166,6 +175,7 @@ add_subdirectory(Applications/QuickLookGenerator)
 add_subdirectory(Applications/NewApplication)
 add_subdirectory(Applications/TextMate)
 
-# === PlugIns (submodules) ===
-add_subdirectory(PlugIns/dialog)
-add_subdirectory(PlugIns/dialog-1.x)
+# === PlugIns ===
+# Both plug-ins are built from PlugIns/CMakeLists.txt, because their sources
+# live in submodules this repository does not control.
+add_subdirectory(PlugIns)

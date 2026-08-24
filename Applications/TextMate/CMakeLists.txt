@@ -33,15 +33,10 @@ else()
 endif()
 configure_file(Info.plist ${CMAKE_CURRENT_BINARY_DIR}/Info.plist)
 
-# Expand ${YEAR} in InfoPlist.strings — overwrite source copy in bundle
-configure_file(
-  resources/English.lproj/InfoPlist.strings
-  ${CMAKE_CURRENT_BINARY_DIR}/English.lproj/InfoPlist.strings)
-# rave converts .strings to UTF-16 (ConvertToUTF16); copying the UTF-8 source
-# straight in leaves the bundle differing from the rave build.
-add_custom_command(TARGET TextMate POST_BUILD
-  COMMAND sh -c "iconv -f utf-8 -t utf-16 < '${CMAKE_CURRENT_BINARY_DIR}/English.lproj/InfoPlist.strings' > '$<TARGET_BUNDLE_DIR:TextMate>/Contents/Resources/English.lproj/InfoPlist.strings'"
-  VERBATIM)
+# Expand ${YEAR} in InfoPlist.strings and encode it as UTF-16, the way rave did.
+textmate_strings(TextMate
+  "${CMAKE_CURRENT_SOURCE_DIR}/resources/English.lproj/InfoPlist.strings"
+  "English.lproj")
 set_target_properties(TextMate PROPERTIES
   MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_BINARY_DIR}/Info.plist")
 
@@ -174,3 +169,11 @@ textmate_codesign_file(TextMate "${CS_IDENTITY}"
 configure_file(Entitlements.plist ${CMAKE_CURRENT_BINARY_DIR}/Entitlements.plist)
 textmate_codesign(TextMate "${CS_IDENTITY}"
   ENTITLEMENTS "${CMAKE_CURRENT_BINARY_DIR}/Entitlements.plist")
+
+# `ninja run` builds, signs and relaunches TextMate, the way rave's
+# `TextMate/run` target did. .tm_properties points ⌘B at it.
+add_custom_target(run
+  COMMAND "${CMAKE_SOURCE_DIR}/bin/relaunch_app" "$<TARGET_BUNDLE_DIR:TextMate>"
+  USES_TERMINAL
+  VERBATIM)
+add_dependencies(run TextMate)
