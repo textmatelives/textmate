@@ -1,6 +1,6 @@
 # rave: require text
 add_library(scope STATIC)
-file(GLOB _src src/*.cc)
+file(GLOB _src CONFIGURE_DEPENDS src/*.cc)
 target_sources(scope PRIVATE ${_src})
 textmate_framework(scope)
 target_link_libraries(scope PUBLIC text)

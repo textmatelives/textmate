@@ -1,5 +1,5 @@
 add_library(OakTextView STATIC)
-file(GLOB _src src/*.cc src/*.mm)
+file(GLOB _src CONFIGURE_DEPENDS src/*.cc src/*.mm)
 target_sources(OakTextView PRIVATE ${_src})
 textmate_framework(OakTextView)
 target_link_libraries(OakTextView PUBLIC

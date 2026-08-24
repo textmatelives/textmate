@@ -1,5 +1,5 @@
 add_library(plist STATIC)
-file(GLOB _src src/*.cc src/*.mm)
+file(GLOB _src CONFIGURE_DEPENDS src/*.cc src/*.mm)
 target_sources(plist PRIVATE ${_src})
 textmate_framework(plist)
 target_include_directories(plist PRIVATE

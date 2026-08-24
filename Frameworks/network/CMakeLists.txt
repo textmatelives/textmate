@@ -4,7 +4,7 @@
 # Not present in tectiv3/textmate — they removed the in-app updater and this
 # framework with it. Retained here because SoftwareUpdate depends on it.
 add_library(network STATIC)
-file(GLOB _src src/*.cc src/*.mm)
+file(GLOB _src CONFIGURE_DEPENDS src/*.cc src/*.mm)
 target_sources(network PRIVATE ${_src})
 # Deliberately NOT textmate_framework(network).
 #

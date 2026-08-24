@@ -1,6 +1,6 @@
 # .qlgenerator bundle, not a regular app
 add_library(TextMateQL MODULE)
-file(GLOB _src src/*.c src/*.mm)
+file(GLOB _src CONFIGURE_DEPENDS src/*.c src/*.mm)
 target_sources(TextMateQL PRIVATE ${_src})
 
 # Info.plist refers to ${TARGET_NAME}, which rave's expand_variables filled in.
@@ -25,7 +25,7 @@ textmate_codesign(TextMateQL "${CS_IDENTITY}")
 # rave propagates a framework's `files resources/* "Resources"` into every
 # target that requires it, so TextMateQL picks up OakAppKit's and scm's
 # resources as well as its own. CMake has no equivalent, so list them.
-file(GLOB _ql_res
+file(GLOB _ql_res CONFIGURE_DEPENDS
   "${CMAKE_SOURCE_DIR}/Frameworks/OakAppKit/resources/Charsets.plist"
   "${CMAKE_SOURCE_DIR}/Frameworks/scm/resources/svn_status.xslt"
   "${CMAKE_SOURCE_DIR}/Frameworks/OakAppKit/gfx/CloseButton/*.png")

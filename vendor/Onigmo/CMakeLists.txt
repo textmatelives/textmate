@@ -1,14 +1,14 @@
 add_library(Onigmo STATIC)
 
-file(GLOB _src src/*.c)
-file(GLOB _enc
+file(GLOB _src CONFIGURE_DEPENDS src/*.c)
+file(GLOB _enc CONFIGURE_DEPENDS
   vendor/enc/ascii.c
   vendor/enc/euc_jp.c
   vendor/enc/iso8859_1.c
   vendor/enc/sjis.c
   vendor/enc/unicode.c
   vendor/enc/utf*.c)
-file(GLOB _vendor vendor/reg*.c vendor/st.c)
+file(GLOB _vendor CONFIGURE_DEPENDS vendor/reg*.c vendor/st.c)
 
 target_sources(Onigmo PRIVATE ${_src} ${_enc} ${_vendor})
 

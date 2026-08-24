@@ -1,5 +1,5 @@
 add_library(OakFilterList STATIC)
-file(GLOB _src src/*.mm src/ui/*.mm)
+file(GLOB _src CONFIGURE_DEPENDS src/*.mm src/ui/*.mm)
 target_sources(OakFilterList PRIVATE ${_src})
 textmate_framework(OakFilterList)
 target_link_libraries(OakFilterList PUBLIC

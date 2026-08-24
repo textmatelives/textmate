@@ -1,6 +1,6 @@
 # rave: require (none), headers src/*.h, sources src/*.cc, tests, frameworks CoreFoundation, libraries iconv
 add_library(text STATIC)
-file(GLOB _src src/*.cc)
+file(GLOB _src CONFIGURE_DEPENDS src/*.cc)
 target_sources(text PRIVATE ${_src})
 textmate_framework(text)
 target_link_libraries(text PUBLIC "-framework CoreFoundation")

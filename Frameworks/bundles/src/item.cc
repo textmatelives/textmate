@@ -142,7 +142,7 @@ namespace bundles
 			}
 			else if(pair.first == kFieldRequiredItems && plist::get<plist::array_t>(&pair.second))
 			{
-				for(auto const& dict : plist::get<plist::array_t>(pair.second))
+				for(auto const& dict : *plist::get<plist::array_t>(&pair.second))
 				{
 					std::string name;
 					oak::uuid_t uuid;
@@ -320,7 +320,8 @@ namespace bundles
 		plist::dictionary_t res;
 		for(auto const& pair : plist)
 		{
-			if(!plist::get<bool>(&pair.second) || plist::get<bool>(pair.second))
+			bool const* flag = plist::get<bool>(&pair.second);
+			if(!flag || *flag)
 				res.insert(res.end(), pair);
 		}
 		return res;

@@ -8,7 +8,7 @@
 # Applications/TextMate/CMakeLists.txt, which is where framework resources are
 # gathered, matching how the xibs are handled.
 add_library(SoftwareUpdate STATIC)
-file(GLOB _src src/*.mm)
+file(GLOB _src CONFIGURE_DEPENDS src/*.mm)
 target_sources(SoftwareUpdate PRIVATE ${_src})
 textmate_framework(SoftwareUpdate)
 target_link_libraries(SoftwareUpdate PUBLIC

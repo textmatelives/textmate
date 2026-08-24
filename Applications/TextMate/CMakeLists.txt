@@ -1,5 +1,5 @@
 add_executable(TextMate MACOSX_BUNDLE)
-file(GLOB _src src/*.cc src/*.mm)
+file(GLOB _src CONFIGURE_DEPENDS src/*.cc src/*.mm)
 target_sources(TextMate PRIVATE ${_src})
 
 # Internal framework dependencies
@@ -58,11 +58,11 @@ target_xib_sources(TextMate "English.lproj"
   "${CMAKE_SOURCE_DIR}/Frameworks/BundleEditor/resources/English.lproj/GrammarProperties.xib")
 
 # Icon and image resources
-file(GLOB _icons icons/*.icns)
+file(GLOB _icons CONFIGURE_DEPENDS icons/*.icns)
 # resources/* excluding "TextMate Help" and English.lproj: the Help directory
 # is rendered from Markdown below (globbing it here would also copy the .md
 # sources into the bundle) and the xibs are compiled to .nib separately.
-file(GLOB _resources resources/*)
+file(GLOB _resources CONFIGURE_DEPENDS resources/*)
 list(FILTER _resources EXCLUDE REGEX "/(TextMate Help|English\\.lproj|textmate_lives\\.icon)$")
 set(_all_resources ${_icons} ${_resources})
 target_sources(TextMate PRIVATE ${_all_resources})
@@ -70,7 +70,7 @@ set_source_files_properties(${_all_resources} PROPERTIES
   MACOSX_PACKAGE_LOCATION Resources)
 
 # Framework resources (static libs can't carry resources, so they go in the app bundle)
-file(GLOB _fw_res
+file(GLOB _fw_res CONFIGURE_DEPENDS
   "${CMAKE_SOURCE_DIR}/Frameworks/Preferences/icons/*.png"
   "${CMAKE_SOURCE_DIR}/Frameworks/OakTextView/resources/*.pdf"
   "${CMAKE_SOURCE_DIR}/Frameworks/OakTextView/resources/*.tiff"
@@ -90,7 +90,7 @@ set_source_files_properties(${_fw_res} PROPERTIES
   MACOSX_PACKAGE_LOCATION Resources)
 
 # TMFileReference resources go in Resources/DocumentTypes/ subdirectory
-file(GLOB _doctype_res
+file(GLOB _doctype_res CONFIGURE_DEPENDS
   "${CMAKE_SOURCE_DIR}/Frameworks/TMFileReference/resources/*.icns"
   "${CMAKE_SOURCE_DIR}/Frameworks/TMFileReference/resources/bindings.plist")
 target_sources(TextMate PRIVATE ${_doctype_res})
@@ -107,21 +107,21 @@ textmate_markdown(TextMate "${CMAKE_SOURCE_DIR}/CHANGELOG.md" "About" ON)
 
 # The Help pages get the same header/footer treatment: rave's MD_FLAGS is set
 # on the whole TextMate target, so every .md it converts is wrapped.
-file(GLOB _help_md "resources/TextMate Help/*.md")
+file(GLOB _help_md CONFIGURE_DEPENDS "resources/TextMate Help/*.md")
 foreach(_md ${_help_md})
   textmate_markdown(TextMate "${_md}" "TextMate Help" ON)
 endforeach()
 
-file(GLOB _help_css "resources/TextMate Help/css/*")
-file(GLOB _help_img "resources/TextMate Help/images/*")
+file(GLOB _help_css CONFIGURE_DEPENDS "resources/TextMate Help/css/*")
+file(GLOB _help_img CONFIGURE_DEPENDS "resources/TextMate Help/images/*")
 target_sources(TextMate PRIVATE ${_help_css} ${_help_img})
 set_source_files_properties(${_help_css} PROPERTIES
   MACOSX_PACKAGE_LOCATION "Resources/TextMate Help/css")
 set_source_files_properties(${_help_img} PROPERTIES
   MACOSX_PACKAGE_LOCATION "Resources/TextMate Help/images")
 
-file(GLOB _about_css about/css/*)
-file(GLOB _about_js about/js/*)
+file(GLOB _about_css CONFIGURE_DEPENDS about/css/*)
+file(GLOB _about_js CONFIGURE_DEPENDS about/js/*)
 target_sources(TextMate PRIVATE ${_about_css} ${_about_js})
 set_source_files_properties(${_about_css} PROPERTIES
   MACOSX_PACKAGE_LOCATION "Resources/About/css")
@@ -129,7 +129,7 @@ set_source_files_properties(${_about_js} PROPERTIES
   MACOSX_PACKAGE_LOCATION "Resources/About/js")
 
 # Framework resources: rave's per-target `files resources/* "Resources"`.
-file(GLOB _fw_res
+file(GLOB _fw_res CONFIGURE_DEPENDS
   "${CMAKE_SOURCE_DIR}/Frameworks/BundleEditor/templates/*.plist"
   "${CMAKE_SOURCE_DIR}/Frameworks/SoftwareUpdate/resources/*"
   "${CMAKE_SOURCE_DIR}/Frameworks/scm/resources/*")

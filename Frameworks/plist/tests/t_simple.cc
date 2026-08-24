@@ -89,8 +89,8 @@ void test_bool ()
 	plist::any_t mixedPlist = plist::parse_ascii("( :true, :false )");
 	OAK_ASSERT(plist::get< std::vector<plist::any_t> >(&mixedPlist));
 	std::vector<plist::any_t> const& v = plist::get< std::vector<plist::any_t> >(mixedPlist);
-	OAK_ASSERT_EQ(plist::get<bool>(v[0]), true);
-	OAK_ASSERT_EQ(plist::get<bool>(v[1]), false);
+	OAK_ASSERT_EQ(plist::convert<bool>(v[0]), true);
+	OAK_ASSERT_EQ(plist::convert<bool>(v[1]), false);
 
 	// plist::any_t badPlist = plist::parse_ascii(":bad");
 	// OAK_ASSERT_EQ(plist::get<bool>(&badPlist), (bool*)nullptr);
@@ -216,23 +216,23 @@ void test_number_type ()
 
 void test_number_conversion ()
 {
-	OAK_ASSERT_EQ(plist::get<int32_t>(plist::parse_ascii(  "+32")),       32);
-	OAK_ASSERT_EQ(plist::get<int32_t>(plist::parse_ascii(   "32")),       32);
-	OAK_ASSERT_EQ(plist::get<int32_t>(plist::parse_ascii(  "-32")),      -32);
-	OAK_ASSERT_EQ(plist::get<int32_t>(plist::parse_ascii("+0x32")),     0x32);
-	OAK_ASSERT_EQ(plist::get<int32_t>(plist::parse_ascii( "0x32")),     0x32);
-	OAK_ASSERT_EQ(plist::get<int32_t>(plist::parse_ascii("-0x32")),    -0x32);
-	OAK_ASSERT_EQ(plist::get<int32_t>(plist::parse_ascii(   "07")),        7);
-	OAK_ASSERT_EQ(plist::get<int32_t>(plist::parse_ascii( "+010")),        8);
-	OAK_ASSERT_EQ(plist::get<int32_t>(plist::parse_ascii(  "010")),        8);
-	OAK_ASSERT_EQ(plist::get<int32_t>(plist::parse_ascii(  "-07")),       -7);
-	OAK_ASSERT_EQ(plist::get<int32_t>(plist::parse_ascii( "-010")),       -8);
+	OAK_ASSERT_EQ(plist::convert<int32_t>(plist::parse_ascii(  "+32")),       32);
+	OAK_ASSERT_EQ(plist::convert<int32_t>(plist::parse_ascii(   "32")),       32);
+	OAK_ASSERT_EQ(plist::convert<int32_t>(plist::parse_ascii(  "-32")),      -32);
+	OAK_ASSERT_EQ(plist::convert<int32_t>(plist::parse_ascii("+0x32")),     0x32);
+	OAK_ASSERT_EQ(plist::convert<int32_t>(plist::parse_ascii( "0x32")),     0x32);
+	OAK_ASSERT_EQ(plist::convert<int32_t>(plist::parse_ascii("-0x32")),    -0x32);
+	OAK_ASSERT_EQ(plist::convert<int32_t>(plist::parse_ascii(   "07")),        7);
+	OAK_ASSERT_EQ(plist::convert<int32_t>(plist::parse_ascii( "+010")),        8);
+	OAK_ASSERT_EQ(plist::convert<int32_t>(plist::parse_ascii(  "010")),        8);
+	OAK_ASSERT_EQ(plist::convert<int32_t>(plist::parse_ascii(  "-07")),       -7);
+	OAK_ASSERT_EQ(plist::convert<int32_t>(plist::parse_ascii( "-010")),       -8);
 }
 
 void test_uint64_conversion ()
 {
-	OAK_ASSERT_EQ(plist::get<uint64_t>(plist::parse_ascii("8589934592")),     8589934592ULL);
-	OAK_ASSERT_EQ(plist::get<uint64_t>(plist::parse_ascii("0x812345678")),   0x812345678ULL);
+	OAK_ASSERT_EQ(plist::convert<uint64_t>(plist::parse_ascii("8589934592")),     8589934592ULL);
+	OAK_ASSERT_EQ(plist::convert<uint64_t>(plist::parse_ascii("0x812345678")),   0x812345678ULL);
 	OAK_ASSERT_EQ(plist::convert<uint64_t>(plist::parse_ascii("'0x812345678'")), 0x812345678ULL);
 }
 

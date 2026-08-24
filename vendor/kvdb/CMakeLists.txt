@@ -1,6 +1,6 @@
 add_library(kvdb STATIC)
 
-file(GLOB _src vendor/kvdb/*.m)
+file(GLOB _src CONFIGURE_DEPENDS vendor/kvdb/*.m)
 target_sources(kvdb PRIVATE ${_src})
 
 # kvdb exports vendor/kvdb/kvdb.h — include parent so <kvdb/kvdb.h> works

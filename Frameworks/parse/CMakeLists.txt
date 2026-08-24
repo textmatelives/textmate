@@ -1,6 +1,6 @@
 # rave: require text bundles plist regexp scope
 add_library(parse STATIC)
-file(GLOB _src src/*.cc)
+file(GLOB _src CONFIGURE_DEPENDS src/*.cc)
 target_sources(parse PRIVATE ${_src})
 textmate_framework(parse)
 target_link_libraries(parse PUBLIC text bundles plist regexp scope)

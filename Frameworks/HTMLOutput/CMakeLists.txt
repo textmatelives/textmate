@@ -1,5 +1,5 @@
 add_library(HTMLOutput STATIC)
-file(GLOB_RECURSE _src src/*.mm)
+file(GLOB_RECURSE _src CONFIGURE_DEPENDS src/*.mm)
 target_sources(HTMLOutput PRIVATE ${_src})
 textmate_framework(HTMLOutput)
 
