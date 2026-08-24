@@ -46,60 +46,81 @@ For questions about TextMate proper (history, design, upstream behaviour), see t
 
 To build TextMate, you need the following:
 
- * [boost][]         — portable C++ source libraries
+ * [cmake][]         — build system generator
  * [multimarkdown][] — marked-up plain text compiler
  * [ninja][]         — build system similar to `make`
- * [ragel][]         — state machine compiler
- * [sparsehash][]    — a cache friendly `hash_map`
 
 All this can be installed using either [Homebrew][] or [MacPorts][]:
 
 ```sh
 # Homebrew
-brew install boost google-sparsehash multimarkdown ninja ragel
+brew install cmake multimarkdown ninja
 
 # MacPorts
-sudo port install boost multimarkdown ninja ragel sparsehash
+sudo port install cmake multimarkdown ninja
 ```
 
-After installing dependencies, make sure you have a full checkout (including submodules) and then run `./configure` followed by `ninja`, for example:
+Running the `scm` test suite additionally needs `git`, `hg` and `svn` on the
+`PATH`.
+
+After installing dependencies, make sure you have a full checkout (including
+submodules), then configure a build directory and build it:
 
 ```sh
 git clone --recursive https://github.com/textmatelives/textmate.git
 cd textmate
-./configure && ninja TextMate/run
+cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build --target TextMate
 ```
 
-The `./configure` script simply checks that all dependencies can be found, and then calls `bin/rave` to bootstrap a `build.ninja` file with default config set to `release` and default target set to `TextMate`.
+The result is `build/Applications/TextMate/TextMate.app`. Configuring is only
+needed once; afterwards `ninja -C build` is enough, and it re-runs CMake by
+itself when a `CMakeLists.txt` changes.
+
+Builds are signed with an ad-hoc signature by default. To sign with a real
+identity, pass its name or hash: `-DCS_IDENTITY="Developer ID Application: …"`.
 
 ## Building from within TextMate
 
-You should install the [Ninja][NinjaBundle] bundle which can be installed via _Preferences_ → _Bundles_.
+You should install the [Ninja][NinjaBundle] bundle which can be installed via
+_Preferences_ → _Bundles_.
 
-After this you can press ⌘B to build from within TextMate. In case you haven't already you also need to set up the `PATH` variable either in _Preferences_ → _Variables_ or `~/.tm_properties` so it can find `ninja` and related tools; an example could be `$PATH:/opt/homebrew/bin`.
+After this you can press ⌘B to build from within TextMate. In case you haven't
+already you also need to set up the `PATH` variable either in _Preferences_ →
+_Variables_ or `~/.tm_properties` so it can find `ninja` and related tools; an
+example could be `$PATH:/opt/homebrew/bin`.
 
-The default target (set in `.tm_properties`) is `TextMate/run`. This will relaunch TextMate but when called from within TextMate, a dialog will appear before the current instance is killed. As there is full session restore, it is safe to relaunch even with unsaved changes.
+`.tm_properties` expects the build directory to be `build` inside the source
+tree, which is what the `cmake -B build` line above creates.
 
-If the current file is a test file then the target to build is changed to build the library to which the test belongs (this is done by setting `TM_NINJA_TARGET` in the `.tm_properties` file found in the root of the source tree).
+The default target is `run`. This will relaunch TextMate, but when called from
+within TextMate a dialog will appear before the current instance is killed. As
+there is full session restore, it is safe to relaunch even with unsaved
+changes.
 
-Similarly, if the current file belongs to an application target (other than `TextMate.app`) then `TM_NINJA_TARGET` is set to build and run this application.
+If the current file is a test file then the target is changed to the one that
+builds and runs the suite it belongs to, and if the current file belongs to an
+application target other than `TextMate.app` then that application is built
+instead.
 
 ## Build Targets
 
-For the `TextMate.app` application there are two symbolic build targets:
-
 ```sh
-ninja TextMate      # Build and sign TextMate
-ninja TextMate/run  # Build, sign, and (re)launch TextMate
+ninja -C build TextMate   # Build and sign TextMate
+ninja -C build run        # Build, sign, and (re)launch TextMate
+ninja -C build tests      # Build every framework test suite
+ninja -C build io_test    # Build and run one suite (here: Frameworks/io)
 ```
 
-To clean everything run:
+Test suites are also registered with CTest, which runs them and reports
+results together:
 
 ```sh
-ninja -t clean
+cmake --build build --target tests
+ctest --test-dir build --output-on-failure
 ```
 
-Or simply delete `~/build/TextMate`.
+To clean everything, delete the `build` directory.
 
 # Legal
 
@@ -107,11 +128,9 @@ The source for TextMate is released under the GNU General Public License as publ
 
 TextMate is a trademark of Allan Odgaard.
 
-[boost]:         http://www.boost.org/
+[cmake]:         https://cmake.org/
 [ninja]:         https://ninja-build.org/
 [multimarkdown]: http://fletcherpenney.net/multimarkdown/
-[ragel]:         https://www.colm.net/open-source/ragel/
 [MacPorts]:      http://www.macports.org/
 [Homebrew]:      http://brew.sh/
 [NinjaBundle]:   https://github.com/textmate/ninja.tmbundle
-[sparsehash]:    https://code.google.com/p/sparsehash/

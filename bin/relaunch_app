@@ -1,0 +1,52 @@
+#!/bin/sh
+# Quit a running copy of an application and start the newly built one.
+#
+# This reproduces what rave's `<App>/run` target did, so that ⌘B from inside
+# TextMate still rebuilds and relaunches the editor. When invoked from within
+# TextMate, $DIALOG points at tm_dialog and the user is asked before their
+# running instance is killed; outside TextMate the relaunch is unattended.
+
+set -u
+
+app="${1:-}"
+if [ -z "$app" ] || [ ! -d "$app" ]; then
+	echo "usage: $(basename "$0") <path-to-app-bundle>" >&2
+	exit 1
+fi
+
+name=$(basename "$app" .app)
+
+if pgrep -x "$name" >/dev/null; then
+	if [ -n "${DIALOG:-}" ] && [ -x "${DIALOG:-}" ]; then
+		answer=$("$DIALOG" alert \
+			--title "Relaunch ${name}?" \
+			--body "Would you like to quit ${name} and start the newly built version?" \
+			--button1 Relaunch --button2 Cancel)
+		case "$answer" in
+			*'<integer>0</integer>'*|*'buttonClicked = 0'*) ;;
+			*) exit 0 ;;
+		esac
+	fi
+
+	pkill -x "$name"
+	n=0
+	while pgrep -x "$name" >/dev/null; do
+		n=$((n + 1))
+		if [ "$n" -ge 25 ]; then
+			echo "Unable to quit ${name}." >&2
+			exit 1
+		fi
+		sleep .2
+	done
+fi
+
+m=0
+until pgrep -x "$name" >/dev/null; do
+	m=$((m + 1))
+	if [ "$m" -ge 25 ]; then
+		echo "Unable to launch ${name}." >&2
+		exit 1
+	fi
+	open "$app" --args -disableSessionRestore NO
+	sleep .2
+done

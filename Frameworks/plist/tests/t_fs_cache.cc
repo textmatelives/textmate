@@ -59,8 +59,8 @@ void test_file_entry_with_content_roundtrip ()
 	b.load(path);
 	plist::dictionary_t roundtripped = b.content(filePath);
 	OAK_ASSERT_EQ(roundtripped.size(), original.size());
-	OAK_ASSERT_EQ(boost::get<std::string>(roundtripped["uuid"]), "ABCD-1234");
-	OAK_ASSERT_EQ(boost::get<std::string>(roundtripped["name"]), "Example");
+	OAK_ASSERT_EQ(plist::get<std::string>(roundtripped["uuid"]), "ABCD-1234");
+	OAK_ASSERT_EQ(plist::get<std::string>(roundtripped["name"]), "Example");
 }
 
 void test_directory_entry_roundtrip ()
@@ -101,7 +101,7 @@ void test_link_entry_roundtrip ()
 	plist::cache_t b;
 	b.load(path);
 	plist::dictionary_t roundtripped = b.content(linkPath);
-	OAK_ASSERT_EQ(boost::get<std::string>(roundtripped["uuid"]), "XYZ");
+	OAK_ASSERT_EQ(plist::get<std::string>(roundtripped["uuid"]), "XYZ");
 }
 
 void test_missing_entry_roundtrip ()

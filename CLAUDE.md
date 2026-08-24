@@ -13,24 +13,47 @@ Hard constraints declared by the maintainer:
 
 ## Build system
 
-`./configure` checks dependencies (`capnp ninja ragel multimarkdown pgrep pkill`) and bootstraps `build.ninja` by invoking `bin/rave -crelease -tTextMate`. `bin/rave` is a Ruby DSL parser that walks `Applications/*/`, `Frameworks/*/`, `PlugIns/*/`, `vendor/*/` for `default.rave` files (see `default.rave:46`) and emits ninja rules. After `./configure`, all builds go through `ninja`.
+CMake generating Ninja. The root `CMakeLists.txt` sets the shared compiler
+configuration and adds one subdirectory per framework, application and plug-in;
+`cmake/TextMateHelpers.cmake` holds the project-specific functions
+(`textmate_framework`, `target_xib_sources`, `target_asset_catalog`,
+`textmate_codesign`, `textmate_embed`, `textmate_markdown`, `textmate_strings`,
+`textmate_add_tests`).
 
-The compiler config is C++20 (`-std=c++2a`), ObjC ARC, deployment target 10.12 (`default.rave:1-7`). Precompiled headers live in `Shared/PCH/prelude.{c,cc,m,mm}`. `NULL_STR` is passed via `-D` (`default.rave:12`). The legacy `REST_API` macro (formerly `https://api.textmate.org`) was removed in PR #9; the fork makes no `api.textmate.org` calls (see "Bundle delivery" below).
+The compiler config is C++20, ObjC ARC, deployment target 14.0
+(`CMakeLists.txt:1-30`). Precompiled headers live in `Shared/PCH/prelude.{c,cc,m,mm}`
+and are force-included per language. `NULL_STR` is passed via `-D`. The legacy
+`REST_API` macro (formerly `https://api.textmate.org`) was removed in PR #9; the
+fork makes no `api.textmate.org` calls (see "Bundle delivery" below).
 
 Common commands:
 
 ```sh
-./configure                        # First-time / regen build.ninja
-ninja                              # Default target (TextMate, per ./configure -tTextMate)
-ninja TextMate/run                 # Build, sign, gracefully relaunch TextMate.app
-ninja -t clean                     # Or delete ~/build/TextMate
-ninja <Framework>/test             # Run a framework's test suite (e.g. scm/test)
-ninja <App>/run                    # Run any other app (e.g. mate/run)
+cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release   # First-time configure
+ninja -C build TextMate            # Build and sign TextMate.app
+ninja -C build run                 # Build, sign, gracefully relaunch TextMate.app
+ninja -C build tests               # Build every framework test suite
+ninja -C build <Framework>_test    # Build and run one suite (e.g. scm_test)
+ctest --test-dir build             # Run all suites and report together
 ```
 
-`$builddir` defaults to `~/build/TextMate`. `bin/rave -b<dir>` overrides it.
+The app lands at `build/Applications/TextMate/TextMate.app`. To clean, delete
+the build directory. Signing uses an ad-hoc identity unless `-DCS_IDENTITY=...`
+is passed.
 
-`.tm_properties` sets `TM_NINJA_TARGET` rules so ⌘B inside TextMate auto-picks the right target: editing `tests/t_*.{cc,mm}` builds `<framework>/test`; editing under `Applications/<X>/` builds `<X>/run`; otherwise `TextMate/run`.
+Two things the old rave build got for free and CMake does not, both already
+handled — do not undo them. rave linked object files directly, so an
+`__attribute__((constructor))` in an otherwise-unreferenced translation unit
+always ran. CMake links static archives, where the linker drops such a member
+outright. `vendor/Onigmo/src/setup.c` (Unicode-aware `\w`, `\b`, `\p{...}`
+everywhere) and `Frameworks/network/src/network.cc` (`curl_global_init`) are
+both pulled in with `-force_load` for that reason. Anything else added with a
+constructor and no referenced symbol needs the same treatment.
+
+`.tm_properties` sets `TM_NINJA_TARGET` rules so ⌘B inside TextMate auto-picks
+the right target: editing `tests/t_*.{cc,mm}` builds and runs `<framework>_test`;
+editing under `Applications/<X>/` builds `<X>`; otherwise `run`. It expects the
+build directory to be `build` inside the source tree.
 
 ## Architecture
 
@@ -45,16 +68,16 @@ The two largest layers worth knowing:
 
 ## Tests
 
-CxxTest-style, but home-grown: `bin/gen_test` reads each `tests/t_*.{cc,mm}` file, finds top-level `void test_*()` functions, and emits a single runner with `main()` (`bin/rave:1372-1480`). Assertions are `OAK_ASSERT`, `OAK_ASSERT_EQ`, `OAK_ASSERT_NE`. Filesystem fixtures use `test::jail_t` from `Frameworks/test`.
+CxxTest-style, but home-grown: `bin/gen_test` reads each `tests/t_*.{cc,mm}` file, finds top-level `void test_*()` functions, and emits a single runner with `main()`. `textmate_add_tests` in `cmake/TextMateHelpers.cmake` wires that up and registers the suite with CTest. Assertions are `OAK_ASSERT`, `OAK_ASSERT_EQ`, `OAK_ASSERT_NE`. Filesystem fixtures use `test::jail_t` from `Frameworks/test`.
 
-Test files are declared in a framework's `default.rave` with `tests tests/t_*.{cc,mm}` (e.g. `Frameworks/scm/default.rave:7`, `Frameworks/FileBrowser/default.rave:7`). Run via `ninja <framework>/test`.
+A framework opts in by calling `textmate_add_tests(<target>)` in its `CMakeLists.txt`; the helper picks up `tests/t_*.{cc,mm}` on its own. Run one via `ninja -C build <framework>_test`, or all of them via `ctest --test-dir build`.
 
 Runner flags (parsed by the generated runner via `getopt_long`, `bin/gen_test:155-189`):
 - `-v` verbose, `-m` measure, `-r N` repeat, `-b` benchmarks, `-p`/`-P` (`--parallel` / `--no-parallel`)
 
-`.mm` test runners are passed `--no-parallel` automatically (`bin/rave:1454`) and `bin/gen_test` runs the serial path on the main thread when `--no-parallel` is set — required by Cocoa APIs that assert `NSThread.isMainThread` (e.g. `TMFileReference`). Pure C++ (`.cc`) runners stay parallel.
+`.mm` test runners are passed `--no-parallel` automatically and `bin/gen_test` runs the serial path on the main thread when `--no-parallel` is set — required by Cocoa APIs that assert `NSThread.isMainThread` (e.g. `TMFileReference`). Pure C++ (`.cc`) runners stay parallel.
 
-There is no name-based test filter. To run a subset, either run the test binary directly (`~/build/TextMate/release/_Test/<id>/<name> -v`) or temporarily edit the test source.
+There is no name-based test filter. To run a subset, either run the test binary directly (`build/Frameworks/<name>/<name>_tests -v`) or temporarily edit the test source.
 
 Tests that shell out to git must call `git init -b master` (not bare `git init`) — modern git's `init.defaultBranch` defaults to `main` and breaks tests that assume `master`.
 

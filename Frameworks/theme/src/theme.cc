@@ -181,7 +181,6 @@ theme_ptr theme_t::copy_with_font_name_and_size (std::string const& fontName, CG
 theme_t::theme_t (bundles::item_ptr const& themeItem, std::string const& fontName, CGFloat fontSize) :_item(themeItem), _font_name(fontName), _font_size(fontSize)
 {
 	_styles = find_shared_styles(themeItem);
-	_cache.set_empty_key(scope::scope_t{});
 }
 
 static CGColorRef OakColorCreateCopySoften (CGColorPtr cgColor, CGFloat factor)
@@ -256,7 +255,7 @@ void theme_t::shared_styles_t::setup_styles ()
 		{
 			for(auto const& it : items)
 			{
-				if(plist::dictionary_t const* styles = boost::get<plist::dictionary_t>(&it))
+				if(plist::dictionary_t const* styles = plist::get<plist::dictionary_t>(&it))
 				{
 					_styles.push_back(parse_styles(*styles));
 					if(!_styles.back().invisibles.is_blank())
