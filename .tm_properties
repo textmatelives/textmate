@@ -10,14 +10,14 @@ excludeDirectoriesInFolderSearch = '{bin/CxxTest,build,SyntaxMate.tmBundle}'
 TM_ORGANIZATION_NAME = 'MacroMates'
 
 TM_TODO_IGNORE       = '/(build|CxxTest|PlugIns|vendor)/|\.(md|html)$'
-TM_BUILD_DIR         = '${builddir:-$HOME/build/${CWD/.*\///}}'
-TM_FRAMEWORKS        = 'authorization buffer BundleEditor BundleEditor BundleMenu bundles BundlesManager cf command CommitWindow crash CrashReporter document DocumentWindow editor encoding file FileBrowser Find HTMLOutput HTMLOutputWindow io layout license MenuBuilder network ns OakAppKit OakCommand OakDebug OakFilterList OakFoundation OakSystem OakTabBarView OakTextView parse plist Preferences regexp scm scope selection settings SoftwareUpdate text theme undo updater version'
-TM_FRAMEWORK_INCLUDE = '${TM_FRAMEWORKS/\w+/-I"${TM_BUILD_DIR}\/release\/_Include\/$0\/include"/g}'
+TM_BUILD_DIR         = '$CWD/build'
+TM_FRAMEWORKS        = 'authorization buffer BundleEditor BundleMenu bundles BundlesManager cf command CommitWindow crash CrashReporter document DocumentWindow editor encoding file FileBrowser Find HTMLOutput HTMLOutputWindow io layout MenuBuilder ns OakAppKit OakCommand OakDebug OakFilterList OakFoundation OakSystem OakTabBarView OakTextView parse plist Preferences regexp scm scope selection settings SoftwareUpdate text theme TMFileReference undo'
+TM_FRAMEWORK_INCLUDE = '${TM_FRAMEWORKS/\w+/-I"${TM_BUILD_DIR}\/Frameworks\/$0\/include"/g}'
 TM_CXX_FLAGS         = '$TM_CXX_FLAGS    -I"$CWD/Shared/include" ${TM_FRAMEWORK_INCLUDE}'
 TM_OBJCXX_FLAGS      = '$TM_OBJCXX_FLAGS -I"$CWD/Shared/include" ${TM_FRAMEWORK_INCLUDE}'
 
-TM_NINJA_FILE        = '${CWD}/build.ninja'
-TM_NINJA_TARGET      = 'TextMate/run'
+TM_NINJA_FILE        = '${TM_BUILD_DIR}/build.ninja'
+TM_NINJA_TARGET      = 'run'
 
 TM_ISSUE_URL         = 'https://github.com/textmate/textmate/issues/%s'
 
@@ -33,12 +33,12 @@ fileType         = 'source.objc++'
 fileType         = 'source.objc++'
 
 [ Applications/**~mate/** ]
-TM_NINJA_TARGET = '${TM_DIRECTORY/^.*\/Applications\/([^\/]+)(\/.*)?$/$1\/run/}'
+TM_NINJA_TARGET = '${TM_DIRECTORY/^.*\/Applications\/([^\/]+)(\/.*)?$/$1/}'
 
 [ tests/t_*.{cc,mm} ]
 scopeAttributes  = 'attr.test.cxxtest'
-TM_NINJA_TARGET  = '${TM_FILEPATH/^.*?([^\/]*)\/tests\/.*$/$1\/test/}'
+TM_NINJA_TARGET  = '${TM_FILEPATH/^.*?([^\/]*)\/tests\/.*$/$1_test/}'
 
 [ tests/gui_*.mm ]
 GUI_TESTS        = '${TM_FILENAME/^gui_(.*)\.mm$/$1/}'
-TM_NINJA_TARGET  = '${TM_FILEPATH/^.*?([^\/]*)\/tests\/.*$/$1\/cxx_test/}'
+TM_NINJA_TARGET  = '${TM_FILEPATH/^.*?([^\/]*)\/tests\/.*$/$1_test/}'
