@@ -77,7 +77,7 @@
 		config.backwards = NO;
 		config.caseSensitive = ![NSUserDefaults.standardUserDefaults boolForKey:kUserDefaultsFindIgnoreCase];
 		config.wraps = [NSUserDefaults.standardUserDefaults boolForKey:kUserDefaultsFindWrapAround];
-		[self findString:entry.string withConfiguration:config completionHandler:nil];
+		[self findString:entry.string withConfiguration:config completionHandler:^(WKFindResult* result){ }];
 	}
 }
 
@@ -90,7 +90,7 @@
 		config.backwards = YES;
 		config.caseSensitive = ![NSUserDefaults.standardUserDefaults boolForKey:kUserDefaultsFindIgnoreCase];
 		config.wraps = [NSUserDefaults.standardUserDefaults boolForKey:kUserDefaultsFindWrapAround];
-		[self findString:entry.string withConfiguration:config completionHandler:nil];
+		[self findString:entry.string withConfiguration:config completionHandler:^(WKFindResult* result){ }];
 	}
 }
 
