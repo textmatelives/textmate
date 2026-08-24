@@ -61,9 +61,11 @@ static void delta_plist_helper (plist::dictionary_t const& oldDict, plist::dicti
 		newPath.push_back(newValue.first);
 
 		plist::dictionary_t::const_iterator oldValue = oldDict.find(newValue.first);
-		if(::plist::get<plist::dictionary_t>(&newValue.second) && oldValue != oldDict.end() && ::plist::get<plist::dictionary_t>(&oldValue->second))
+		plist::dictionary_t const* newSubDict = ::plist::get<plist::dictionary_t>(&newValue.second);
+		plist::dictionary_t const* oldSubDict = oldValue != oldDict.end() ? ::plist::get<plist::dictionary_t>(&oldValue->second) : nullptr;
+		if(newSubDict && oldSubDict)
 		{
-			delta_plist_helper(::plist::get<plist::dictionary_t>(oldValue->second), ::plist::get<plist::dictionary_t>(newValue.second), changed, deleted, newPath);
+			delta_plist_helper(*oldSubDict, *newSubDict, changed, deleted, newPath);
 		}
 		else if(oldValue == oldDict.end() || !plist::equal(oldValue->second, newValue.second))
 		{

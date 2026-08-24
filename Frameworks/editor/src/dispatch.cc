@@ -303,7 +303,9 @@ namespace ng
 
 		for(auto const& command : commands)
 		{
-			plist::dictionary_t dict = plist::get<plist::dictionary_t>(command); // TODO ASSERT this!
+			// A malformed entry yields an empty dictionary and is skipped below,
+			// rather than throwing out of the editor mid-macro.
+			plist::dictionary_t dict = plist::convert<plist::dictionary_t>(command);
 			std::string sel, str;
 			plist::dictionary_t args;
 			if(plist::get_key_path(dict, "command", sel))

@@ -55,9 +55,14 @@ namespace plist
 		bool operator< (any_t const& rhs) const  { return data < rhs.data; }
 	};
 
-	// Drop-in replacements for boost::get
+	// Drop-in replacements for boost::get. These are strict: the stored type
+	// must be exactly T. There is deliberately no overload taking any_t const&
+	// — a const value is nearly always a read that wants plist::convert<T>,
+	// which coerces and yields a default when the types do not line up, the
+	// way plist::get<T> did before any_t moved off boost::variant. Making the
+	// const case a compile error keeps that choice explicit, and avoids
+	// returning a reference into an any_t temporary.
 	template <typename T> T& get (any_t& v)             { return std::get<T>(v.data); }
-	template <typename T> T const& get (any_t const& v)  { return std::get<T>(v.data); }
 	template <typename T> T* get (any_t* v)              { return v ? std::get_if<T>(&v->data) : nullptr; }
 	template <typename T> T const* get (any_t const* v)  { return v ? std::get_if<T>(&v->data) : nullptr; }
 
