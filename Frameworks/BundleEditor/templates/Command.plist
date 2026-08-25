@@ -1,2 +1,2 @@
-{	command = '#!/usr/bin/env ruby -wKU\nputs "Hello world"\n';
+{	command = '#!/usr/bin/env ruby -wEutf-8\nputs "Hello world"\n';
 }
