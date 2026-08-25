@@ -5,7 +5,7 @@
 	<key>beforeRunningCommand</key>
 	<string>nop</string>
 	<key>command</key>
-	<string>#!/usr/bin/env ruby18 -wKU
+	<string>#!/usr/bin/env ruby -wKU
 require "shellwords"
 
 abort "Select one or more items in file browser" unless ENV.has_key? 'TM_SELECTED_FILES'
