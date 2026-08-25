@@ -57,6 +57,19 @@ namespace oak
 		res.emplace("LOGNAME", entry->pw_name);
 		res.emplace("USER",    entry->pw_name);
 
+		// Launched from Finder we inherit no locale, which leaves anything we
+		// run defaulting to the C locale. Ruby then reports an external
+		// encoding of US-ASCII, so commands read files and stdin as bytes and
+		// tag ENV strings ASCII-8BIT — interpolating a path with an accent in
+		// it into a UTF-8 string raises Encoding::CompatibilityError.
+		//
+		// bash_init.sh has always exported this, but fix_shebang only prepends
+		// that preamble to commands with no shebang of their own, so every
+		// "#!/usr/bin/env ruby" command went without. Setting it here covers
+		// them all. emplace leaves alone anything the user let through via the
+		// environmentWhitelist preference.
+		res.emplace("LC_CTYPE", "UTF-8");
+
 		res.emplace("TM_APP_IDENTIFIER", cf::to_s(CFBundleGetIdentifier(CFBundleGetMainBundle())));
 		res.emplace("TM_FULLNAME",       entry->pw_gecos ?: "John Doe");
 		res.emplace("TM_PID",            std::to_string(getpid()));
