@@ -72,7 +72,7 @@ class String
 		self.each_byte do |byte|	
 			char = byte.chr
 			case char
-				when /[^\w_\-\+=\/\x7F-\xFF]/
+				when /[^\w_\-=\/\x7F-\xFF]/n
 					outname += "\\"
 			end
 			outname += char
