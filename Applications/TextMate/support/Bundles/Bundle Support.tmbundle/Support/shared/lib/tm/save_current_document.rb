@@ -52,8 +52,8 @@ module TextMate
       doc, dst = STDIN.read, ENV['TM_FILEPATH']
       
       unless dst.nil?
-        FileUtils.touch(dst) unless File.exists?(dst) or not File.writable?(File.dirname(dst))
-        return if File.exists?(dst) and File.read(dst) == doc
+        FileUtils.touch(dst) unless File.exist?(dst) or not File.writable?(File.dirname(dst))
+        return if File.exist?(dst) and File.read(dst) == doc
       else
         ENV['TM_FILEPATH']         = dst = TextMate::IO.tempfile(temp_ext).path
         ENV['TM_FILENAME']         = File.basename dst

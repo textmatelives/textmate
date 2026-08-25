@@ -27,7 +27,7 @@ static struct TMMandatoryBundle const kTMMandatoryBundles[] = {
 		"0BB1F01A-4F0A-475A-ACDD-0F5578F2EFC3",
 		"Bundle Support",
 		"https://github.com/textmatelives/bundle-support.tmbundle",
-		"686adb59a5bec2ee7e8552c16a890034aef42e0e",
+		"bda1fda1c67ef1ec1d5022a9b919732f50aa1144",
 		"Other",
 	},
 	// branch: main
@@ -43,7 +43,7 @@ static struct TMMandatoryBundle const kTMMandatoryBundles[] = {
 		"4F45FDC0-62CA-4786-9134-8BC7C1F5606F",
 		"Source",
 		"https://github.com/textmatelives/source.tmbundle",
-		"2c873f8382fd11cda4a86b4159bc2977577568d3",
+		"678a8db11aaaa2f22f20e4f268f52920e550c08d",
 		"Other",
 	},
 	// branch: master (upstream textmate/themes.tmbundle — pure data, no Ruby)

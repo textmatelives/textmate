@@ -89,7 +89,8 @@ module TextMate
 
         support_path = ENV['TM_SUPPORT_PATH']
 
-        ERB.new(HTMLOUTPUT_TEMPLATE, 0, '%-').result(binding)
+        # ERB.new(HTMLOUTPUT_TEMPLATE, 0, '%-').result(binding)
+        ERB.new(HTMLOUTPUT_TEMPLATE, trim_mode: '%-').result(binding)
       end
 
       def footer
@@ -120,7 +121,7 @@ module TextMate
               res[:print] << { :name => name, :class => file, :path => "#{path}/#{file}" }
             end
 
-          end if File.exists? path
+          end if File.exist? path
         end
 
         res

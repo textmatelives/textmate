@@ -12,7 +12,7 @@
 				<key>bundlePath</key>
 				<string>/Users/dpowers/Library/Application Support/TextMate/Bundles/Source.tmbundle</string>
 				<key>command</key>
-				<string>#!/usr/bin/env ruby18
+				<string>#!/usr/bin/env ruby
 
 termchar = ";"
 if ENV['TM_LINE_TERMINATOR']
