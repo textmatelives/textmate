@@ -250,15 +250,6 @@
 			<key>description</key><string>Syntax for writing Installer distribution scripts (http://developer.apple.com/releasenotes/DeveloperTools/Installer.html). Combines XML with JavaScript + custom symbol highlighting.</string>
 </dict>
 <dict>
-	<key>uuid</key><string>7F48FD99-8480-47CC-8C4B-F6AD17ACF122</string>
-	<key>name</key><string>iPhone</string>
-	<key>url</key><string>https://github.com/textmatelives/iphone.tmbundle</string>
-	<key>ref</key><string>main</string>
-	<key>autoUpdate</key><true/>
-	<key>category</key><string>Languages</string>
-			<key>description</key><string>Objective-C with added iPhone grammar parsing.</string>
-</dict>
-<dict>
 	<key>uuid</key><string>44339853-BBEB-44BF-9E69-B70E8E040B4C</string>
 	<key>name</key><string>Java Velocity</string>
 	<key>url</key><string>https://github.com/textmatelives/java-velocity.tmbundle</string>
