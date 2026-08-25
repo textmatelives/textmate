@@ -27,7 +27,7 @@ static struct TMMandatoryBundle const kTMMandatoryBundles[] = {
 		"0BB1F01A-4F0A-475A-ACDD-0F5578F2EFC3",
 		"Bundle Support",
 		"https://github.com/textmatelives/bundle-support.tmbundle",
-		"bda1fda1c67ef1ec1d5022a9b919732f50aa1144",
+		"cb0ace92962eb2b400baa95ae167135addbd8164",
 		"Other",
 	},
 	// branch: main
