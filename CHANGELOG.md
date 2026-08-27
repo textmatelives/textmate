@@ -2,11 +2,13 @@ Title: Release Notes
 
 # Changes
 
-## Unreleased
+## 2026-08-27 (v2.2.1-undead)
+
+One stability fix. See [all changes since v2.2.0-undead](https://github.com/textmatelives/textmate/compare/v2.2.0-undead...v2.2.1-undead).
 
 ### Stability
 
-* **KeyCue and other accessibility clients no longer crash TextMate while inspecting menus on macOS 26.6.2.** AppKit's `NSMenu` accessibility path raises and internally catches a compatibility exception for its removed `accessibilityPerformAction:` fallback. TextMate's fail-fast exception observer previously called `abort()` before AppKit could catch it.
+* **KeyCue and other accessibility clients no longer crash TextMate while inspecting menus on macOS 26.6.2.** AppKit's `NSMenu` accessibility path raises and internally catches a compatibility exception for its removed `accessibilityPerformAction:` fallback. TextMate's fail-fast exception observer previously called `abort()` before AppKit could catch it. Reported, diagnosed and fixed by [@BenjaminX](https://github.com/BenjaminX). ([#54](https://github.com/textmatelives/textmate/issues/54), [#55](https://github.com/textmatelives/textmate/pull/55), `172a78fa`)
 
 ## 2026-08-26 (v2.2.0-undead)
 
