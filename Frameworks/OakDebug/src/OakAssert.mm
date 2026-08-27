@@ -6,6 +6,21 @@
 @interface OakExceptionHandlerDelegate : NSObject { }
 @end
 
+static BOOL IsAppKitMenuAccessibilityCompatibilityException (NSException* exception)
+{
+	/*
+	 * On macOS 26.6.2, -[NSMenu accessibilityPerformShowMenu] still dispatches
+	 * through the deprecated accessibilityPerformAction: API. AppKit's NSMenu
+	 * implementation forwards that selector to NSObject, which no longer
+	 * implements it, and the accessibility entry point catches the resulting
+	 * exception. NSExceptionHandler observes the exception before AppKit catches
+	 * it, though, so treating every observed exception as fatal makes menu
+	 * inspection by accessibility clients such as KeyCue abort TextMate.
+	 */
+	return [exception.name isEqualToString:NSInvalidArgumentException] &&
+	       [exception.reason hasPrefix:@"-[NSMenu accessibilityPerformAction:]: unrecognized selector sent to instance "];
+}
+
 std::string OakStackDump (int linesToSkip)
 {
 	void* callstack[256];
@@ -118,7 +133,7 @@ void OakPrintBadAssertion (char const* lhs, char const* op, char const* rhs, std
 
 - (BOOL)exceptionHandler:(NSExceptionHandler*)sender shouldLogException:(NSException*)exception mask:(NSUInteger)mask
 {
-	if([[exception name] isEqualToString:@"FSExecutionErrorException"])
+	if([exception.name isEqualToString:@"FSExecutionErrorException"] || IsAppKitMenuAccessibilityCompatibilityException(exception))
 		return NO;
 	os_log_error(OS_LOG_DEFAULT, "%{public}@: %{public}@\n", exception.name, exception.reason);
 	abort();

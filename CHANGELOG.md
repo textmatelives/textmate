@@ -2,6 +2,12 @@ Title: Release Notes
 
 # Changes
 
+## Unreleased
+
+### Stability
+
+* **KeyCue and other accessibility clients no longer crash TextMate while inspecting menus on macOS 26.6.2.** AppKit's `NSMenu` accessibility path raises and internally catches a compatibility exception for its removed `accessibilityPerformAction:` fallback. TextMate's fail-fast exception observer previously called `abort()` before AppKit could catch it.
+
 ## 2026-08-26 (v2.2.0-undead)
 
 The rave build system is replaced by CMake, two crashes are fixed, and a fork-wide sweep gets bundle Ruby running on the system interpreter — 50 bundle pull requests across 40 repositories. See [all changes since v2.1.5-undead](https://github.com/textmatelives/textmate/compare/v2.1.5-undead...v2.2.0-undead).
@@ -2171,5 +2177,3 @@ Notable changes since to TextMate 1.5.10:
 * **Foreign Input Modes**
 
 	Display of CJK and “advanced” input modes is now be supported (although only limited testing has been done).
-
-
