@@ -102,8 +102,11 @@ void test_unresolvable_inputs ()
 // ====================================================
 
 // Tag layout mirroring the real textmatelives/textmate repo plus synthetic
-// betas; deliberately listed out of version order, since the advertisement
-// is sorted by ref name, not version.
+// betas and experimental builds; deliberately listed out of version order,
+// since the advertisement is sorted by ref name, not version. The
+// experimental tags sit at 2.3.0 — above every stable and beta tag here —
+// because that is the case that leaks: nothing about being newer may make
+// an experiment visible to a channel that did not ask for it.
 static NSData* version_tags ()
 {
 	return advertisement(@[
@@ -116,20 +119,40 @@ static NSData* version_tags ()
 		str([NSString stringWithFormat:@"%@ refs/tags/v2.1.2-undead\n", kTagObjectSHA]),
 		str([NSString stringWithFormat:@"%@ refs/tags/v2.1.2-undead^{}\n", kPeeledSHA]),
 		str([NSString stringWithFormat:@"%@ refs/tags/v2.1.1-undead\n", kTagObjectSHA]),
+		str([NSString stringWithFormat:@"%@ refs/tags/v2.3.0-undead-exp.2\n", kTagObjectSHA]),
+		str([NSString stringWithFormat:@"%@ refs/tags/v2.3.0-undead-exp.10\n", kTagObjectSHA]),
 	]);
 }
 
-void test_latest_version_release_channel_excludes_betas ()
+void test_latest_version_release_channel_excludes_prereleases ()
 {
-	// 2.1.10-undead-beta.* outrank 2.1.2-undead per OakCompareVersionStrings,
-	// but the release channel must not see them.
-	OAK_ASSERT([OakLatestVersionInUploadPackAdvertisement(version_tags(), NO) isEqualToString:@"2.1.2-undead"]);
+	// Both 2.1.10-undead-beta.* and 2.3.0-undead-exp.* outrank 2.1.2-undead
+	// per OakCompareVersionStrings; the release channel must see neither.
+	OAK_ASSERT([OakLatestVersionInUploadPackAdvertisement(version_tags(), kSoftwareUpdateChannelRelease) isEqualToString:@"2.1.2-undead"]);
 }
 
-void test_latest_version_beta_channel_includes_betas ()
+void test_latest_version_beta_channel_includes_betas_not_experiments ()
 {
-	// Max overall — and numerically: beta.10 > beta.2.
-	OAK_ASSERT([OakLatestVersionInUploadPackAdvertisement(version_tags(), YES) isEqualToString:@"2.1.10-undead-beta.10"]);
+	// Max among stable+beta — and numerically: beta.10 > beta.2. The newer
+	// experimental tags stay invisible, or opting into betas would drag the
+	// user onto an experiment they never asked for.
+	OAK_ASSERT([OakLatestVersionInUploadPackAdvertisement(version_tags(), kSoftwareUpdateChannelPrerelease) isEqualToString:@"2.1.10-undead-beta.10"]);
+}
+
+void test_latest_version_experimental_channel_sees_only_experiments ()
+{
+	// Deliberately no convergence onto stable: an experimental stream may
+	// never merge, so offering the newest stable would silently take away
+	// the feature the user opted in to test. Also numeric: exp.10 > exp.2.
+	OAK_ASSERT([OakLatestVersionInUploadPackAdvertisement(version_tags(), kSoftwareUpdateChannelExperimental) isEqualToString:@"2.3.0-undead-exp.10"]);
+}
+
+void test_latest_version_unknown_channel_is_treated_as_stable ()
+{
+	// A channel string from a future build (or a hand-edited default) must
+	// not fall through to something more permissive than release.
+	OAK_ASSERT([OakLatestVersionInUploadPackAdvertisement(version_tags(), @"no-such-channel") isEqualToString:@"2.1.2-undead"]);
+	OAK_ASSERT([OakLatestVersionInUploadPackAdvertisement(version_tags(), nil) isEqualToString:@"2.1.2-undead"]);
 }
 
 void test_latest_version_ignores_non_version_refs ()
@@ -141,23 +164,27 @@ void test_latest_version_ignores_non_version_refs ()
 		str([NSString stringWithFormat:@"%@ refs/tags/3.0.0\n", kTagObjectSHA]),
 		str([NSString stringWithFormat:@"%@ refs/tags/v2.1.1-undead\n", kTagObjectSHA]),
 	]);
-	OAK_ASSERT([OakLatestVersionInUploadPackAdvertisement(data, YES) isEqualToString:@"2.1.1-undead"]);
+	OAK_ASSERT([OakLatestVersionInUploadPackAdvertisement(data, kSoftwareUpdateChannelPrerelease) isEqualToString:@"2.1.1-undead"]);
 
 	// Only beta tags exist → the release channel finds nothing.
 	NSData* betasOnly = advertisement(@[
 		str([NSString stringWithFormat:@"%@ refs/tags/v2.1.2-undead-beta.1\n", kTagObjectSHA]),
 	]);
-	OAK_ASSERT(OakLatestVersionInUploadPackAdvertisement(betasOnly, NO) == nil);
-	OAK_ASSERT([OakLatestVersionInUploadPackAdvertisement(betasOnly, YES) isEqualToString:@"2.1.2-undead-beta.1"]);
+	OAK_ASSERT(OakLatestVersionInUploadPackAdvertisement(betasOnly, kSoftwareUpdateChannelRelease) == nil);
+	OAK_ASSERT([OakLatestVersionInUploadPackAdvertisement(betasOnly, kSoftwareUpdateChannelPrerelease) isEqualToString:@"2.1.2-undead-beta.1"]);
+
+	// No experimental tags → the experimental channel finds nothing rather
+	// than falling back to stable.
+	OAK_ASSERT(OakLatestVersionInUploadPackAdvertisement(betasOnly, kSoftwareUpdateChannelExperimental) == nil);
 }
 
 void test_latest_version_malformed_or_empty ()
 {
-	OAK_ASSERT(OakLatestVersionInUploadPackAdvertisement(nil, YES) == nil);
-	OAK_ASSERT(OakLatestVersionInUploadPackAdvertisement(str(@"HTTP/1.1 403 Forbidden"), YES) == nil);
-	OAK_ASSERT(OakLatestVersionInUploadPackAdvertisement(advertisement(@[ ]), YES) == nil);
+	OAK_ASSERT(OakLatestVersionInUploadPackAdvertisement(nil, kSoftwareUpdateChannelPrerelease) == nil);
+	OAK_ASSERT(OakLatestVersionInUploadPackAdvertisement(str(@"HTTP/1.1 403 Forbidden"), kSoftwareUpdateChannelPrerelease) == nil);
+	OAK_ASSERT(OakLatestVersionInUploadPackAdvertisement(advertisement(@[ ]), kSoftwareUpdateChannelPrerelease) == nil);
 	// sample() carries tags “1.0.0” (no v prefix — skipped) and “v2” (qualifies).
-	OAK_ASSERT([OakLatestVersionInUploadPackAdvertisement(sample(), NO) isEqualToString:@"2"]);
+	OAK_ASSERT([OakLatestVersionInUploadPackAdvertisement(sample(), kSoftwareUpdateChannelRelease) isEqualToString:@"2"]);
 }
 
 // ====================================

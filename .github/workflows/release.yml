@@ -296,12 +296,14 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           set -euo pipefail
-          # -beta versions publish as GitHub prereleases: excluded from
-          # releases/latest (the stable update feed), picked up by the beta
-          # channel's list endpoint.
+          # Prerelease markers publish as GitHub prereleases, which keeps them
+          # out of releases/latest. -beta feeds the beta channel; -exp feeds the
+          # experimental channel. Which channel actually offers a tag is decided
+          # in OakVersionAdmissibleOnChannel, not here — this flag only governs
+          # how the release is presented on GitHub.
           PRERELEASE_FLAG=""
           case "${VERSION}" in
-            *-beta*) PRERELEASE_FLAG="--prerelease" ;;
+            *-beta*|*-exp*) PRERELEASE_FLAG="--prerelease" ;;
           esac
           gh release create "v${VERSION}" \
             ${PRERELEASE_FLAG} \
