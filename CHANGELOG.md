@@ -2,6 +2,30 @@ Title: Release Notes
 
 # Changes
 
+## 2026-08-30 (v2.3.0-undead-beta.1)
+
+The first beta this fork has cut, and the first exercise of the prerelease channel that shipped back in v2.1.2-undead. It carries a new experimental update channel, a post-update notice that offers the changelog rather than opening it, and two small corrections. See [all changes since v2.2.1-undead](https://github.com/textmatelives/textmate/compare/v2.2.1-undead...v2.3.0-undead-beta.1).
+
+### Software Update
+
+* **A third update channel, "Experimental builds", carries feature streams that are not on the mainline.** All three channels read the one `textmatelives/textmate` feed; the streams are separated by the tag marker `release.yml` stamps — none, `-beta`, `-exp` — so an experiment costs a tag convention rather than a second repository. Release sees stable tags only. Beta sees stable and `-beta`, so a beta user converges back onto stable once it catches up. Experimental sees `-exp` and deliberately **not** stable: such a stream may never merge, and offering a newer stable would silently take away the feature the user opted in to test. ([#58](https://github.com/textmatelives/textmate/pull/58), `79070871`)
+* **Fixed: a non-beta prerelease tag would have been offered to everyone.** The version picker took a `BOOL includePrereleases` and skipped only tags containing `-beta`. Any other suffix passed, so a `v2.3.0-undead-exp.1` tag would have outranked `v2.2.1-undead` and been offered on the **stable** channel. Admission is now decided per channel, and an unrecognised or missing channel resolves to release — the least permissive reading — so a stale or hand-edited default cannot widen what a user is offered. ([#58](https://github.com/textmatelives/textmate/pull/58), `79070871`)
+* **The "nightly" channel is gone, along with "Check for Test Build".** Canary pointed at the same feed as Release and the filter never widened for it, so it saw exactly what Release saw; its only entry point, the ⌥-key alternate menu item, was a duplicate of "Check for Update". The channel is now read solely from Preferences → Software Update, with no modifier-key override, so what a user is offered always matches what the pop-up says. ([#58](https://github.com/textmatelives/textmate/pull/58), `79070871`)
+* **An empty channel no longer reports a server error.** A stream with nothing published is an ordinary state, but the update check reported "No release tags in server response", which is both wrong — the feed parsed fine — and alarming. It now distinguishes the two and says which channel has nothing in it. ([#58](https://github.com/textmatelives/textmate/pull/58), `79070871`)
+
+### Editor
+
+* **After an update, TextMate offers the release notes instead of opening them.** A small notice names the new version, with **Changelog** as the default button and **Cancel** beside it; the About window's Changes tab opens only if asked for. This half of [#56](https://github.com/textmatelives/textmate/issues/56) was already implemented and had been dead since 2021: `showChangesIfUpdated` looked the notes up with `URLForResource:@"CHANGELOG"`, no subdirectory, while the file ships in `About/`, so the URL was `nil` and neither the window nor the digest it depended on ever happened. The trigger is now the running version against a stored `lastLaunchedVersion` rather than a digest of the notes, which also fires when the notes change and the version does not. The same mismatch is present at the upstream baseline and in tectiv3/textmate. ([#56](https://github.com/textmatelives/textmate/issues/56), [#59](https://github.com/textmatelives/textmate/pull/59), `95101c7e`)
+* **The file browser's SCM status button names its shortcut.** It has answered to ⇧⌘Y all along, but a button cannot display a key equivalent and the menu item that owns it sits under File Browser, which is not where one looks for an SCM action. The tool tip now carries it. ([#61](https://github.com/textmatelives/textmate/pull/61), `8b6c153d`)
+
+### Build
+
+* **Removed a development bundle identifier that never took effect.** The CMake migration brought over a `BUNDLE_IDENTIFIER`/`BUNDLE_NAME` pair meant to give non-Release builds a `com.macromates.TextMate-dev` identity, but this tree's `Info.plist` still names the app through `${TARGET_NAME}`, so neither was ever read and every build has identified as `com.macromates.TextMate`. It is removed rather than completed: `Applications/mate` looks the app up by a hardcoded `com.macromates.TextMate`, so a separate development identity would quietly point `mate` at whatever stable build is installed instead of the one being debugged. Nothing shipped is affected — CI configures Release, and Application Support is pinned regardless of `CFBundleName`. ([#60](https://github.com/textmatelives/textmate/pull/60), `38a4810d`)
+
+### Documentation
+
+* **`RELEASING.md` no longer claims every release becomes `releases/latest`.** That stopped being unconditional when the beta channel shipped; `-beta` and `-exp` versions publish as GitHub prereleases. ([#62](https://github.com/textmatelives/textmate/pull/62), `9b97009d`)
+
 ## 2026-08-27 (v2.2.1-undead)
 
 One stability fix. See [all changes since v2.2.0-undead](https://github.com/textmatelives/textmate/compare/v2.2.0-undead...v2.2.1-undead).
