@@ -95,8 +95,13 @@ fresh in this job):
    Gatekeeper** with `spctl --assess` (`:242-262`).
 10. **Build the `.tbz`** `TextMate-${VERSION}.tbz` (`:264-275`).
 11. **Extract release notes** with `bin/extract_changes` (`:277-289`).
-12. **Create the GitHub Release** with `gh release create "v${VERSION}"` — no
-    `--prerelease`/`--draft`, so it becomes `releases/latest` (`:291-302`).
+12. **Create the GitHub Release** with `gh release create "v${VERSION}"`
+    (`:292-314`). A stable version gets neither `--prerelease` nor `--draft`, so
+    it becomes `releases/latest`. A `-beta` or `-exp` version is published with
+    `--prerelease` (`:304-307`), which keeps it out of `releases/latest`. That
+    flag only governs how GitHub presents the release; which update channel is
+    actually offered a tag is decided by `OakVersionAdmissibleOnChannel` in
+    `Frameworks/SoftwareUpdate`.
 13. **Delete the ephemeral keychain** (always) (`:304-306`).
 
 ## Required GitHub secrets
