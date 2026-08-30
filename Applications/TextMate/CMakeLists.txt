@@ -14,15 +14,23 @@ target_link_libraries(TextMate PRIVATE
 
 target_link_libraries(TextMate PRIVATE "-framework Cocoa" "-framework UniformTypeIdentifiers")
 
-# Info.plist variable expansion
+# Info.plist variable expansion. Info.plist names the app through
+# ${TARGET_NAME} — CFBundleName is ${TARGET_NAME}, CFBundleIdentifier is
+# com.macromates.${TARGET_NAME} — so that is the only variable the expansion
+# reads.
+#
+# A BUNDLE_IDENTIFIER/BUNDLE_NAME pair giving non-Release builds a
+# "com.macromates.TextMate-dev" identity came across with the CMake migration
+# but was never referenced here, so it has never had any effect: every build,
+# local or CI, has identified as com.macromates.TextMate. It is not restored,
+# deliberately. Applications/mate looks the app up by a hardcoded
+# com.macromates.TextMate (mate.mm), so a separate development identity would
+# quietly point `mate` at whatever stable build is installed instead of the one
+# being debugged, and would ask for its own TCC grants. Both cost more than the
+# preference isolation they would buy. Nothing shipped is affected either way:
+# CI configures Release (release.yml, build-and-test.yml), and Application
+# Support is pinned to "TextMate" in main.mm regardless of CFBundleName.
 set(TARGET_NAME "TextMate")
-if(CMAKE_BUILD_TYPE STREQUAL "Release")
-  set(BUNDLE_IDENTIFIER "com.macromates.TextMate")
-  set(BUNDLE_NAME "TextMate")
-else()
-  set(BUNDLE_IDENTIFIER "com.macromates.TextMate-dev")
-  set(BUNDLE_NAME "TextMate-dev")
-endif()
 set(APP_MIN_OS "${CMAKE_OSX_DEPLOYMENT_TARGET}")
 set(APP_VERSION "${TEXTMATE_VERSION}")
 string(TIMESTAMP YEAR "%Y")
