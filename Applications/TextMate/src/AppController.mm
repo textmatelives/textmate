@@ -100,7 +100,6 @@ BOOL HasDocumentWindow (NSArray* windows)
 				{ /* -------- */ },
 				{ @"Preferences…",          @selector(showPreferences:),            @","   },
 				{ @"Check for Update",      @selector(performSoftwareUpdateCheck:)         },
-				{ @"Check for Test Build",  @selector(performSoftwareUpdateCheck:),       .modifierFlags = NSEventModifierFlagCommand|NSEventModifierFlagOption, .alternate = YES },
 				{ /* -------- */ },
 				{ @"Services",              .systemMenu = MBMenuTypeServices               },
 				{ /* -------- */ },
@@ -490,15 +489,18 @@ BOOL HasDocumentWindow (NSArray* windows)
 	// textmatelives/textmate — what `git ls-remote` reads. Unlike the GitHub
 	// Releases API it is unmetered, so checks cannot be starved by the
 	// 60-requests/hour-per-IP quota (issue #26). SoftwareUpdate picks the
-	// highest refs/tags/v* version — the beta channel includes -beta tags,
-	// the others skip them, so beta users converge back onto stable when it
-	// catches up — and derives the download URL from release.yml's asset
-	// convention. No nightly stream exists, so Canary behaves like Release.
+	// highest refs/tags/v* version its channel admits and derives the
+	// download URL from release.yml's asset convention.
+	//
+	// All channels read the one feed: the streams are separated by the tag
+	// marker release.yml stamps (none / -beta / -exp), not by URL, so an
+	// experiment costs a tag convention rather than a second repository.
+	// OakVersionAdmissibleOnChannel owns which channel sees what.
 	NSURL* const feedURL = [NSURL URLWithString:@"https://github.com/textmatelives/textmate.git/info/refs?service=git-upload-pack"];
 	SoftwareUpdate.sharedInstance.channels = @{
-		kSoftwareUpdateChannelRelease:    feedURL,
-		kSoftwareUpdateChannelPrerelease: feedURL,
-		kSoftwareUpdateChannelCanary:     feedURL,
+		kSoftwareUpdateChannelRelease:      feedURL,
+		kSoftwareUpdateChannelPrerelease:   feedURL,
+		kSoftwareUpdateChannelExperimental: feedURL,
 	};
 
 	settings_t::set_default_settings_path([[[NSBundle mainBundle] pathForResource:@"Default" ofType:@"tmProperties"] fileSystemRepresentation]);

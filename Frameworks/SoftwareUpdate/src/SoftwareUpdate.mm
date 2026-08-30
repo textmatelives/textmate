@@ -16,7 +16,12 @@ NSString* const kUserDefaultsSoftwareUpdateDisableReadOnlyFileSystemWarningKey =
 
 NSString* const kSoftwareUpdateChannelRelease                                  = @"release";
 NSString* const kSoftwareUpdateChannelPrerelease                               = @"beta";
-NSString* const kSoftwareUpdateChannelCanary                                   = @"nightly";
+NSString* const kSoftwareUpdateChannelExperimental                             = @"experimental";
+
+// Markers release.yml stamps onto a prerelease tag. A tag carrying neither is
+// a stable release.
+static NSString* const kVersionMarkerBeta         = @"-beta";
+static NSString* const kVersionMarkerExperimental = @"-exp";
 
 static BOOL is_hex (char ch)
 {
@@ -107,7 +112,34 @@ NSString* OakSHAForRefInUploadPackAdvertisement (NSData* data, NSString* ref)
 	return nil;
 }
 
-NSString* OakLatestVersionInUploadPackAdvertisement (NSData* data, BOOL includePrereleases)
+// Whether `version` is one that `channel` may be offered. See the contract in
+// SoftwareUpdate.h — in particular that beta converges onto stable and
+// experimental deliberately does not, and that an unknown channel falls back
+// to the least permissive answer rather than the most.
+static BOOL OakVersionAdmissibleOnChannel (NSString* version, NSString* channel)
+{
+	BOOL isBeta         = [version containsString:kVersionMarkerBeta];
+	BOOL isExperimental = [version containsString:kVersionMarkerExperimental];
+
+	if([channel isEqualToString:kSoftwareUpdateChannelExperimental])
+		return isExperimental;
+	else if([channel isEqualToString:kSoftwareUpdateChannelPrerelease])
+		return !isExperimental;
+	return !isBeta && !isExperimental;
+}
+
+// How a channel is named in messages shown to the user. Matches the wording
+// of the Preferences → Software Update pop-up.
+static NSString* OakDisplayNameForChannel (NSString* channel)
+{
+	if([channel isEqualToString:kSoftwareUpdateChannelExperimental])
+		return @"experimental";
+	else if([channel isEqualToString:kSoftwareUpdateChannelPrerelease])
+		return @"prerelease";
+	return @"release";
+}
+
+NSString* OakLatestVersionInUploadPackAdvertisement (NSData* data, NSString* channel)
 {
 	NSString* best = nil;
 	for(NSString* name in OakRefsInUploadPackAdvertisement(data))
@@ -121,7 +153,7 @@ NSString* OakLatestVersionInUploadPackAdvertisement (NSData* data, BOOL includeP
 
 		if(!tag.length || !isdigit([tag characterAtIndex:0])) // v2.1.0 yes, vendor-drop no
 			continue;
-		if(!includePrereleases && [tag containsString:@"-beta"]) // release.yml’s prerelease marker
+		if(!OakVersionAdmissibleOnChannel(tag, channel))
 			continue;
 
 		if(!best || OakCompareVersionStrings(best, tag) == NSOrderedAscending)
@@ -322,7 +354,7 @@ static BOOL OakBundleIsSignedByTeam (NSURL* appURL, NSString* expectedTeamID)
 				[NSUserDefaults.standardUserDefaults removeObjectForKey:kUserDefaultsSoftwareUpdateSuspendUntilKey];
 			}
 
-			[self checkForTestBuild:NO completionHandler:^(NSURL* remoteURL, NSString* remoteVersion, NSError* error){
+			[self checkWithCompletionHandler:^(NSURL* remoteURL, NSString* remoteVersion, NSError* error){
 				self.errorString = error ? [NSString stringWithFormat:@"Error: %@", error.localizedDescription] : nil;
 				if(error)
 				{
@@ -343,10 +375,9 @@ static BOOL OakBundleIsSignedByTeam (NSURL* appURL, NSString* expectedTeamID)
 
 - (void)checkForUpdate:(id)sender
 {
-	BOOL isOptionDown = OakIsAlternateKeyOrMouseEvent(NSEventModifierFlagOption);
-	BOOL isShiftDown  = OakIsAlternateKeyOrMouseEvent(NSEventModifierFlagShift);
+	BOOL isShiftDown = OakIsAlternateKeyOrMouseEvent(NSEventModifierFlagShift);
 
-	[self checkForTestBuild:isOptionDown completionHandler:^(NSURL* remoteURL, NSString* remoteVersion, NSError* error){
+	[self checkWithCompletionHandler:^(NSURL* remoteURL, NSString* remoteVersion, NSError* error){
 		SUDownloadViewController* alertViewController = [[SUDownloadViewController alloc] init];
 		if(error)
 				[alertViewController presentError:error];
@@ -354,9 +385,12 @@ static BOOL OakBundleIsSignedByTeam (NSURL* appURL, NSString* expectedTeamID)
 	}];
 }
 
-- (void)checkForTestBuild:(BOOL)testBuild completionHandler:(void(^)(NSURL* remoteURL, NSString* remoteVersion, NSError* error))completionHandler
+- (void)checkWithCompletionHandler:(void(^)(NSURL* remoteURL, NSString* remoteVersion, NSError* error))completionHandler
 {
-	NSString* updateChannel = testBuild ? kSoftwareUpdateChannelCanary : [NSUserDefaults.standardUserDefaults stringForKey:kUserDefaultsSoftwareUpdateChannelKey];
+	// The channel is whatever Preferences → Software Update is set to; there
+	// is no modifier-key override, so what a user is offered always matches
+	// what the pop-up says.
+	NSString* updateChannel = [NSUserDefaults.standardUserDefaults stringForKey:kUserDefaultsSoftwareUpdateChannelKey];
 	if(!updateChannel)
 		return completionHandler(nil, nil, [NSError errorWithDomain:@"SoftwareUpdate" code:0 userInfo:@{ NSLocalizedDescriptionKey: @"No channel configured." }]);
 
@@ -390,11 +424,26 @@ static BOOL OakBundleIsSignedByTeam (NSURL* appURL, NSString* expectedTeamID)
 				}
 				else if([contentType hasPrefix:@"application/x-git-upload-pack-advertisement"])
 				{
-					BOOL includePrereleases = [updateChannel isEqualToString:kSoftwareUpdateChannelPrerelease];
-					remoteVersion = OakLatestVersionInUploadPackAdvertisement(data, includePrereleases);
+					remoteVersion = OakLatestVersionInUploadPackAdvertisement(data, updateChannel);
 					remoteURL     = OakUpdateAssetURLForVersion(remoteVersion, url);
 					if(!remoteURL || !remoteVersion)
-						error = [NSError errorWithDomain:@"SoftwareUpdate" code:0 userInfo:@{ NSLocalizedDescriptionKey: @"No release tags in server response." }];
+					{
+						// Tell an empty channel apart from an unreadable feed. A
+						// channel with nothing published is an ordinary state —
+						// experimental streams exist only while an experiment is
+						// running — so saying the server sent no tags would be
+						// both wrong and alarming. The probe re-reads the same
+						// response against the release channel: if that finds a
+						// version, the feed was fine and the channel is simply
+						// empty. (The stringWithFormat: is parenthesised because
+						// its comma would otherwise read as an argument separator
+						// to the enclosing os_activity_initiate macro — brackets
+						// do not group for the preprocessor, parentheses do.)
+						NSString* message = OakLatestVersionInUploadPackAdvertisement(data, kSoftwareUpdateChannelRelease)
+							? ([NSString stringWithFormat:@"No %@ builds have been published yet.", OakDisplayNameForChannel(updateChannel)])
+							: @"No release tags in server response.";
+						error = [NSError errorWithDomain:@"SoftwareUpdate" code:0 userInfo:@{ NSLocalizedDescriptionKey: message }];
+					}
 				}
 				else
 				{

@@ -24,7 +24,7 @@
 		icon = [NSImage imageWithSystemSymbolName:@"arrow.triangle.2.circlepath" accessibilityDescription:@"Software Update"];
 	if(self = [super initWithNibName:nil label:@"Software Update" image:icon])
 	{
-		[OakStringListTransformer createTransformerWithName:@"OakSoftwareUpdateChannelTransformer" andObjectsArray:@[ kSoftwareUpdateChannelRelease, kSoftwareUpdateChannelPrerelease ]];
+		[OakStringListTransformer createTransformerWithName:@"OakSoftwareUpdateChannelTransformer" andObjectsArray:@[ kSoftwareUpdateChannelRelease, kSoftwareUpdateChannelPrerelease, kSoftwareUpdateChannelExperimental ]];
 	}
 	return self;
 }
@@ -126,9 +126,11 @@
 	NSTextField* lastCheckTextField        = OakCreateLabel(@"Some time ago");
 	NSButton* checkNowButton               = [NSButton buttonWithTitle:@"Check Now" target:self.softwareUpdateController action:@selector(checkForUpdate:)];
 
+	// Tags are indices into OakSoftwareUpdateChannelTransformer's array above.
 	MBMenu const updateChannelMenuItems = {
-		{ @"Normal releases", .tag = 0 },
-		{ @"Prereleases",     .tag = 1 },
+		{ @"Normal releases",     .tag = 0 },
+		{ @"Prereleases",         .tag = 1 },
+		{ @"Experimental builds", .tag = 2 },
 	};
 	MBCreateMenu(updateChannelMenuItems, updateChannelPopUp.menu);
 
