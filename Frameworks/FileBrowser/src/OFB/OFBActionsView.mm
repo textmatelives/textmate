@@ -34,13 +34,18 @@ static NSButton* OakCreateImageButton (NSImage* image)
 		self.reloadButton.toolTip       = @"Reload file browser";
 		self.searchButton.toolTip       = @"Search current folder";
 		self.favoritesButton.toolTip    = @"Show favorites";
-		self.scmButton.toolTip          = @"Show source control management status";
+		// A button cannot display a key equivalent, so the tool tip carries it —
+		// the binding is otherwise only discoverable under the File Browser menu,
+		// which is not where one looks for an SCM action. Kept in step with
+		// AppController's "SCM Status" item, which owns the shortcut.
+		NSString* const scmDescription  = @"Show source control management status";
+		self.scmButton.toolTip          = [scmDescription stringByAppendingString:@" (⇧⌘Y)"];
 
 		self.reloadButton.image.accessibilityDescription    = self.reloadButton.toolTip;
 		self.createButton.image.accessibilityDescription    = self.createButton.toolTip;
 		self.searchButton.image.accessibilityDescription    = self.searchButton.toolTip;
 		self.favoritesButton.image.accessibilityDescription = self.favoritesButton.toolTip;
-		self.scmButton.image.accessibilityDescription       = self.scmButton.toolTip;
+		self.scmButton.image.accessibilityDescription       = scmDescription;
 
 		NSView* wrappedActionsPopUpButton = [NSView new];
 		OakAddAutoLayoutViewsToSuperview(@[ self.actionsPopUpButton ], wrappedActionsPopUpButton);
