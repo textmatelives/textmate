@@ -4,15 +4,7 @@
 #import <OakFoundation/NSString Additions.h>
 #import <ns/ns.h>
 
-static NSString* const kUserDefaultsReleaseNotesDigestKey = @"releaseNotesDigest";
-
-static NSData* Digest (NSString* someString)
-{
-	char const* str = [someString UTF8String];
-	char md[CC_SHA1_DIGEST_LENGTH];
-	CC_SHA1((unsigned char*)str, strlen(str), (unsigned char*)md);
-	return [NSData dataWithBytes:md length:sizeof(md)];
-}
+static NSString* const kUserDefaultsLastLaunchedVersionKey = @"lastLaunchedVersion";
 
 @interface AboutWindowController () <NSWindowDelegate, NSToolbarDelegate, WKNavigationDelegate, WKScriptMessageHandler>
 @property (nonatomic, readonly) NSArray<NSString*>* segmentLabels;
@@ -29,20 +21,43 @@ static NSData* Digest (NSString* someString)
 	return sharedInstance;
 }
 
-+ (void)showChangesIfUpdated
++ (void)showUpdateNoticeIfNeeded
 {
-	NSURL* url = [[NSBundle mainBundle] URLForResource:@"CHANGELOG" withExtension:@"html"];
-	dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_LOW, 0), ^{
-		if(NSString* releaseNotes = [NSString stringWithContentsOfURL:url encoding:NSUTF8StringEncoding error:NULL])
-		{
-			NSData* lastDigest    = [NSUserDefaults.standardUserDefaults dataForKey:kUserDefaultsReleaseNotesDigestKey];
-			NSData* currentDigest = Digest(releaseNotes);
-			dispatch_async(dispatch_get_main_queue(), ^{
-				if(lastDigest && ![lastDigest isEqualToData:currentDigest])
-					[AboutWindowController.sharedInstance showChangesWindow:self];
-				[NSUserDefaults.standardUserDefaults setObject:currentDigest forKey:kUserDefaultsReleaseNotesDigestKey];
-			});
-		}
+	// Offers the changelog once, the first time a newly installed version is
+	// run. It does not open the release notes by itself: an app that throws its
+	// own changelog at you on launch is a nuisance, so the window only appears
+	// if the notice is answered with Changelog.
+	//
+	// The trigger is the running version, not the content of the release notes.
+	// A digest of CHANGELOG.html would also fire when the notes changed without
+	// the version doing so, which is not what "you have been updated" means.
+	NSUserDefaults* defaults = NSUserDefaults.standardUserDefaults;
+
+	NSString* currentVersion = [NSBundle.mainBundle objectForInfoDictionaryKey:@"CFBundleShortVersionString"];
+	if(!currentVersion.length)
+		return;
+
+	NSString* lastVersion = [defaults stringForKey:kUserDefaultsLastLaunchedVersionKey];
+	[defaults setObject:currentVersion forKey:kUserDefaultsLastLaunchedVersionKey];
+
+	// Nothing to announce on a first run — no version was left behind to have
+	// come from — nor when relaunching the version already recorded. Any change
+	// counts, in either direction: the update dialog offers downgrades too, so
+	// the wording states the version rather than claiming an upgrade.
+	if(!lastVersion.length || [lastVersion isEqualToString:currentVersion])
+		return;
+
+	// Deferred so the alert is not run modally from inside the launch sequence.
+	dispatch_async(dispatch_get_main_queue(), ^{
+		NSAlert* alert        = [[NSAlert alloc] init];
+		alert.messageText     = @"TextMate Has Been Updated";
+		alert.informativeText = [NSString stringWithFormat:@"You are now running version %@.", currentVersion];
+
+		[alert addButtonWithTitle:@"Changelog"]; // first added is the default
+		[alert addButtonWithTitle:@"Cancel"];
+
+		if([alert runModal] == NSAlertFirstButtonReturn)
+			[AboutWindowController.sharedInstance showChangesWindow:self];
 	});
 }
 
@@ -133,10 +148,6 @@ static NSData* Digest (NSString* someString)
 {
 	self.selectedPage = @"Changes";
 	[self showWindow:self];
-
-	NSURL* url = [[NSBundle mainBundle] URLForResource:@"CHANGELOG" withExtension:@"html"];
-	if(NSString* releaseNotes = [NSString stringWithContentsOfURL:url encoding:NSUTF8StringEncoding error:NULL])
-		[NSUserDefaults.standardUserDefaults setObject:Digest(releaseNotes) forKey:kUserDefaultsReleaseNotesDigestKey];
 }
 
 - (void)takeSelectedSegmentFrom:(id)sender
