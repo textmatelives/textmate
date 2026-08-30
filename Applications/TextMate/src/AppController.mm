@@ -578,7 +578,7 @@ BOOL HasDocumentWindow (NSArray* windows)
 	[[selectMenu itemWithTitle:@"Toggle Column Selection"] setActivationString:@"⌥" withFont:nil];
 
 	[TerminalPreferences updateMateIfRequired];
-	[AboutWindowController showChangesIfUpdated];
+	[AboutWindowController showUpdateNoticeIfNeeded];
 
 	[OakCommitWindowServer sharedInstance]; // Setup server
 
