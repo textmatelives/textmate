@@ -1,7 +1,6 @@
 #include <bundles/bundles.h>
 
-@interface BundleEditor : NSWindowController <NSBrowserDelegate>
+@interface BundleEditor : NSWindowController <NSTableViewDataSource, NSTableViewDelegate>
 @property (class, readonly) BundleEditor* sharedInstance;
 - (void)revealBundleItem:(bundles::item_ptr const&)anItem;
-- (IBAction)browserSelectionDidChange:(id)sender;
 @end

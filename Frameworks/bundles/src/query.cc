@@ -1,4 +1,6 @@
 #include "query.h"
+#include "load.h"
+#include <algorithm>
 #include <text/ctype.h>
 #include <text/parse.h>
 #include <text/trim.h>
@@ -13,6 +15,31 @@ namespace bundles
 
 	void add_callback (callback_t* cb)    { Callbacks.add(cb); }
 	void remove_callback (callback_t* cb) { Callbacks.remove(cb); }
+
+	static size_t notification_depth = 0;
+	static bool notifications_dirty = false;
+
+	static void notify_changed ()
+	{
+		if(notification_depth)
+			notifications_dirty = true;
+		else
+			Callbacks(&callback_t::bundles_did_change);
+	}
+
+	void suspend_notifications ()
+	{
+		++notification_depth;
+	}
+
+	void resume_notifications ()
+	{
+		if(notification_depth && --notification_depth == 0 && notifications_dirty)
+		{
+			notifications_dirty = false;
+			notify_changed();
+		}
+	}
 
 	static bool is_deleted (item_ptr item)
 	{
@@ -169,7 +196,7 @@ namespace bundles
 			}
 		}
 
-		Callbacks(&callback_t::bundles_did_change);
+		notify_changed();
 
 		bool res = true;
 		for(auto const& item : AllItems)
@@ -182,7 +209,137 @@ namespace bundles
 		Callbacks(&callback_t::bundles_will_change);
 		AllItems.push_back(item);
 		cache().clear();
-		Callbacks(&callback_t::bundles_did_change);
+		notify_changed();
+	}
+
+	void add_to_menu (oak::uuid_t const& menu_uuid, oak::uuid_t const& item_uuid, oak::uuid_t const& after_uuid)
+	{
+		if(!menu_uuid || !item_uuid)
+			return;
+
+		Callbacks(&callback_t::bundles_will_change);
+
+		std::vector<oak::uuid_t>& members = AllMenus[menu_uuid];
+		members.erase(std::remove(members.begin(), members.end(), item_uuid), members.end());
+		auto after = after_uuid ? std::find(members.begin(), members.end(), after_uuid) : members.end();
+		members.insert(after == members.end() ? members.end() : after + 1, item_uuid);
+
+		if(item_ptr item = lookup(item_uuid))
+			item->set_parent_menu(menu_uuid);
+
+		cache().clear();
+		notify_changed();
+	}
+
+	void add_to_menu_at_index (oak::uuid_t const& menu_uuid, oak::uuid_t const& item_uuid, size_t index, bool dedup)
+	{
+		if(!menu_uuid || !item_uuid)
+			return;
+
+		Callbacks(&callback_t::bundles_will_change);
+
+		std::vector<oak::uuid_t>& members = AllMenus[menu_uuid];
+		// Dividers share one uuid: de-duplicating a divider insert would
+		// delete every divider already in the menu.
+		if(dedup)
+			members.erase(std::remove(members.begin(), members.end(), item_uuid), members.end());
+		members.insert(members.begin() + std::min(index, members.size()), item_uuid);
+
+		if(item_ptr item = lookup(item_uuid))
+			item->set_parent_menu(menu_uuid);
+
+		cache().clear();
+		notify_changed();
+	}
+
+	void remove_from_menu (oak::uuid_t const& menu_uuid, oak::uuid_t const& item_uuid)
+	{
+		if(!menu_uuid || !item_uuid)
+			return;
+
+		Callbacks(&callback_t::bundles_will_change);
+
+		if(auto menu = AllMenus.find(menu_uuid); menu != AllMenus.end())
+			menu->second.erase(std::remove(menu->second.begin(), menu->second.end(), item_uuid), menu->second.end());
+
+		if(item_ptr item = lookup(item_uuid))
+		{
+			if(item->parent_menu() == menu_uuid && item->bundle())
+				item->set_parent_menu(item->bundle()->uuid());
+		}
+
+		cache().clear();
+		notify_changed();
+	}
+
+	void remove_separator_from_menu_at_index (oak::uuid_t const& menu_uuid, size_t index)
+	{
+		if(!menu_uuid)
+			return;
+
+		Callbacks(&callback_t::bundles_will_change);
+
+		// The shared divider item has no meaningful parent menu to reset, and
+		// value-based removal would take out every divider in the menu, so
+		// only the exact slot goes, and only when it really is a divider.
+		if(auto menu = AllMenus.find(menu_uuid); menu != AllMenus.end() && index < menu->second.size() && menu->second[index] == item_t::menu_item_separator()->uuid())
+			menu->second.erase(menu->second.begin() + index);
+
+		cache().clear();
+		notify_changed();
+	}
+
+	std::vector<oak::uuid_t> menu_members (oak::uuid_t const& menu_uuid)
+	{
+		if(auto menu = AllMenus.find(menu_uuid); menu != AllMenus.end())
+			return menu->second;
+		return std::vector<oak::uuid_t>();
+	}
+
+	std::pair<size_t, size_t> menu_indexes_for_pane_slot (std::vector<std::string> const& entries, size_t slot, std::set<std::string> const& dragged)
+	{
+		size_t plistIndex = 0, membersIndex = 0, drawn = 0;
+		for(size_t p = 0; p < entries.size(); ++p)
+		{
+			std::string const& entry = entries[p];
+			if(dragged.find(entry) != dragged.end())
+				continue;
+			if(entry == kSeparatorString)
+			{
+				if(drawn == slot)
+					break;
+				++drawn;
+				++membersIndex;
+			}
+			else if(oak::uuid_t::is_valid(entry))
+			{
+				// Drawn state first: stopping at an entry must not count
+				// it, or slot 0 resolves one past the anchor.
+				bool draws = false;
+				if(item_ptr item = lookup(oak::uuid_t(entry)))
+					draws = !is_deleted(item) && !is_disabled(item) && !item->hidden_from_user();
+				if(draws && drawn == slot)
+					break;
+				if(draws)
+					++drawn;
+				++membersIndex;
+			}
+			// Strings the loader’s to_menu() drops (not valid uuids) hold
+			// their plist slot but never reach the membership list.
+			++plistIndex;
+		}
+		return std::make_pair(plistIndex, membersIndex);
+	}
+
+	void rename_item (oak::uuid_t const& item_uuid, std::string const& new_name)
+	{
+		if(item_ptr item = lookup(item_uuid))
+		{
+			Callbacks(&callback_t::bundles_will_change);
+			item->set_name(new_name);
+			cache().clear();
+			notify_changed();
+		}
 	}
 
 	void remove_item (item_ptr item)
@@ -195,7 +352,7 @@ namespace bundles
 			Callbacks(&callback_t::bundles_will_change);
 			AllItems.erase(it);
 			cache().clear();
-			Callbacks(&callback_t::bundles_did_change);
+			notify_changed();
 			break;
 		}
 	}
