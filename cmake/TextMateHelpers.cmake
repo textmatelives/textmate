@@ -124,6 +124,10 @@ function(textmate_add_tests FRAMEWORK_TARGET)
   if(NOT BUILD_TESTING)
     return()
   endif()
+  # SERIAL opts out of the parallel runner for suites whose tests mutate
+  # shared global state and are only safe run one at a time.
+  cmake_parse_arguments(_TAT "SERIAL" "" "" ${ARGN})
+
   file(GLOB _test_sources CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/tests/t_*.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/tests/t_*.mm")
@@ -145,6 +149,12 @@ function(textmate_add_tests FRAMEWORK_TARGET)
   else()
     set(_runner "${CMAKE_CURRENT_BINARY_DIR}/test_runner.cc")
     set(_runner_args "")
+  endif()
+  if(_TAT_SERIAL)
+    # The bundles query tests replace the shared index: under the parallel
+    # runner concurrent readers segfault (bundles SEGFAULT in CI).
+    list(APPEND _runner_args --no-parallel)
+    list(REMOVE_DUPLICATES _runner_args)
   endif()
 
   add_custom_command(

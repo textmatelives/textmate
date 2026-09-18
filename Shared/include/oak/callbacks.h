@@ -21,13 +21,14 @@ namespace oak
 		void add (T* callback)                          { std::lock_guard<std::mutex> lock(_mutex); ASSERTF(std::find(_callbacks.begin(), _callbacks.end(), callback) == _callbacks.end(), "%p", callback); _callbacks.push_back(callback); }
 		void remove (T* callback)                       { std::lock_guard<std::mutex> lock(_mutex); ASSERTF(std::find(_callbacks.begin(), _callbacks.end(), callback) != _callbacks.end(), "%p", callback); _callbacks.erase(std::find(_callbacks.begin(), _callbacks.end(), callback)); }
 
-		template <typename M, typename... Args> void operator () (M fun, Args... args) const { for(auto const& cb : dup()) (cb->*fun)(args...); }
+		template <typename M, typename... Args> void operator () (M fun, Args... args) const { for(auto const& cb : dup()) if(is_registered(cb)) (cb->*fun)(args...); }
 
 		iterator begin () const                         { return _callbacks.begin(); }
 		iterator end () const                           { return _callbacks.end(); }
 
 	private:
 		std::vector<T*> dup () const                    { std::lock_guard<std::mutex> lock(_mutex); return _callbacks; }
+		bool is_registered (T* cb) const                { std::lock_guard<std::mutex> lock(_mutex); return std::find(_callbacks.begin(), _callbacks.end(), cb) != _callbacks.end(); }
 		std::vector<T*> _callbacks;
 		mutable std::mutex _mutex;
 	};

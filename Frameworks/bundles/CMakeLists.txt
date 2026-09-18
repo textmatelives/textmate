@@ -6,4 +6,5 @@ textmate_framework(bundles)
 target_link_libraries(bundles PUBLIC OakSystem io plist regexp scope text
   "-framework CoreFoundation")
 
-textmate_add_tests(bundles)
+# Index-mutating query tests require serial execution (see TextMateHelpers).
+textmate_add_tests(bundles SERIAL)

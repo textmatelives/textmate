@@ -4,7 +4,7 @@
 #include <text/format.h>
 #include <oak/debug.h>
 
-static std::string const kSeparatorString = "------------------------------------";
+std::string const kSeparatorString = "------------------------------------";
 
 static std::vector<oak::uuid_t> to_menu (plist::array_t const& uuids, std::string const& path)
 {
@@ -17,6 +17,224 @@ static std::vector<oak::uuid_t> to_menu (plist::array_t const& uuids, std::strin
 		else	os_log_error(OS_LOG_DEFAULT, "Invalid uuid (%{public}s) in ‘%{public}s’", to_s(uuid).c_str(), path.c_str());
 	}
 	return res;
+}
+
+static plist::array_t* main_menu_items (plist::dictionary_t& info_plist, std::string const& bundle_uuid, std::string const& menu_uuid, bool createTopLevel)
+{
+	auto main_menu_it = info_plist.find("mainMenu");
+	plist::dictionary_t* main_menu = main_menu_it != info_plist.end() ? plist::get<plist::dictionary_t>(&main_menu_it->second) : nullptr;
+	if(!main_menu)
+	{
+		// Bundles that never had an explicit order (fresh leftovers) have no
+		// mainMenu at all: materialize it so a validated drop can persist.
+		// Removal stays best-effort and never creates structure.
+		if(!createTopLevel)
+			return nullptr;
+		main_menu_it = info_plist.emplace("mainMenu", plist::dictionary_t()).first;
+		main_menu = plist::get<plist::dictionary_t>(&main_menu_it->second);
+		if(!main_menu)
+			return nullptr;
+	}
+
+	if(menu_uuid == bundle_uuid)
+	{
+		auto items_it = main_menu->find("items");
+		if(items_it == main_menu->end())
+		{
+			if(!createTopLevel)
+				return nullptr;
+			items_it = main_menu->emplace("items", plist::array_t()).first;
+		}
+		return plist::get<plist::array_t>(&items_it->second);
+	}
+
+	if(auto sub_menus_it = main_menu->find("submenus"); sub_menus_it != main_menu->end())
+	{
+		if(plist::dictionary_t* sub_menus = plist::get<plist::dictionary_t>(&sub_menus_it->second))
+		{
+			if(auto sub_menu_it = sub_menus->find(menu_uuid); sub_menu_it != sub_menus->end())
+			{
+				if(plist::dictionary_t* sub_menu = plist::get<plist::dictionary_t>(&sub_menu_it->second))
+				{
+					auto items_it = sub_menu->find("items");
+					if(items_it == sub_menu->end())
+					{
+						// A known submenu entry with no items array yet
+						// (hand-edited plist): materialize the array, keeping
+						// the entry’s name. A missing entry stays a failure —
+						// the loader drops nameless submenu records, so
+						// inventing one here would lose the menu on reload.
+						if(!createTopLevel)
+							return nullptr;
+						items_it = sub_menu->emplace("items", plist::array_t()).first;
+					}
+					return plist::get<plist::array_t>(&items_it->second);
+				}
+			}
+		}
+	}
+	return nullptr;
+}
+
+static void erase_uuid_from_array (plist::array_t& items, std::string const& item_uuid)
+{
+	items.erase(std::remove_if(items.begin(), items.end(), [&](plist::any_t const& entry){
+		std::string const* str = plist::get<std::string>(&entry);
+		return str && *str == item_uuid;
+	}), items.end());
+}
+
+bool bundles::insert_uuid_into_main_menu_at_index (plist::dictionary_t& info_plist, std::string const& bundle_uuid, std::string const& menu_uuid, std::string const& item_uuid, size_t index)
+{
+	if(!oak::uuid_t::is_valid(menu_uuid) || !oak::uuid_t::is_valid(item_uuid))
+		return false;
+
+	plist::array_t* items = main_menu_items(info_plist, bundle_uuid, menu_uuid, true);
+	if(!items)
+		return false;
+
+	erase_uuid_from_array(*items, item_uuid);
+	items->insert(items->begin() + std::min(index, items->size()), plist::any_t(item_uuid));
+	return true;
+}
+
+bool bundles::insert_uuid_into_main_menu (plist::dictionary_t& info_plist, std::string const& bundle_uuid, std::string const& menu_uuid, std::string const& item_uuid, std::string const& after_uuid)
+{
+	if(!oak::uuid_t::is_valid(menu_uuid) || !oak::uuid_t::is_valid(item_uuid))
+		return false;
+
+	plist::array_t* items = main_menu_items(info_plist, bundle_uuid, menu_uuid, true);
+	if(!items)
+		return false;
+
+	size_t index = items->size();
+	if(!after_uuid.empty())
+	{
+		for(size_t i = 0; i < items->size(); ++i)
+		{
+			if(std::string const* str = plist::get<std::string>(&(*items)[i]))
+			{
+				if(*str == after_uuid)
+				{
+					index = i + 1;
+					break;
+				}
+			}
+		}
+	}
+	return insert_uuid_into_main_menu_at_index(info_plist, bundle_uuid, menu_uuid, item_uuid, index);
+}
+
+bool bundles::remove_uuid_from_main_menu (plist::dictionary_t& info_plist, std::string const& bundle_uuid, std::string const& menu_uuid, std::string const& item_uuid)
+{
+	if(!oak::uuid_t::is_valid(menu_uuid) || !oak::uuid_t::is_valid(item_uuid))
+		return false;
+
+	plist::array_t* items = main_menu_items(info_plist, bundle_uuid, menu_uuid, false);
+	if(!items)
+		return false;
+
+	erase_uuid_from_array(*items, item_uuid);
+	return true;
+}
+
+bool bundles::insert_separator_into_main_menu_at_index (plist::dictionary_t& info_plist, std::string const& bundle_uuid, std::string const& menu_uuid, size_t index)
+{
+	if(!oak::uuid_t::is_valid(menu_uuid))
+		return false;
+
+	plist::array_t* items = main_menu_items(info_plist, bundle_uuid, menu_uuid, true);
+	if(!items)
+		return false;
+
+	// No erase-all first: dividers share one token, so de-duplicating here
+	// would delete every divider already in the menu.
+	items->insert(items->begin() + std::min(index, items->size()), plist::any_t(kSeparatorString));
+	return true;
+}
+
+bool bundles::remove_separator_from_main_menu_at_index (plist::dictionary_t& info_plist, std::string const& bundle_uuid, std::string const& menu_uuid, size_t index)
+{
+	if(!oak::uuid_t::is_valid(menu_uuid))
+		return false;
+
+	plist::array_t* items = main_menu_items(info_plist, bundle_uuid, menu_uuid, false);
+	if(!items || index >= items->size())
+		return false;
+
+	std::string const* str = plist::get<std::string>(&(*items)[index]);
+	if(!str || *str != kSeparatorString)
+		return false;
+
+	items->erase(items->begin() + index);
+	return true;
+}
+
+bool bundles::remove_submenu_from_main_menu (plist::dictionary_t& info_plist, std::string const& bundle_uuid, std::string const& parent_menu_uuid, std::string const& submenu_uuid)
+{
+	if(!oak::uuid_t::is_valid(parent_menu_uuid) || !oak::uuid_t::is_valid(submenu_uuid))
+		return false;
+
+	// The record must exist: the loader drops nameless submenu records, so
+	// deleting a bare parent reference would lose nothing but also fix
+	// nothing — refuse instead. Removal never creates structure.
+	auto main_menu_it = info_plist.find("mainMenu");
+	plist::dictionary_t* main_menu = main_menu_it != info_plist.end() ? plist::get<plist::dictionary_t>(&main_menu_it->second) : nullptr;
+	if(!main_menu)
+		return false;
+	auto sub_menus_it = main_menu->find("submenus");
+	plist::dictionary_t* sub_menus = sub_menus_it != main_menu->end() ? plist::get<plist::dictionary_t>(&sub_menus_it->second) : nullptr;
+	if(!sub_menus || sub_menus->find(submenu_uuid) == sub_menus->end())
+		return false;
+
+	// Parent reference first: it fails cleanly (untouched) when the parent
+	// menu is missing, before the record goes away.
+	if(!remove_uuid_from_main_menu(info_plist, bundle_uuid, parent_menu_uuid, submenu_uuid))
+		return false;
+	sub_menus->erase(submenu_uuid);
+	return true;
+}
+
+bool bundles::add_submenu_to_main_menu (plist::dictionary_t& info_plist, std::string const& submenu_uuid, std::string const& name)
+{
+	if(!oak::uuid_t::is_valid(submenu_uuid))
+		return false;
+
+	auto main_menu_it = info_plist.find("mainMenu");
+	plist::dictionary_t* main_menu = main_menu_it != info_plist.end() ? plist::get<plist::dictionary_t>(&main_menu_it->second) : nullptr;
+	if(!main_menu)
+	{
+		main_menu_it = info_plist.emplace("mainMenu", plist::dictionary_t()).first;
+		main_menu = plist::get<plist::dictionary_t>(&main_menu_it->second);
+		if(!main_menu)
+			return false;
+	}
+
+	auto sub_menus_it = main_menu->find("submenus");
+	plist::dictionary_t* sub_menus = sub_menus_it != main_menu->end() ? plist::get<plist::dictionary_t>(&sub_menus_it->second) : nullptr;
+	if(!sub_menus)
+	{
+		sub_menus_it = main_menu->emplace("submenus", plist::dictionary_t()).first;
+		sub_menus = plist::get<plist::dictionary_t>(&sub_menus_it->second);
+		if(!sub_menus)
+			return false;
+	}
+
+	auto sub_menu_it = sub_menus->find(submenu_uuid);
+	plist::dictionary_t* sub_menu = sub_menu_it != sub_menus->end() ? plist::get<plist::dictionary_t>(&sub_menu_it->second) : nullptr;
+	if(!sub_menu)
+	{
+		sub_menu_it = sub_menus->emplace(submenu_uuid, plist::dictionary_t()).first;
+		sub_menu = plist::get<plist::dictionary_t>(&sub_menu_it->second);
+		if(!sub_menu)
+			return false;
+		sub_menu->emplace("items", plist::array_t());
+	}
+
+	(*sub_menu)["name"] = name;
+	if(sub_menu->find("items") == sub_menu->end())
+		sub_menu->emplace("items", plist::array_t());
+	return true;
 }
 
 static void remove_cycles (oak::uuid_t const& menuUUID, std::map< oak::uuid_t, std::vector<oak::uuid_t> >& menus, std::set<oak::uuid_t> parents = { })
