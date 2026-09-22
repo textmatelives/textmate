@@ -160,3 +160,11 @@ bundle_command_t parse_drag_command (bundles::item_ptr bundleItem)
 	setup_fields(plist, res);
 	return res;
 }
+
+bool command_accepts_document (bundle_command_t const& command, std::string const& fileType)
+{
+	if(fileType == NULL_STR)
+		return false;
+	bool wholeDocument = command.input == input::entire_document || (command.input == input::selection && command.input_fallback == input::entire_document);
+	return wholeDocument && command.scope_selector.does_match(fileType).has_value();
+}

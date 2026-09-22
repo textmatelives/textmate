@@ -3,6 +3,8 @@
 #import "helpers/HOAutoScroll.h"
 #import "helpers/HOJSBridge.h"
 #import "helpers/HOWKScriptMessageHandler.h"
+#import "helpers/OakLocalLinkPolicy.h"
+#import "helpers/OakHTMLOutputPageCache.h"
 #import "helpers/OakHTMLOutputRequestMetadata.h"
 #import "helpers/OakSystemCommandURLSchemeHandler.h"
 #import <OakFoundation/OakFoundation.h>
@@ -14,12 +16,22 @@
 @end
 
 @interface OakHTMLOutputView ()
+{
+	std::map<std::string, std::map<std::string, std::string>> _environmentByPage; // pages in the history and the environment each was produced with
+}
 @property (nonatomic, getter = isRunningCommand, readwrite) BOOL runningCommand;
 @property (nonatomic) HOAutoScroll* autoScrollHelper;
 @property (nonatomic) std::map<std::string, std::string> environment;
 @property (nonatomic) NSArray* pendingScrollPosition;
 @property (nonatomic, getter = isVisible) BOOL visible;
 @end
+
+static std::string page_key (NSURL* url)
+{
+	NSURLComponents* components = [NSURLComponents componentsWithURL:url resolvingAgainstBaseURL:NO];
+	components.fragment = nil;
+	return std::string(components.URL.absoluteString.UTF8String ?: "");
+}
 
 @implementation OakHTMLOutputView
 + (NSSet*)keyPathsForValuesAffectingMainFrameTitle
@@ -42,6 +54,7 @@
 		self.autoScrollHelper = [[HOAutoScroll alloc] initWithWebView:self.webView];
 
 	self.environment = anEnvironment;
+	_environmentByPage[page_key(aRequest.URL)] = anEnvironment;
 
 	// Pass environment to the script message handler so TextMate.system() uses correct env
 	[self.scriptMessageHandler setEnvironment:anEnvironment];
@@ -124,7 +137,18 @@
 		[rewritten replaceCharactersInRange:fullRange withString:[prefix stringByAppendingString:@"tm-file://"]];
 	}
 
-	[self.webView loadHTMLString:rewritten baseURL:[NSURL fileURLWithPath:NSHomeDirectory()]];
+	// Refresh in place. Loading an HTML string would replace the history entry with a document that
+	// cannot be revisited, so for a page we streamed the new content is served under its own URL instead.
+	std::string const key = page_key(self.webView.URL);
+	if(_environmentByPage.count(key))
+	{
+		[OakHTMLOutputPageCache.sharedCache setData:[rewritten dataUsingEncoding:NSUTF8StringEncoding] forKey:[NSString stringWithCxxString:key]];
+		[self.webView reload];
+	}
+	else
+	{
+		[self.webView loadHTMLString:rewritten baseURL:[NSURL fileURLWithPath:NSHomeDirectory()]];
+	}
 }
 
 - (NSString*)mainFrameTitle
@@ -165,6 +189,7 @@
 {
 	self.runningCommand = NO;
 	self.autoScrollHelper = nil;
+	[self restoreEnvironmentForPage:webView];
 
 	// Re-inject environment into the JS bridge after navigation (e.g., goBack/goForward)
 	if(!self.disableJavaScriptAPI)
@@ -190,6 +215,32 @@
 	[super webView:webView didFinishNavigation:navigation];
 }
 
+// Back and forward return to pages that other documents produced: bring back the environment that made each
+- (void)restoreEnvironmentForPage:(WKWebView*)webView
+{
+	auto page = _environmentByPage.find(page_key(webView.URL));
+	if(page != _environmentByPage.end() && page->second != _environment)
+	{
+		_environment = page->second;
+		if(self.documentDidChangeHandler)
+		{
+			auto path = _environment.find("TM_FILEPATH");
+			self.documentDidChangeHandler(path != _environment.end() ? [NSString stringWithCxxString:path->second] : nil);
+		}
+	}
+
+	std::set<std::string> history;
+	WKBackForwardList* list = webView.backForwardList;
+	for(WKBackForwardListItem* item in list.backList)
+		history.insert(page_key(item.URL));
+	for(WKBackForwardListItem* item in list.forwardList)
+		history.insert(page_key(item.URL));
+	if(list.currentItem)
+		history.insert(page_key(list.currentItem.URL));
+	for(auto it = _environmentByPage.begin(); it != _environmentByPage.end(); )
+		it = history.count(it->first) ? std::next(it) : _environmentByPage.erase(it);
+}
+
 - (void)webView:(WKWebView*)webView didFailProvisionalNavigation:(WKNavigation*)navigation withError:(NSError*)error
 {
 	self.runningCommand = NO;
@@ -204,17 +255,50 @@
 	[super webView:webView didFailNavigation:navigation withError:error];
 }
 
-// =========================================
-// = Navigation Policy: Intercept txmt:// =
-// =========================================
+// ==========================================================
+// = Navigation Policy: Intercept txmt:// and local files =
+// ==========================================================
+
+- (void)openTxMtURL:(NSURL*)url
+{
+	auto projectUUID = _environment.find("TM_PROJECT_UUID");
+	if(projectUUID != _environment.end())
+		url = [NSURL URLWithString:[[url absoluteString] stringByAppendingFormat:@"&project=%@", [NSString stringWithCxxString:projectUUID->second]]];
+	[NSApp sendAction:@selector(handleTxMtURL:) to:nil from:url];
+}
 
 - (void)webView:(WKWebView*)webView decidePolicyForNavigationAction:(WKNavigationAction*)navigationAction decisionHandler:(void(^)(WKNavigationActionPolicy))decisionHandler
 {
 	NSURL* url = navigationAction.request.URL;
 	NSString* scheme = url.scheme;
 
-	// Allow our custom schemes and file://
-	if([@[@"x-txmt-filehandle", @"tm-file", @"tm-system", @"file", @"about"] containsObject:scheme])
+	// Local files: the web view shows what it can render, a clicked link to anything else opens in TextMate
+	if([@[@"tm-file", @"file"] containsObject:scheme])
+	{
+		auto documentPath = _environment.find("TM_FILEPATH");
+		BOOL linkActivated = navigationAction.navigationType == WKNavigationTypeLinkActivated;
+		switch(OakLocalLinkActionForURL(url, linkActivated, documentPath != _environment.end() ? [NSString stringWithCxxString:documentPath->second] : nil))
+		{
+			case OakLocalLinkActionLoad:
+				decisionHandler(WKNavigationActionPolicyAllow);
+			break;
+
+			case OakLocalLinkActionOpen:
+				if(!(self.localFileHandler && self.localFileHandler(url.path)))
+					[self openTxMtURL:OakTxMtOpenURLForPath(url.path)];
+				decisionHandler(WKNavigationActionPolicyCancel);
+			break;
+
+			case OakLocalLinkActionScroll:
+				[webView evaluateJavaScript:OakScrollToFragmentScript(url.fragment) completionHandler:nil];
+				decisionHandler(WKNavigationActionPolicyCancel);
+			break;
+		}
+		return;
+	}
+
+	// Allow our other custom schemes
+	if([@[@"x-txmt-filehandle", @"tm-system", @"about"] containsObject:scheme])
 	{
 		decisionHandler(WKNavigationActionPolicyAllow);
 		return;
@@ -223,10 +307,7 @@
 	// Handle txmt:// internally
 	if([scheme isEqualToString:@"txmt"])
 	{
-		auto projectUUID = _environment.find("TM_PROJECT_UUID");
-		if(projectUUID != _environment.end())
-			url = [NSURL URLWithString:[[url absoluteString] stringByAppendingFormat:@"&project=%@", [NSString stringWithCxxString:projectUUID->second]]];
-		[NSApp sendAction:@selector(handleTxMtURL:) to:nil from:url];
+		[self openTxMtURL:url];
 		decisionHandler(WKNavigationActionPolicyCancel);
 		return;
 	}

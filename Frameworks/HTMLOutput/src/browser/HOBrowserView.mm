@@ -215,7 +215,7 @@ in the hierachy returns YES, the key (equivalent) event is then passed to the me
 	// "Frame load interrupted" (WebKitErrorFrameLoadInterruptedByPolicyChange = 102) is normal
 	// when a new navigation replaces an in-progress one. Don't show an error page for this.
 	if([error.domain isEqualToString:@"WebKitErrorDomain"] && error.code == 102)
-		return;
+		return [self webView:webView didFinishNavigation:navigation]; // the page did not change; stop showing progress
 
 	[self showLoadErrorForURL:webView.URL error:error];
 	[self webView:webView didFinishNavigation:navigation];
