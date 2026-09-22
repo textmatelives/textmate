@@ -18,6 +18,7 @@ NS_ENUM(NSInteger) {
 @property (nonatomic) BOOL updateHTMLViewAtomically;
 @property (nonatomic, readonly) OakHTMLOutputView* htmlOutputView;
 - (instancetype)initWithBundleCommand:(bundle_command_t const&)aCommand;
+- (bundle_command_t const&)bundleCommand;
 - (void)executeWithInput:(NSFileHandle*)fileHandleForReading variables:(std::map<std::string, std::string> const&)someVariables outputHandler:(void(^)(std::string const& out, output::type placement, output_format::type format, output_caret::type outputCaret, std::map<std::string, std::string> const& environment))handler;
 - (void)terminate;
 - (void)closeHTMLOutputView;

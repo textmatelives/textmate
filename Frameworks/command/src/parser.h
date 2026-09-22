@@ -41,6 +41,10 @@ struct bundle_command_t
 };
 
 bundle_command_t parse_command (bundles::item_ptr bundleItem);
+
+// True when the command can run with a whole file of the given type as its input,
+// e.g. a preview command following a link to another file it knows how to render.
+bool command_accepts_document (bundle_command_t const& command, std::string const& fileType);
 bundle_command_t parse_command (plist::dictionary_t const& plist);
 bundle_command_t parse_drag_command (bundles::item_ptr bundleItem);
 plist::dictionary_t convert_command_from_v1 (plist::dictionary_t plist);

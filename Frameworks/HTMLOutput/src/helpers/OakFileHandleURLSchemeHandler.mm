@@ -1,5 +1,6 @@
 #import "OakFileHandleURLSchemeHandler.h"
 #import "OakHTMLOutputRequestMetadata.h"
+#import "OakHTMLOutputPageCache.h"
 #import <OakSystem/process.h>
 
 @implementation OakFileHandleURLSchemeHandler
@@ -23,6 +24,17 @@
 
 	if(!metadata || !metadata.fileHandle)
 	{
+		// Back or forward to a page whose stream is spent: replay what was served
+		if(NSData* page = [OakHTMLOutputPageCache.sharedCache dataForKey:urlString])
+		{
+			NSURLResponse* response = [[NSURLResponse alloc] initWithURL:urlSchemeTask.request.URL
+				MIMEType:@"text/html" expectedContentLength:page.length textEncodingName:@"utf-8"];
+			[urlSchemeTask didReceiveResponse:response];
+			[urlSchemeTask didReceiveData:page];
+			[urlSchemeTask didFinish];
+			return;
+		}
+
 		NSURLResponse* response = [[NSHTTPURLResponse alloc] initWithURL:urlSchemeTask.request.URL
 			statusCode:404 HTTPVersion:@"HTTP/1.1" headerFields:nil];
 		[urlSchemeTask didReceiveResponse:response];
@@ -36,6 +48,7 @@
 	[urlSchemeTask didReceiveResponse:response];
 
 	NSFileHandle* fileHandle = metadata.fileHandle;
+	NSMutableData* page = [NSMutableData data];
 	NSValue* taskKey = [NSValue valueWithNonretainedObject:urlSchemeTask];
 
 	dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
@@ -56,7 +69,10 @@
 					else
 					{
 						if(data.length > 0)
+						{
 							[urlSchemeTask didReceiveData:data];
+							[page appendData:data];
+						}
 					}
 				});
 			}
@@ -76,7 +92,10 @@
 		[fileHandle closeFile];
 		dispatch_async(dispatch_get_main_queue(), ^{
 			if(!self->_stoppedTasks[taskKey])
+			{
 				[urlSchemeTask didFinish];
+				[OakHTMLOutputPageCache.sharedCache setData:page forKey:urlString];
+			}
 			[self->_stoppedTasks removeObjectForKey:taskKey];
 			[OakHTMLOutputRequestMetadata removeMetadataForURLString:urlString];
 		});

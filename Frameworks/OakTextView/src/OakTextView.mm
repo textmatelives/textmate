@@ -4538,6 +4538,13 @@ static scope::context_t add_modifiers_to_scope (scope::context_t scope, NSUInteg
 	return [OakCommandRefresher findRefresherForCommandUUID:[[NSUUID alloc] initWithUUIDString:to_ns(aBundleCommand.uuid)] document:doc window:self.window];
 }
 
+- (OakCommandRefresher*)browsingRefresherForCommand:(bundle_command_t const&)aBundleCommand
+{
+	if(!(aBundleCommand.auto_refresh & auto_refresh::on_document_change))
+		return nil;
+	return [OakCommandRefresher findRefresherForCommandUUID:[[NSUUID alloc] initWithUUIDString:to_ns(aBundleCommand.uuid)] document:nil window:self.window];
+}
+
 - (void)executeBundleCommand:(bundle_command_t const&)aBundleCommand variables:(std::map<std::string, std::string> const&)initialVariables
 {
 	[self executeBundleCommand:aBundleCommand buffer:*documentView selection:documentView->ranges() variables:initialVariables];
@@ -4551,6 +4558,15 @@ static scope::context_t add_modifiers_to_scope (scope::context_t scope, NSUInteg
 				[refresher bringHTMLOutputToFront:self];
 		else	[refresher teardown];
 		return;
+	}
+	else if(OakCommandRefresher* refresher = [self browsingRefresherForCommand:aBundleCommand])
+	{
+		// The command already has an output view in this window showing another document: steer it here, browser style
+		if(refresher.command.htmlOutputView && [refresher showDocument:_document variables:initialVariables])
+		{
+			[refresher bringHTMLOutputToFront:self];
+			return;
+		}
 	}
 
 	std::map<std::string, std::string> variables = initialVariables;

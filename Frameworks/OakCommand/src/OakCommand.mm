@@ -194,6 +194,11 @@ static pid_t run_command (dispatch_group_t rootGroup, std::string const& cmd, in
 	return self;
 }
 
+- (bundle_command_t const&)bundleCommand
+{
+	return _bundleCommand;
+}
+
 - (NSUUID*)identifier
 {
 	return _bundleCommand.uuid ? [[NSUUID alloc] initWithUUIDString:to_ns(_bundleCommand.uuid)] : nil;
