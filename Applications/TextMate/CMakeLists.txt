@@ -44,18 +44,18 @@ configure_file(Info.plist ${CMAKE_CURRENT_BINARY_DIR}/Info.plist)
 # Expand ${YEAR} in InfoPlist.strings and encode it as UTF-16, the way rave did.
 textmate_strings(TextMate
   "${CMAKE_CURRENT_SOURCE_DIR}/resources/English.lproj/InfoPlist.strings"
-  "English.lproj")
+  "en.lproj")
 set_target_properties(TextMate PROPERTIES
   MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_BINARY_DIR}/Info.plist")
 
 # Compile xib → nib (all xibs from TextMate and frameworks go into the app bundle)
-target_xib_sources(TextMate "English.lproj"
+target_xib_sources(TextMate "en.lproj"
   resources/English.lproj/MainMenu.xib
   "${CMAKE_SOURCE_DIR}/Frameworks/OakTextView/resources/English.lproj/TabSizeSetting.xib"
   "${CMAKE_SOURCE_DIR}/Frameworks/Preferences/resources/English.lproj/TerminalPreferences.xib"
   "${CMAKE_SOURCE_DIR}/Frameworks/OakAppKit/resources/English.lproj/CustomizeEncodings.xib"
   "${CMAKE_SOURCE_DIR}/Frameworks/OakAppKit/resources/English.lproj/Pasteboard Selector.xib")
-target_xib_sources(TextMate "English.lproj"
+target_xib_sources(TextMate "en.lproj"
   "${CMAKE_SOURCE_DIR}/Frameworks/BundleEditor/resources/English.lproj/BundleProperties.xib"
   "${CMAKE_SOURCE_DIR}/Frameworks/BundleEditor/resources/English.lproj/FileDropProperties.xib"
   "${CMAKE_SOURCE_DIR}/Frameworks/BundleEditor/resources/English.lproj/CommandProperties.xib"

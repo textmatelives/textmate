@@ -11,7 +11,7 @@
 	<key>CFBundleIdentifier</key>
 	<string>com.macromates.${TARGET_NAME}</string>
 	<key>CFBundleDevelopmentRegion</key>
-	<string>English</string>
+	<string>en</string>
 	<key>CFBundleExecutable</key>
 	<string>${TARGET_NAME}</string>
 	<key>CFBundleHelpBookFolder</key>
