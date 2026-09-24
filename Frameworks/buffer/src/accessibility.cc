@@ -2,6 +2,7 @@
 #include <bundles/bundles.h>
 #include <ns/language.h>
 #include <text/trim.h>
+#include <text/parse.h>
 #include <oak/oak.h>
 
 namespace
@@ -58,6 +59,18 @@ namespace ng
 		rule_t rule;
 		rule.language = text::trim(string_setting(bundles::value_for_setting("accessibilityLanguage", scope)));
 
+		for(auto const& style : text::split(string_setting(bundles::value_for_setting("accessibilityTextStyle", scope)), " "))
+		{
+			if(style == "bold")
+				rule.styles |= kTextStyleBold;
+			else if(style == "italic")
+				rule.styles |= kTextStyleItalic;
+			else if(style == "underline")
+				rule.styles |= kTextStyleUnderline;
+			else if(style == "strikethrough")
+				rule.styles |= kTextStyleStrikethrough;
+		}
+
 		if(plist::is_true(bundles::value_for_setting("accessibilityLink", scope)))
 		{
 			rule.link       = true;
@@ -80,6 +93,11 @@ namespace ng
 		}
 
 		return _rules.emplace(scope, rule).first->second;
+	}
+
+	unsigned accessibility_t::text_style (scope::scope_t const& scope)
+	{
+		return rule_for(scope).styles;
 	}
 
 	// =================

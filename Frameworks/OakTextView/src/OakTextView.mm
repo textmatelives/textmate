@@ -1421,12 +1421,14 @@ doScroll:
 	NSMutableAttributedString* res = [[NSMutableAttributedString alloc] initWithString:[NSString stringWithCxxString:text]];
 	ng::accessibility_t& accessibility = documentView->accessibility();
 
-	// Add style
+	// Add style: what the theme draws, and what ‘accessibilityTextStyle’ says the
+	// text means even when the theme does not draw it
 	std::map<size_t, scope::scope_t> scopes = documentView->scopes(from, to);
 	NSRange runRange = NSMakeRange(0, 0);
 	for(auto pair = scopes.begin(); pair != scopes.end(); )
 	{
 		styles_t const& styles = self.theme->styles_for_scope(pair->second);
+		unsigned const textStyle = accessibility.text_style(pair->second);
 
 		size_t i = pair->first;
 		size_t j = ++pair != scopes.end() ? pair->first : to - from;
@@ -1434,6 +1436,10 @@ doScroll:
 		runRange.location += runRange.length;
 		runRange.length = utf16::distance(text.data() + i, text.data() + j);
 		NSFont* font = (__bridge NSFont*)styles.font();
+		if(textStyle & ng::accessibility_t::kTextStyleBold)
+			font = [NSFontManager.sharedFontManager convertFont:font toHaveTrait:NSBoldFontMask];
+		if(textStyle & ng::accessibility_t::kTextStyleItalic)
+			font = [NSFontManager.sharedFontManager convertFont:font toHaveTrait:NSItalicFontMask];
 		NSMutableDictionary* attributes = [NSMutableDictionary dictionaryWithCapacity:4];
 		[attributes addEntriesFromDictionary:@{
 			NSAccessibilityFontTextAttribute: @{
@@ -1445,9 +1451,9 @@ doScroll:
 			NSAccessibilityForegroundColorTextAttribute: (__bridge id)styles.foreground(),
 			NSAccessibilityBackgroundColorTextAttribute: (__bridge id)styles.background(),
 		}];
-		if(styles.underlined())
+		if(styles.underlined() || (textStyle & ng::accessibility_t::kTextStyleUnderline))
 			attributes[NSAccessibilityUnderlineTextAttribute] = @(NSUnderlineStyleSingle | NSUnderlinePatternSolid); // TODO is this always so?
-		if(styles.strikethrough())
+		if(styles.strikethrough() || (textStyle & ng::accessibility_t::kTextStyleStrikethrough))
 			attributes[NSAccessibilityStrikethroughTextAttribute] = @YES;
 
 		[res setAttributes:attributes range:runRange];

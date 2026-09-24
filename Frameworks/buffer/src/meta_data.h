@@ -42,14 +42,15 @@ namespace ng
 	};
 
 	// What assistive clients are told about the text, from the scope settings
-	// ‘accessibilityRotor’, ‘accessibilityLanguage’ and ‘accessibilityLink’, the way
-	// ‘showInSymbolList’ works. Nothing is computed until asked for: edits and
-	// parsing only widen the range the next query updates.
+	// ‘accessibilityLanguage’, ‘accessibilityTextStyle’, ‘accessibilityLink’ and
+	// ‘accessibilityRotor’, the way ‘showInSymbolList’ works. Nothing is computed
+	// until asked for: edits and parsing only widen the range the next query updates.
 	struct accessibility_t : meta_data_t, bundles::callback_t
 	{
 		accessibility_t ();
 		~accessibility_t ();
 
+		enum text_style_t { kTextStyleBold = 1, kTextStyleItalic = 2, kTextStyleUnderline = 4, kTextStyleStrikethrough = 8 };
 		enum class extent_t { run, line, block };
 
 		struct link_t       { size_t first, last; std::string title, url; };
@@ -61,6 +62,7 @@ namespace ng
 		std::vector<rotor_t> const& rotors (buffer_t const* buffer);
 		std::vector<rotor_item_t> const& rotor_items (buffer_t const* buffer, std::string const& rotor);
 		std::vector<ns::language_run_t> languages (buffer_t const* buffer, size_t from, size_t to);
+		unsigned text_style (scope::scope_t const& scope);
 
 	private:
 		void replace (buffer_t* buffer, size_t from, size_t to, size_t len);
@@ -70,6 +72,7 @@ namespace ng
 		struct rule_t
 		{
 			std::string language;
+			unsigned styles = 0;
 			bool link = false;
 			std::shared_ptr<symbol_transform_t> link_title, link_url;
 			std::string rotor;
