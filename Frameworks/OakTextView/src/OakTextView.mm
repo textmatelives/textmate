@@ -56,159 +56,71 @@ NSString* const kUserDefaultsFontSmoothingKey      = @"fontSmoothing";
 NSString* const kUserDefaultsDisableTypingPairsKey = @"disableTypingPairs";
 NSString* const kUserDefaultsScrollPastEndKey      = @"scrollPastEnd";
 
-@interface OakAccessibleLink : NSObject
-- (id)initWithTextView:(OakTextView*)textView range:(ng::range_t)range title:(NSString*)title URL:(NSString*)URL frame:(NSRect)frame;
-@property (nonatomic, weak) OakTextView* textView;
+@class OakTextView;
+
+@interface OakTextView (OakAccessibleLink)
+- (NSRect)accessibilityFrameForLinkRange:(ng::range_t const&)range;
+@end
+
+// A link in the text, exposed to assistive clients as an element of its own.
+@interface OakAccessibleLink : NSAccessibilityElement
+- (id)initWithTextView:(OakTextView*)textView range:(ng::range_t)range title:(NSString*)title URL:(NSURL*)URL;
+@property (nonatomic, readonly) OakTextView* textView;
+@property (nonatomic, readonly) NSString* title;
+@property (nonatomic, readonly) NSURL* URL;
 @property (nonatomic) ng::range_t range;
-@property (nonatomic) NSString* title;
-@property (nonatomic) NSString* URL;
-@property (nonatomic) NSRect frame;
 @end
 
 @implementation OakAccessibleLink
-- (id)initWithTextView:(OakTextView*)textView range:(ng::range_t)range title:(NSString*)title URL:(NSString*)URL frame:(NSRect)frame
+- (id)initWithTextView:(OakTextView*)textView range:(ng::range_t)range title:(NSString*)title URL:(NSURL*)URL
 {
 	if((self = [super init]))
 	{
-		_textView = textView;
+		self.accessibilityElement = YES;
+		self.accessibilityEnabled = YES;
+		self.accessibilityParent  = textView;
+		self.accessibilityRole    = NSAccessibilityLinkRole;
+		self.accessibilitySubrole = NSAccessibilityTextLinkSubrole;
+		self.accessibilityTitle   = title;
+		self.accessibilityURL     = URL;
 		_range = range;
-		_title = title;
-		_URL = URL;
-		_frame = frame;
 	}
 	return self;
 }
 
+- (OakTextView*)textView { return self.accessibilityParent; }
+- (NSString*)title       { return self.accessibilityTitle; }
+- (NSURL*)URL            { return self.accessibilityURL; }
+
 - (NSString*)description
 {
-	return [NSString stringWithFormat:@"[%@](%@), range = %@, frame = %@", self.title, self.URL, [NSString stringWithCxxString:to_s(self.range)], NSStringFromRect(self.frame)];
+	return [NSString stringWithFormat:@"[%@](%@), range = %@", self.title, self.URL, [NSString stringWithCxxString:to_s(self.range)]];
 }
 
-- (BOOL)isEqual:(id)object
+- (NSRect)accessibilityFrame
 {
-	if([object isKindOfClass:[OakAccessibleLink class]])
-	{
-		OakAccessibleLink* link = (OakAccessibleLink*)object;
-		return self.range == link.range && [self.textView isEqual:link.textView];
-	}
-	return NO;
+	return [self.textView accessibilityFrameForLinkRange:self.range];
 }
 
-- (NSUInteger)hash
+- (NSPoint)accessibilityActivationPoint
 {
-	return [self.textView hash] + _range.min().index + _range.max().index;
+	NSRect const frame = self.accessibilityFrame;
+	return NSMakePoint(NSMidX(frame), NSMidY(frame));
 }
 
-- (BOOL)accessibilityIsIgnored
+- (id)accessibilityWindow
 {
-	return NO;
+	return self.textView.window;
 }
 
-- (NSSet*)myAccessibilityAttributeNames
+- (id)accessibilityTopLevelUIElement
 {
-	static NSSet* set = [NSSet setWithArray:@[
-		NSAccessibilityRoleAttribute,
-		NSAccessibilityRoleDescriptionAttribute,
-		NSAccessibilitySubroleAttribute,
-		NSAccessibilityParentAttribute,
-		NSAccessibilityWindowAttribute,
-		NSAccessibilityTopLevelUIElementAttribute,
-		NSAccessibilityPositionAttribute,
-		NSAccessibilitySizeAttribute,
-		NSAccessibilityTitleAttribute,
-		NSAccessibilityURLAttribute,
-	]];
-	return set;
+	return self.textView.window;
 }
 
-- (NSArray*)accessibilityAttributeNames
+- (id)accessibilityFocusedUIElement
 {
-	static NSArray* attributes = [[self myAccessibilityAttributeNames] allObjects];
-	return attributes;
-}
-
-- (id)accessibilityAttributeValue:(NSString*)attribute
-{
-	id value = nil;
-
-	if([attribute isEqualToString:NSAccessibilityRoleAttribute]) {
-		value = NSAccessibilityLinkRole;
-	} else if([attribute isEqualToString:NSAccessibilitySubroleAttribute]) {
-		value = NSAccessibilityTextLinkSubrole;
-	} else if([attribute isEqualToString:NSAccessibilityRoleDescriptionAttribute]) {
-		value = NSAccessibilityRoleDescriptionForUIElement(self);
-	} else if([attribute isEqualToString:NSAccessibilityParentAttribute]) {
-		value = self.textView;
-	} else if([attribute isEqualToString:NSAccessibilityWindowAttribute] || [attribute isEqualToString:NSAccessibilityTopLevelUIElementAttribute]) {
-		value = [self.textView accessibilityAttributeValue:attribute];
-	} else if([attribute isEqualToString:NSAccessibilityPositionAttribute] || [attribute isEqualToString:NSAccessibilitySizeAttribute]) {
-		NSRect frame = NSAccessibilityFrameInView(self.textView, self.frame);
-		if([attribute isEqualToString:NSAccessibilityPositionAttribute])
-			value = [NSValue valueWithPoint:frame.origin];
-		else
-			value = [NSValue valueWithSize:frame.size];
-	} else if([attribute isEqualToString:NSAccessibilityTitleAttribute]) {
-		value = self.title;
-	} else if([attribute isEqualToString:NSAccessibilityURLAttribute]) {
-		value = self.URL;
-	} else {
-		@throw [NSException exceptionWithName:NSAccessibilityException reason:[NSString stringWithFormat:@"Getting accessibility attribute not supported: %@", attribute] userInfo:nil];
-	}
-
-	return value;
-}
-
-- (BOOL)accessibilityIsAttributeSettable:(NSString*)attribute
-{
-	if([[self myAccessibilityAttributeNames] containsObject:attribute])
-		return NO;
-	return [super accessibilityIsAttributeSettable:attribute];
-}
-
-- (void)accessibilitySetValue:(id)value forAttribute:(NSString*)attribute
-{
-	if([[self myAccessibilityAttributeNames] containsObject:attribute])
-		@throw [NSException exceptionWithName:NSAccessibilityException reason:[NSString stringWithFormat:@"Setting accessibility attribute not supported: %@", attribute] userInfo:nil];
-	[super accessibilitySetValue:value forAttribute:attribute];
-}
-
-- (NSArray*)accessibilityParameterizedAttributeNames
-{
-	return @[];
-}
-
-- (id)accessibilityAttributeValue:(NSString*)attribute forParameter:(id)parameter
-{
-	@throw [NSException exceptionWithName:NSAccessibilityException reason:[NSString stringWithFormat:@"Accessibility parameterized attribute not supported: %@", attribute] userInfo:nil];
-}
-
-- (NSArray*)accessibilityActionNames
-{
-	static NSArray* actions = nil;
-	if(!actions)
-	{
-		actions = @[
-			NSAccessibilityPressAction,
-		];
-	}
-	return actions;
-}
-
-- (NSString*)accessibilityActionDescription:(NSString*)action
-{
-	return NSAccessibilityActionDescription(action);
-}
-
-- (void)accessibilityPerformAction:(NSString*)action
-{
-	if([action isEqualToString:NSAccessibilityPressAction])
-	{
-		// TODO
-	}
-	else
-	{
-		@throw [NSException exceptionWithName:NSAccessibilityException reason:[NSString stringWithFormat:@"Accessibility action not supported: %@", action] userInfo:nil];
-	}
+	return NSAccessibilityUnignoredAncestor(self.textView);
 }
 
 - (id)accessibilityHitTest:(NSPoint)point
@@ -216,9 +128,12 @@ NSString* const kUserDefaultsScrollPastEndKey      = @"scrollPastEnd";
 	return self;
 }
 
-- (id)accessibilityFocusedUIElement
+- (BOOL)accessibilityPerformPress
 {
-	return NSAccessibilityUnignoredAncestor(self.textView);
+	if(!self.URL)
+		return NO;
+	[NSWorkspace.sharedWorkspace openURL:self.URL];
+	return YES;
 }
 @end
 
@@ -1806,6 +1721,13 @@ doScroll:
 	return [super accessibilityIndexOfChild:child];
 }
 
+- (NSRect)accessibilityFrameForLinkRange:(ng::range_t const&)range
+{
+	if(!documentView)
+		return NSZeroRect;
+	return NSAccessibilityFrameInView(self, documentView->rect_for_range(range.min().index, range.max().index));
+}
+
 - (id)accessibilityHitTest:(NSPoint)screenPoint
 {
 	if(!documentView)
@@ -1818,7 +1740,7 @@ doScroll:
 	if(it != links->end() && it->second.range.min() <= index)
 	{
 		OakAccessibleLink* link = it->second;
-		if(NSMouseInRect(point, link.frame, YES))
+		if(NSMouseInRect(point, documentView->rect_for_range(link.range.min().index, link.range.max().index), YES))
 			return [link accessibilityHitTest:screenPoint];
 	}
 	return self;
@@ -1841,9 +1763,7 @@ doScroll:
 			size_t i = pair->first;
 			size_t j = ++pair != scopes.end() ? pair->first : documentView->size();
 			NSString* title = [NSString stringWithCxxString:documentView->substr(i, j)];
-			NSRect frame = NSRectFromCGRect(documentView->rect_for_range(i, j));
-			ng::range_t range(i, j);
-			OakAccessibleLink* link = [[OakAccessibleLink alloc] initWithTextView:self range:range title:title URL:nil frame:frame];
+			OakAccessibleLink* link = [[OakAccessibleLink alloc] initWithTextView:self range:ng::range_t(i, j) title:title URL:nil];
 			links->set(j, link);
 		}
 		_links = links;
