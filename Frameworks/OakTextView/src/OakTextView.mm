@@ -1572,7 +1572,7 @@ doScroll:
 		runRange.length = utf16::distance(text.data() + i, text.data() + j);
 
 		[res addAttribute:NSAccessibilityMisspelledTextAttribute value:@(true) range:runRange];
-		[res addAttribute:@"AXMarkedMisspelled" value:@(true) range:runRange];
+		[res addAttribute:NSAccessibilityMarkedMisspelledTextAttribute value:@(true) range:runRange];
 
 		if((pair != end) && (++pair != end))
 		{
