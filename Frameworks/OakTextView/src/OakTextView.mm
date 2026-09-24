@@ -39,6 +39,7 @@
 #import <text/classification.h>
 #import <text/format.h>
 #import <text/newlines.h>
+#import <text/parse.h>
 #import <text/trim.h>
 #import <text/utf16.h>
 #import <text/utf8.h>
@@ -138,9 +139,6 @@ NSString* const kSymbolsRotorName                  = @"Symbols";
 	return YES;
 }
 @end
-
-typedef indexed_map_t<OakAccessibleLink*> links_t;
-typedef std::shared_ptr<links_t> links_ptr;
 
 typedef NS_ENUM(NSUInteger, OakFlagsState) {
 	OakFlagsStateClear = 0,
@@ -433,7 +431,7 @@ private:
 	// = Accessibility =
 	// =================
 
-	links_ptr _links;
+	NSArray<OakAccessibleLink*>* _links;
 	NSArray<NSAccessibilityCustomRotor*>* _rotors;
 	NSMapTable<NSAccessibilityCustomRotor*, NSString*>* _rotorNames;
 	size_t _accessibilityGeneration;
@@ -458,7 +456,7 @@ private:
 @property (nonatomic) LiveSearchView* liveSearchView;
 @property (nonatomic, copy) NSString* liveSearchString;
 @property (nonatomic) ng::ranges_t liveSearchRanges;
-@property (nonatomic, readonly) links_ptr links;
+@property (nonatomic, readonly) NSArray<OakAccessibleLink*>* links;
 @property (nonatomic) BOOL needsEnsureSelectionIsInVisibleArea;
 @property (nonatomic, readwrite) NSString* symbol;
 @property (nonatomic) scm::status::type scmStatus;
@@ -880,7 +878,7 @@ static std::string shell_quote (std::vector<std::string> paths)
 
 		[self resetBlinkCaretTimer];
 		[self setNeedsDisplay:YES];
-		_links.reset();
+		_links = nil;
 		_rotors = nil;
 		NSAccessibilityPostNotification(self, NSAccessibilityValueChangedNotification);
 
@@ -1144,7 +1142,6 @@ doScroll:
 {
 	AUTO_REFRESH;
 	documentView->did_update_scopes(from, to);
-	_links.reset();
 }
 
 - (void)drawRect:(NSRect)aRect
@@ -1422,6 +1419,7 @@ doScroll:
 	size_t const from = range.min().index, to = range.max().index;
 	std::string const text = documentView->substr(from, to);
 	NSMutableAttributedString* res = [[NSMutableAttributedString alloc] initWithString:[NSString stringWithCxxString:text]];
+	ng::accessibility_t& accessibility = documentView->accessibility();
 
 	// Add style
 	std::map<size_t, scope::scope_t> scopes = documentView->scopes(from, to);
@@ -1456,26 +1454,21 @@ doScroll:
 	}
 
 	// Add links
-	links_ptr const links = self.links;
-	auto lbegin = links->upper_bound(from);
-	auto lend   = links->lower_bound(to);
-	if(lend != links->end() && to >= lend->second.range.min().index)
-		++lend;
+	for(OakAccessibleLink* link in self.links)
+	{
+		ng::range_t linkRange = link.range;
+		if(linkRange.max().index <= from)
+			continue;
+		if(linkRange.min().index >= to)
+			break;
 
-	std::for_each(lbegin, lend, [=](links_t::iterator::value_type const& pair){
-		ng::range_t range = pair.second.range;
-		range.first = std::clamp(range.min(), ng::index_t(from), ng::index_t(to));
-		range.last  = std::clamp(range.max(), ng::index_t(from), ng::index_t(to));
-		if(!range.empty())
-		{
-			range.first.index -= from;
-			range.last.index  -= from;
-			NSRange linkRange;
-			linkRange.location = utf16::distance(text.data(), text.data() + range.first.index);
-			linkRange.length   = utf16::distance(text.data() + range.first.index, text.data() + range.last.index);
-			[res addAttribute:NSAccessibilityLinkTextAttribute value:pair.second range:linkRange];
-		}
-	});
+		size_t const i = std::max(linkRange.min().index, from) - from;
+		size_t const j = std::min(linkRange.max().index, to) - from;
+		NSRange nsRange;
+		nsRange.location = utf16::distance(text.data(), text.data() + i);
+		nsRange.length   = utf16::distance(text.data() + i, text.data() + j);
+		[res addAttribute:NSAccessibilityLinkTextAttribute value:link range:nsRange];
+	}
 
 	// Add misspellings
 	std::map<size_t, bool> misspellings = documentView->misspellings(from, to);
@@ -1508,7 +1501,7 @@ doScroll:
 	}
 
 	// Add languages, from which VoiceOver picks the voice for each run
-	for(auto const& run : documentView->accessibility().languages(documentView->buffer(), from, to))
+	for(auto const& run : accessibility.languages(documentView->buffer(), from, to))
 	{
 		size_t const i = run.first - from, j = run.last - from;
 		NSRange nsRange;
@@ -1629,13 +1622,7 @@ doScroll:
 
 - (NSArray*)accessibilityChildren
 {
-	if(!documentView)
-		return nil;
-	NSMutableArray* links = [NSMutableArray array];
-	std::shared_ptr<links_t> links_ = self.links;
-	for(auto const& pair : *links_)
-		[links addObject:pair.second];
-	return links;
+	return documentView ? self.links : nil;
 }
 
 - (void)setAccessibilityValue:(NSString*)value
@@ -1721,11 +1708,33 @@ static NSAccessibilityCustomRotorType rotor_type_for_name (std::string const& na
 	return it != types.end() ? it->second : NSAccessibilityCustomRotorTypeCustom;
 }
 
-- (void)updateAccessibilityRotors
+- (void)updateAccessibilityChildren
 {
 	ng::accessibility_t& accessibility = documentView->accessibility();
-	if(_rotors && _accessibilityGeneration == accessibility.generation())
+	if(_links && _rotors && _accessibilityGeneration == accessibility.generation())
 		return;
+
+	// The elements are kept, and with them VoiceOver’s cursor, as long as the
+	// number of links is unchanged; an edit then only moves them.
+	auto const& links = accessibility.links(documentView->buffer());
+	NSMutableArray* newLinks = _links.count == links.size() ? nil : [NSMutableArray arrayWithCapacity:links.size()];
+	for(size_t i = 0; i < links.size(); ++i)
+	{
+		NSURL* URL = [NSURL URLWithString:to_ns(links[i].url)];
+		if(newLinks)
+		{
+			[newLinks addObject:[[OakAccessibleLink alloc] initWithTextView:self range:ng::range_t(links[i].first, links[i].last) title:to_ns(links[i].title) URL:(URL.scheme ? URL : nil)]];
+		}
+		else
+		{
+			OakAccessibleLink* link = _links[i];
+			link.range              = ng::range_t(links[i].first, links[i].last);
+			link.accessibilityTitle = to_ns(links[i].title);
+			link.accessibilityURL   = URL.scheme ? URL : nil;
+		}
+	}
+	if(newLinks)
+		_links = newLinks;
 
 	NSMutableArray* names = [NSMutableArray arrayWithObject:kSymbolsRotorName];
 	for(auto const& rotor : accessibility.rotors(documentView->buffer()))
@@ -1753,18 +1762,26 @@ static NSAccessibilityCustomRotorType rotor_type_for_name (std::string const& na
 	_accessibilityGeneration = accessibility.generation();
 }
 
+- (NSArray*)links
+{
+	if(!documentView)
+		return @[ ];
+	[self updateAccessibilityChildren];
+	return _links;
+}
+
 - (NSArray*)accessibilityCustomRotors API_AVAILABLE(macos(10.13))
 {
 	if(!documentView)
 		return @[ [[NSAccessibilityCustomRotor alloc] initWithLabel:kSymbolsRotorName itemSearchDelegate:self] ];
-	[self updateAccessibilityRotors];
+	[self updateAccessibilityChildren];
 	return _rotors;
 }
 
 - (NSUInteger)accessibilityArrayAttributeCount:(NSString*)attribute
 {
 	if([attribute isEqualToString:NSAccessibilityChildrenAttribute])
-		return self.links->size();
+		return self.links.count;
 
 	return [super accessibilityArrayAttributeCount:attribute];
 }
@@ -1773,11 +1790,8 @@ static NSAccessibilityCustomRotorType rotor_type_for_name (std::string const& na
 {
 	if([attribute isEqualToString:NSAccessibilityChildrenAttribute])
 	{
-		links_ptr const links = self.links;
-		NSMutableArray* values = [NSMutableArray arrayWithCapacity:maxCount];
-		for(auto it = links->nth(index); maxCount && it != links->end(); ++it, --maxCount)
-			[values addObject:it->second];
-		return values;
+		NSArray* links = self.links;
+		return index < links.count ? [links subarrayWithRange:NSMakeRange(index, std::min(maxCount, links.count - index))] : @[ ];
 	}
 
 	return [super accessibilityArrayAttributeValues:attribute index:index maxCount:maxCount];
@@ -1786,12 +1800,7 @@ static NSAccessibilityCustomRotorType rotor_type_for_name (std::string const& na
 - (NSUInteger)accessibilityIndexOfChild:(id)child
 {
 	if([child isKindOfClass:[OakAccessibleLink class]])
-	{
-		OakAccessibleLink* link = (OakAccessibleLink* )child;
-		links_ptr const links = self.links;
-		auto it = links->find(link.range.max().index);
-		return it != links->end() ? it.index() : NSNotFound;
-	}
+		return [self.links indexOfObjectIdenticalTo:child];
 
 	return [super accessibilityIndexOfChild:child];
 }
@@ -1809,41 +1818,13 @@ static NSAccessibilityCustomRotorType rotor_type_for_name (std::string const& na
 		return self;
 
 	NSPoint point = [self convertRect:[self.window convertRectFromScreen:NSMakeRect(screenPoint.x, screenPoint.y, 0, 0)] fromView:nil].origin;
-	ng::index_t index = documentView->index_at_point(point);
-	const links_ptr links = self.links;
-	auto it = links->lower_bound(index.index);
-	if(it != links->end() && it->second.range.min() <= index)
+	ng::index_t const index = documentView->index_at_point(point);
+	for(OakAccessibleLink* link in self.links)
 	{
-		OakAccessibleLink* link = it->second;
-		if(NSMouseInRect(point, documentView->rect_for_range(link.range.min().index, link.range.max().index), YES))
+		if(link.range.min() <= index && index < link.range.max() && NSMouseInRect(point, documentView->rect_for_range(link.range.min().index, link.range.max().index), YES))
 			return [link accessibilityHitTest:screenPoint];
 	}
 	return self;
-}
-
-- (links_ptr)links
-{
-	if(!_links)
-	{
-		links_ptr links(new links_t());
-		scope::selector_t linkSelector = "markup.underline.link";
-		std::map<size_t, scope::scope_t> scopes = documentView->scopes(0, documentView->size());
-		for(auto pair = scopes.begin(); pair != scopes.end(); )
-		{
-			if(!linkSelector.does_match(pair->second))
-			{
-				++pair;
-				continue;
-			}
-			size_t i = pair->first;
-			size_t j = ++pair != scopes.end() ? pair->first : documentView->size();
-			NSString* title = [NSString stringWithCxxString:documentView->substr(i, j)];
-			OakAccessibleLink* link = [[OakAccessibleLink alloc] initWithTextView:self range:ng::range_t(i, j) title:title URL:nil];
-			links->set(j, link);
-		}
-		_links = links;
-	}
-	return _links;
 }
 
 // ================================================

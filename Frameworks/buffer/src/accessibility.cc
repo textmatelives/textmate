@@ -58,6 +58,13 @@ namespace ng
 		rule_t rule;
 		rule.language = text::trim(string_setting(bundles::value_for_setting("accessibilityLanguage", scope)));
 
+		if(plist::is_true(bundles::value_for_setting("accessibilityLink", scope)))
+		{
+			rule.link       = true;
+			rule.link_title = transform_setting(bundles::value_for_setting("accessibilityLinkTitleTransformation", scope));
+			rule.link_url   = transform_setting(bundles::value_for_setting("accessibilityLinkURLTransformation", scope));
+		}
+
 		rule.rotor = text::trim(string_setting(bundles::value_for_setting("accessibilityRotor", scope)));
 		if(!rule.rotor.empty())
 		{
@@ -89,6 +96,7 @@ namespace ng
 
 	void accessibility_t::replace (buffer_t* buffer, size_t from, size_t to, size_t len)
 	{
+		_links.replace(from, to, len);
 		_rotor_items.replace(from, to, len);
 		_languages.replace(from, to, len);
 
@@ -125,9 +133,9 @@ namespace ng
 		invalidate(0, SIZE_T_MAX);
 	}
 
-	// ========================
-	// = Rotor items, on demand =
-	// ========================
+	// ===================================
+	// = Links and rotor items, on demand =
+	// ===================================
 
 	void accessibility_t::update_items (buffer_t const* buffer)
 	{
@@ -143,15 +151,26 @@ namespace ng
 			if(last != tree.begin())
 				to = std::max<size_t>(to, (--last)->first + (*last).second.length);
 		};
+		widen(_links);
 		widen(_rotor_items);
 		to = std::min(to, buffer->size());
 
+		_links.remove(_links.lower_bound(from), _links.lower_bound(to));
 		_rotor_items.remove(_rotor_items.lower_bound(from), _rotor_items.lower_bound(to));
 
 		auto const lineOf = [&](size_t i){ return buffer->substr(buffer->begin(buffer->convert(i).line), buffer->eol(buffer->convert(i).line)); };
 
+		rule_t const* linkRule = nullptr;
 		rule_t const* rotorRule = nullptr;
-		size_t rotorFrom = 0;
+		size_t linkFrom = 0, rotorFrom = 0;
+
+		auto const endLink = [&](size_t last){
+			std::string const text = buffer->substr(linkFrom, last);
+			std::string const title = text::trim(linkRule->link_title ? linkRule->link_title->expand(text) : text);
+			std::string const url   = text::trim(linkRule->link_url ? linkRule->link_url->expand(text) : text);
+			_links.set(linkFrom, link_entry_t{ last - linkFrom, title, url });
+			linkRule = nullptr;
+		};
 
 		auto const endRotorItem = [&](size_t last){
 			std::string const text = rotorRule->extent == extent_t::run ? buffer->substr(rotorFrom, last) : lineOf(rotorFrom);
@@ -171,6 +190,14 @@ namespace ng
 
 			rule_t const& rule = rule_for(it->second);
 
+			if(linkRule && !rule.link)
+				endLink(i);
+			if(!linkRule && rule.link)
+			{
+				linkRule = &rule;
+				linkFrom = i;
+			}
+
 			if(rotorRule && (rule.rotor.empty() || rotorRule != &rule))
 				endRotorItem(i);
 			if(!rotorRule && !rule.rotor.empty())
@@ -180,6 +207,8 @@ namespace ng
 			}
 		}
 
+		if(linkRule && linkFrom < to)
+			endLink(to);
 		if(rotorRule && rotorFrom < to)
 			endRotorItem(to);
 
@@ -195,6 +224,10 @@ namespace ng
 
 		if(_cached)
 			return;
+
+		_links_cache.clear();
+		for(auto const& pair : _links)
+			_links_cache.push_back({ (size_t)pair.first, pair.first + pair.second.length, pair.second.title, pair.second.url });
 
 		std::map<std::string, double> orders;
 		for(auto const& pair : _rotor_items)
@@ -212,6 +245,12 @@ namespace ng
 
 		_rotor_items_cache.clear();
 		_cached = true;
+	}
+
+	std::vector<accessibility_t::link_t> const& accessibility_t::links (buffer_t const* buffer)
+	{
+		update(buffer);
+		return _links_cache;
 	}
 
 	std::vector<accessibility_t::rotor_t> const& accessibility_t::rotors (buffer_t const* buffer)
