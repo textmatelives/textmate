@@ -2,6 +2,7 @@
 #define BUFFER_META_DATA_H_Z0JQSBGY
 
 #include "buffer.h"
+#include "symbol_transform.h"
 
 namespace ng
 {
@@ -37,6 +38,53 @@ namespace ng
 
 		typedef indexed_map_t<std::string> tree_t;
 		tree_t _symbols;
+	};
+
+	// What assistive clients are told about the text, from scope settings such
+	// as ‘accessibilityRotor’, the way ‘showInSymbolList’ works. Nothing is computed
+	// until asked for: edits and parsing only widen the range the next query updates.
+	struct accessibility_t : meta_data_t, bundles::callback_t
+	{
+		accessibility_t ();
+		~accessibility_t ();
+
+		enum class extent_t { run, line, block };
+
+		struct rotor_t      { std::string name; double order; };
+		struct rotor_item_t { size_t first, last; std::string label; };
+
+		size_t generation () const { return _generation; } // changes when rotor items may have
+		std::vector<rotor_t> const& rotors (buffer_t const* buffer);
+		std::vector<rotor_item_t> const& rotor_items (buffer_t const* buffer, std::string const& rotor);
+
+	private:
+		void replace (buffer_t* buffer, size_t from, size_t to, size_t len);
+		void did_parse (buffer_t const* buffer, size_t from, size_t to);
+		void bundles_did_change ();
+
+		struct rule_t
+		{
+			std::string rotor;
+			std::shared_ptr<symbol_transform_t> rotor_transform;
+			extent_t extent = extent_t::run;
+			double order = 100;
+		};
+
+		struct rotor_entry_t { size_t length; std::string rotor, label; extent_t extent; };
+
+		rule_t const& rule_for (scope::scope_t const& scope);
+		void update (buffer_t const* buffer);
+		void update_items (buffer_t const* buffer);
+		void invalidate (size_t from, size_t to);
+
+		std::map<scope::scope_t, rule_t> _rules;
+		indexed_map_t<rotor_entry_t> _rotor_items;
+		size_t _dirty_from = 0, _dirty_to = SIZE_T_MAX;
+		size_t _generation = 0;
+
+		bool _cached = false;
+		std::vector<rotor_t> _rotors_cache;
+		std::map<std::string, std::vector<rotor_item_t>> _rotor_items_cache;
 	};
 
 	struct marks_t : meta_data_t

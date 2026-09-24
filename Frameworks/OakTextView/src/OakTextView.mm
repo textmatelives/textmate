@@ -20,6 +20,7 @@
 #import <OakSystem/application.h>
 #import <crash/info.h>
 #import <buffer/indexed_map.h>
+#import <buffer/meta_data.h>
 #import <BundleMenu/BundleMenu.h>
 #import <BundlesManager/BundlesManager.h>
 #import <Preferences/Keys.h>
@@ -55,6 +56,7 @@ NSString* const kUserDefaultsWrapColumnPresetsKey  = @"wrapColumnPresets";
 NSString* const kUserDefaultsFontSmoothingKey      = @"fontSmoothing";
 NSString* const kUserDefaultsDisableTypingPairsKey = @"disableTypingPairs";
 NSString* const kUserDefaultsScrollPastEndKey      = @"scrollPastEnd";
+NSString* const kSymbolsRotorName                  = @"Symbols";
 
 @class OakTextView;
 
@@ -195,6 +197,9 @@ struct document_view_t : ng::buffer_api_t
 		ng::buffer_t const& buf = [_document_editor buffer];
 		return buf.symbols();
 	}
+
+	ng::buffer_t const* buffer () const         { return &[_document_editor buffer]; }
+	ng::accessibility_t& accessibility () const  { return [_document_editor buffer].accessibility(); }
 
 	bool has_marks (std::string const& type = NULL_STR) const
 	{
@@ -429,6 +434,9 @@ private:
 	// =================
 
 	links_ptr _links;
+	NSArray<NSAccessibilityCustomRotor*>* _rotors;
+	NSMapTable<NSAccessibilityCustomRotor*, NSString*>* _rotorNames;
+	size_t _accessibilityGeneration;
 }
 - (void)ensureSelectionIsInVisibleArea:(id)sender;
 - (void)updateChoiceMenu:(id)sender;
@@ -873,6 +881,7 @@ static std::string shell_quote (std::vector<std::string> paths)
 		[self resetBlinkCaretTimer];
 		[self setNeedsDisplay:YES];
 		_links.reset();
+		_rotors = nil;
 		NSAccessibilityPostNotification(self, NSAccessibilityValueChangedNotification);
 
 		if(hasFocus)
@@ -1679,11 +1688,71 @@ doScroll:
 	return [self nsRangeForRange:ng::range_t(index, index + length)];
 }
 
+// A rotor named by one of these tokens is one of VoiceOver’s own, with its
+// name and place in the rotor menu supplied by VoiceOver; any other name is a
+// rotor of that name.
+static NSAccessibilityCustomRotorType rotor_type_for_name (std::string const& name)
+{
+	static std::map<std::string, NSAccessibilityCustomRotorType> const types = {
+		{ "annotation", NSAccessibilityCustomRotorTypeAnnotation },
+		{ "bold",       NSAccessibilityCustomRotorTypeBoldText },
+		{ "heading",    NSAccessibilityCustomRotorTypeHeading },
+		{ "heading1",   NSAccessibilityCustomRotorTypeHeadingLevel1 },
+		{ "heading2",   NSAccessibilityCustomRotorTypeHeadingLevel2 },
+		{ "heading3",   NSAccessibilityCustomRotorTypeHeadingLevel3 },
+		{ "heading4",   NSAccessibilityCustomRotorTypeHeadingLevel4 },
+		{ "heading5",   NSAccessibilityCustomRotorTypeHeadingLevel5 },
+		{ "heading6",   NSAccessibilityCustomRotorTypeHeadingLevel6 },
+		{ "image",      NSAccessibilityCustomRotorTypeImage },
+		{ "italic",     NSAccessibilityCustomRotorTypeItalicText },
+		{ "landmark",   NSAccessibilityCustomRotorTypeLandmark },
+		{ "link",       NSAccessibilityCustomRotorTypeLink },
+		{ "list",       NSAccessibilityCustomRotorTypeList },
+		{ "table",      NSAccessibilityCustomRotorTypeTable },
+		{ "underline",  NSAccessibilityCustomRotorTypeUnderlinedText },
+	};
+	auto it = types.find(name);
+	return it != types.end() ? it->second : NSAccessibilityCustomRotorTypeCustom;
+}
+
+- (void)updateAccessibilityRotors
+{
+	ng::accessibility_t& accessibility = documentView->accessibility();
+	if(_rotors && _accessibilityGeneration == accessibility.generation())
+		return;
+
+	NSMutableArray* names = [NSMutableArray arrayWithObject:kSymbolsRotorName];
+	for(auto const& rotor : accessibility.rotors(documentView->buffer()))
+		[names addObject:to_ns(rotor.name)];
+
+	NSMutableArray* currentNames = [NSMutableArray arrayWithCapacity:_rotors.count];
+	for(NSAccessibilityCustomRotor* rotor in _rotors)
+		[currentNames addObject:[_rotorNames objectForKey:rotor] ?: @""];
+
+	if(![names isEqualToArray:currentNames])
+	{
+		NSMutableArray* rotors = [NSMutableArray arrayWithCapacity:names.count];
+		NSMapTable* rotorNames = [NSMapTable strongToStrongObjectsMapTable];
+		for(NSString* name in names)
+		{
+			NSAccessibilityCustomRotorType const type = [name isEqualToString:kSymbolsRotorName] ? NSAccessibilityCustomRotorTypeCustom : rotor_type_for_name(to_s(name));
+			NSAccessibilityCustomRotor* rotor = type == NSAccessibilityCustomRotorTypeCustom ? [[NSAccessibilityCustomRotor alloc] initWithLabel:name itemSearchDelegate:self] : [[NSAccessibilityCustomRotor alloc] initWithRotorType:type itemSearchDelegate:self];
+			[rotors addObject:rotor];
+			[rotorNames setObject:name forKey:rotor];
+		}
+		_rotors     = rotors;
+		_rotorNames = rotorNames;
+	}
+
+	_accessibilityGeneration = accessibility.generation();
+}
+
 - (NSArray*)accessibilityCustomRotors API_AVAILABLE(macos(10.13))
 {
-	return @[
-		[[NSAccessibilityCustomRotor alloc] initWithLabel:@"Symbols" itemSearchDelegate:self],
-	];
+	if(!documentView)
+		return @[ [[NSAccessibilityCustomRotor alloc] initWithLabel:kSymbolsRotorName itemSearchDelegate:self] ];
+	[self updateAccessibilityRotors];
+	return _rotors;
 }
 
 - (NSUInteger)accessibilityArrayAttributeCount:(NSString*)attribute
@@ -1777,13 +1846,31 @@ doScroll:
 
 - (NSAccessibilityCustomRotorItemResult*)rotor:(NSAccessibilityCustomRotor*)rotor resultForSearchParameters:(NSAccessibilityCustomRotorSearchParameters*)searchParameters API_AVAILABLE(macos(10.13))
 {
-	auto const symbols = documentView->symbols();
+	if(!documentView)
+		return nil;
+
+	// Every rotor is searched the same way, so the symbol list is brought into the
+	// shape of the grammar-defined rotors: an ordered list of labelled ranges.
+	std::vector<ng::accessibility_t::rotor_item_t> symbolItems;
+	std::vector<ng::accessibility_t::rotor_item_t> const* items = &symbolItems;
+	NSString* name = [_rotorNames objectForKey:rotor];
+	if(!name && [rotor.label isEqualToString:kSymbolsRotorName])
+	{
+		for(auto const& pair : documentView->symbols())
+			symbolItems.push_back({ pair.first, pair.first, pair.second });
+	}
+	else if(name)
+	{
+		items = &documentView->accessibility().rotor_items(documentView->buffer(), to_s(name));
+	}
+	else
+	{
+		return nil;
+	}
 
 	std::string const filterString = searchParameters.filterString ? text::lowercase(to_s(searchParameters.filterString)) : "";
-
-	auto const substringMatcher = [&filterString](const std::pair<size_t, std::string>& symbolPair){
-		std::string const symbol = text::lowercase(symbolPair.second);
-		return symbol.find(filterString) != std::string::npos;
+	auto const matchesFilter = [&filterString](ng::accessibility_t::rotor_item_t const& item){
+		return filterString.empty() || text::lowercase(item.label).find(filterString) != std::string::npos;
 	};
 
 	NSAccessibilityCustomRotorItemResult* currentItem = searchParameters.currentItem;
@@ -1794,54 +1881,38 @@ doScroll:
 	if(!currentItem.targetElement && location == 0 && currentItem.targetRange.length == 0)
 		location = NSNotFound;
 
-	auto it = symbols.end();
+	size_t const currentIndex = location == NSNotFound ? 0 : [self rangeForNSRange:NSMakeRange(location, 0)].min().index;
+	auto const byStart = [](ng::accessibility_t::rotor_item_t const& item, size_t index){ return item.first < index; };
+
+	auto it = items->end();
 	switch(searchParameters.searchDirection)
 	{
 		case NSAccessibilityCustomRotorSearchDirectionNext:
 		{
-			if(location == NSNotFound)
-			{
-				it = symbols.begin();
-			}
-			else
-			{
-				ng::index_t	const currentIndex = [self rangeForNSRange:NSMakeRange(location, 0)].min();
-				it = symbols.upper_bound(currentIndex.index);
-			}
-			it = std::find_if(it, symbols.end(), substringMatcher);
+			it = location == NSNotFound ? items->begin() : std::upper_bound(items->begin(), items->end(), currentIndex, [](size_t index, ng::accessibility_t::rotor_item_t const& item){ return index < item.first; });
+			it = std::find_if(it, items->end(), matchesFilter);
 		}
 		break;
 
 		case NSAccessibilityCustomRotorSearchDirectionPrevious:
 		{
-			if(location == NSNotFound)
-			{
-				it = symbols.end();
-			}
-			else
-			{
-				ng::index_t	const currentIndex = [self rangeForNSRange:NSMakeRange(location, 0)].min();
-				it = symbols.lower_bound(currentIndex.index);
-			}
-			auto rit = std::make_reverse_iterator(it);
-			rit = std::find_if(rit, symbols.rend(), substringMatcher);
-			if(rit == symbols.rend())
-					it = symbols.end();
-			else	it = (++rit).base();
+			it = location == NSNotFound ? items->end() : std::lower_bound(items->begin(), items->end(), currentIndex, byStart);
+			auto rit = std::find_if(std::make_reverse_iterator(it), items->rend(), matchesFilter);
+			it = rit == items->rend() ? items->end() : (++rit).base();
 		}
 		break;
 	}
 
-	if(it == symbols.end())
+	if(it == items->end())
 		return nil;
 
 	NSAccessibilityCustomRotorItemResult* result = [[NSAccessibilityCustomRotorItemResult alloc] initWithTargetElement:self];
 
-	ng::index_t const resultIndex = it->first;
-	text::pos_t const pos = documentView->convert(resultIndex.index);
-	size_t const end = documentView->end(pos.line);
-	result.targetRange = [self nsRangeForRange:ng::range_t(resultIndex, end)];
-	result.customLabel = to_ns(it->second);
+	// The target is the first line of the item, as with symbols: that is what
+	// VoiceOver reads on arrival, and where the caret lands.
+	size_t const line = documentView->convert(it->first).line;
+	result.targetRange = [self nsRangeForRange:ng::range_t(it->first, documentView->end(line))];
+	result.customLabel = to_ns(it->label);
 
 	return result;
 }
