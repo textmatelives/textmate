@@ -3,6 +3,6 @@ add_library(ns STATIC)
 file(GLOB _src CONFIGURE_DEPENDS src/*.mm)
 target_sources(ns PRIVATE ${_src})
 textmate_framework(ns)
-target_link_libraries(ns PUBLIC text OakFoundation plist "-framework Cocoa")
+target_link_libraries(ns PUBLIC text OakFoundation plist "-framework Cocoa" "-framework NaturalLanguage")
 
 textmate_add_tests(ns)

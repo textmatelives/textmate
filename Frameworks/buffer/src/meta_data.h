@@ -3,6 +3,7 @@
 
 #include "buffer.h"
 #include "symbol_transform.h"
+#include <ns/language.h>
 
 namespace ng
 {
@@ -41,8 +42,9 @@ namespace ng
 	};
 
 	// What assistive clients are told about the text, from scope settings such
-	// as ‘accessibilityRotor’, the way ‘showInSymbolList’ works. Nothing is computed
-	// until asked for: edits and parsing only widen the range the next query updates.
+	// as ‘accessibilityRotor’ and ‘accessibilityLanguage’, the way ‘showInSymbolList’
+	// works. Nothing is computed until asked for: edits and parsing only widen the
+	// range the next query updates.
 	struct accessibility_t : meta_data_t, bundles::callback_t
 	{
 		accessibility_t ();
@@ -56,6 +58,7 @@ namespace ng
 		size_t generation () const { return _generation; } // changes when rotor items may have
 		std::vector<rotor_t> const& rotors (buffer_t const* buffer);
 		std::vector<rotor_item_t> const& rotor_items (buffer_t const* buffer, std::string const& rotor);
+		std::vector<ns::language_run_t> languages (buffer_t const* buffer, size_t from, size_t to);
 
 	private:
 		void replace (buffer_t* buffer, size_t from, size_t to, size_t len);
@@ -64,6 +67,7 @@ namespace ng
 
 		struct rule_t
 		{
+			std::string language;
 			std::string rotor;
 			std::shared_ptr<symbol_transform_t> rotor_transform;
 			extent_t extent = extent_t::run;
@@ -76,9 +80,12 @@ namespace ng
 		void update (buffer_t const* buffer);
 		void update_items (buffer_t const* buffer);
 		void invalidate (size_t from, size_t to);
+		typedef std::shared_ptr<std::vector<ns::language_run_t>> language_runs_ptr;
+		language_runs_ptr languages_for_line (buffer_t const* buffer, size_t n);
 
 		std::map<scope::scope_t, rule_t> _rules;
 		indexed_map_t<rotor_entry_t> _rotor_items;
+		indexed_map_t<language_runs_ptr> _languages; // per line, offsets relative to the line
 		size_t _dirty_from = 0, _dirty_to = SIZE_T_MAX;
 		size_t _generation = 0;
 

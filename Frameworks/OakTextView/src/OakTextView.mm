@@ -1507,9 +1507,15 @@ doScroll:
 		}
 	}
 
-	// Add text language
-	NSString* lang = [NSString stringWithCxxString:documentView->spelling_language()];
-	[res addAttribute:@"AXNaturalLanguageText" value:lang range:NSMakeRange(0, [res length])];
+	// Add languages, from which VoiceOver picks the voice for each run
+	for(auto const& run : documentView->accessibility().languages(documentView->buffer(), from, to))
+	{
+		size_t const i = run.first - from, j = run.last - from;
+		NSRange nsRange;
+		nsRange.location = utf16::distance(text.data(), text.data() + i);
+		nsRange.length   = utf16::distance(text.data() + i, text.data() + j);
+		[res addAttribute:NSAccessibilityLanguageTextAttribute value:to_ns(run.language) range:nsRange];
+	}
 
 	return res;
 }

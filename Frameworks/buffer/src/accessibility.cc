@@ -56,6 +56,8 @@ namespace ng
 			return it->second;
 
 		rule_t rule;
+		rule.language = text::trim(string_setting(bundles::value_for_setting("accessibilityLanguage", scope)));
+
 		rule.rotor = text::trim(string_setting(bundles::value_for_setting("accessibilityRotor", scope)));
 		if(!rule.rotor.empty())
 		{
@@ -88,6 +90,12 @@ namespace ng
 	void accessibility_t::replace (buffer_t* buffer, size_t from, size_t to, size_t len)
 	{
 		_rotor_items.replace(from, to, len);
+		_languages.replace(from, to, len);
+
+		// The lines touched by the edit are identified afresh.
+		size_t const firstLine = buffer->convert(from).line;
+		size_t const lastLine  = buffer->convert(from + len).line;
+		_languages.remove(_languages.lower_bound(buffer->begin(firstLine)), _languages.upper_bound(buffer->eol(lastLine)));
 
 		if(_dirty_from < _dirty_to)
 		{
@@ -106,12 +114,14 @@ namespace ng
 
 	void accessibility_t::did_parse (buffer_t const* buffer, size_t from, size_t to)
 	{
+		_languages.remove(_languages.lower_bound(buffer->begin(buffer->convert(from).line)), _languages.lower_bound(to));
 		invalidate(from, to);
 	}
 
 	void accessibility_t::bundles_did_change ()
 	{
 		_rules.clear();
+		_languages.clear();
 		invalidate(0, SIZE_T_MAX);
 	}
 
@@ -239,6 +249,73 @@ namespace ng
 			}
 			res.push_back({ first, last, pair.second.label });
 			lastLine = endLine;
+		}
+		return res;
+	}
+
+	// ======================
+	// = Language of a line =
+	// ======================
+
+	accessibility_t::language_runs_ptr accessibility_t::languages_for_line (buffer_t const* buffer, size_t n)
+	{
+		size_t const from = buffer->begin(n), to = buffer->eol(n);
+		auto it = _languages.find(from);
+		if(it != _languages.end())
+			return it->second;
+
+		auto res = std::make_shared<std::vector<ns::language_run_t>>();
+		std::vector<std::pair<size_t, size_t>> autoRuns;
+		std::map<size_t, scope::scope_t> const scopes = buffer->scopes(from, to);
+		for(auto pair = scopes.begin(); pair != scopes.end(); )
+		{
+			std::string const& language = rule_for(pair->second).language;
+			size_t const i = pair->first;
+			size_t const j = ++pair != scopes.end() ? pair->first : to - from;
+			if(i >= j)
+				continue;
+
+			if(language == "auto")
+				autoRuns.emplace_back(i, j);
+			else if(!language.empty() && language != "none")
+				res->push_back({ i, j, language });
+		}
+
+		if(!autoRuns.empty())
+		{
+			for(auto const& run : ns::identify_languages(buffer->substr(from, to)))
+			{
+				for(auto const& autoRun : autoRuns)
+				{
+					size_t const i = std::max(run.first, autoRun.first), j = std::min(run.last, autoRun.second);
+					if(i < j)
+						res->push_back({ i, j, run.language });
+				}
+			}
+			std::sort(res->begin(), res->end(), [](ns::language_run_t const& lhs, ns::language_run_t const& rhs){ return lhs.first < rhs.first; });
+		}
+
+		_languages.set(from, res);
+		return res;
+	}
+
+	std::vector<ns::language_run_t> accessibility_t::languages (buffer_t const* buffer, size_t from, size_t to)
+	{
+		std::vector<ns::language_run_t> res;
+		if(from >= to)
+			return res;
+
+		size_t const firstLine = buffer->convert(from).line;
+		size_t const lastLine  = buffer->convert(to - 1).line;
+		for(size_t n = firstLine; n <= lastLine; ++n)
+		{
+			size_t const lineFrom = buffer->begin(n);
+			for(auto const& run : *languages_for_line(buffer, n))
+			{
+				size_t const i = std::max(lineFrom + run.first, from), j = std::min(lineFrom + run.last, to);
+				if(i < j)
+					res.push_back({ i, j, run.language });
+			}
 		}
 		return res;
 	}
