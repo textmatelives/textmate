@@ -56,6 +56,7 @@ namespace ng
 
 	struct spelling_t;
 	struct symbols_t;
+	struct accessibility_t;
 	struct marks_t;
 
 	struct buffer_api_t
@@ -129,6 +130,8 @@ namespace ng
 
 		std::map<size_t, std::string> symbols () const;
 		std::string symbol_at (size_t i) const;
+
+		accessibility_t& accessibility ();
 
 		void set_live_spelling (bool flag);
 		bool live_spelling () const;
@@ -232,11 +235,13 @@ namespace ng
 
 		std::shared_ptr<spelling_t> _spelling;
 		std::shared_ptr<symbols_t>  _symbols;
+		std::shared_ptr<accessibility_t> _accessibility;
 		std::shared_ptr<marks_t>    _marks;
 		std::shared_ptr<pairs_t>    _pairs;
 
 		friend struct spelling_t; // _scopes
 		friend struct symbols_t;  // _scopes
+		friend struct accessibility_t; // _scopes
 	};
 
 	std::string to_s (buffer_t const& buf, size_t first = 0, size_t last = SIZE_T_MAX);
