@@ -761,6 +761,13 @@ static void* kOakTabViewSelectedContext  = &kOakTabViewSelectedContext;
 	[NSNotificationCenter.defaultCenter removeObserver:self];
 }
 
+- (void)setHidesNewTabButton:(BOOL)flag
+{
+	_hidesNewTabButton = flag;
+	self.createNewTabButton.hidden = flag;
+	[self updateToLayout:[self makeLayout]];
+}
+
 - (NSButton*)createNewTabButton
 {
 	if(!_createNewTabButton)
@@ -1019,7 +1026,11 @@ static void* kOakTabViewSelectedContext  = &kOakTabViewSelectedContext;
 
 - (void)draggingSession:(NSDraggingSession*)session endedAtPoint:(NSPoint)screenPoint operation:(NSDragOperation)operation
 {
+	// A tab bar that took the drop has already reloaded us, which forgets the dragged index
+	NSString* identifier = _draggedTabIndex != -1 && _draggedTabIndex < _tabItems.count ? _tabItems[_draggedTabIndex].identifier : nil;
 	self.draggedTabIndex = -1;
+	if(identifier && [_delegate respondsToSelector:@selector(tabBarView:didEndDraggingTabItem:atScreenPoint:operation:)])
+		[_delegate tabBarView:self didEndDraggingTabItem:[[NSUUID alloc] initWithUUIDString:identifier] atScreenPoint:screenPoint operation:operation];
 }
 
 // ========================
@@ -1249,7 +1260,7 @@ static void* kOakTabViewSelectedContext  = &kOakTabViewSelectedContext;
 - (NSArray<OakTabFrame*>*)makeLayout
 {
 	static NSString* const firstTabIdentifier = [NSUUID UUID].UUIDString;
-	CGFloat const visibleWidth = NSWidth(self.bounds) - NSWidth(self.createNewTabButton.frame);
+	CGFloat const visibleWidth = NSWidth(self.bounds) - (_hidesNewTabButton ? 0 : NSWidth(self.createNewTabButton.frame));
 	NSUInteger const countOfVisibleTabs = MIN(MAX(0, floor(visibleWidth / OakScaledUIMetric(_minimumTabSize))), _tabItems.count);
 
 	NSMutableArray<OakTabItem*>* tabItems = [NSMutableArray array];

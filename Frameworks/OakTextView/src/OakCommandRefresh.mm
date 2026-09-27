@@ -114,7 +114,12 @@ static NSMutableSet<OakCommandRefresher*>* CommandRefreshers = [NSMutableSet set
 - (void)observeValueForKeyPath:(NSString*)keyPath ofObject:(id)anObject change:(NSDictionary*)someChanges context:(void*)context
 {
 	if([keyPath isEqualToString:@"visible"])
-		return [self teardown];
+	{
+		// The view re-reports itself visible when it moves to another window, e.g. a tab torn off or dropped elsewhere
+		if(!_command.htmlOutputView.isVisible)
+			[self teardown];
+		return;
+	}
 	[super observeValueForKeyPath:keyPath ofObject:anObject change:someChanges context:context];
 }
 

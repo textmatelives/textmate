@@ -42,8 +42,6 @@
 		[self.window setDelegate:self];
 		[self.window setReleasedWhenClosed:NO];
 		[self.window setCollectionBehavior:NSWindowCollectionBehaviorMoveToActiveSpace|NSWindowCollectionBehaviorFullScreenAuxiliary];
-
-		[self newHTMLOutputView];
 	}
 	return self;
 }
@@ -51,7 +49,10 @@
 - (instancetype)initWithIdentifier:(NSUUID*)anIdentifier
 {
 	if(self = [self init])
+	{
 		self.window.frameAutosaveName = [NSString stringWithFormat:@"HTML output for %@", anIdentifier.UUIDString];
+		[self newHTMLOutputView];
+	}
 	return self;
 }
 
@@ -85,12 +86,11 @@
 
 - (BOOL)windowShouldClose:(id)sender
 {
-	NSArray<OakHTMLOutputView*>* running = [self.tabView.htmlOutputViews filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"isRunningCommand == YES"]];
-	if(running.count == 0)
+	if(![self.tabView.htmlOutputViews filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"isRunningCommand == YES"]].count)
 		return YES;
 
 	// Stop the running commands one at a time, then close; a refused stop keeps the window
-	[self stopViews:running.objectEnumerator completionHandler:^(BOOL didStopAll){
+	[self.tabView stopRunningCommandsWithCompletionHandler:^(BOOL didStopAll){
 		if(didStopAll)
 		{
 			[self.window orderOut:self];
@@ -98,20 +98,6 @@
 		}
 	}];
 	return NO;
-}
-
-- (void)stopViews:(NSEnumerator<OakHTMLOutputView*>*)views completionHandler:(void(^)(BOOL didStopAll))handler
-{
-	OakHTMLOutputView* view = views.nextObject;
-	if(!view)
-		return handler(YES);
-
-	[self.tabView setSelectedHTMLOutputView:view]; // the stop prompt is about this view
-	[view stopLoadingWithUserInteraction:YES completionHandler:^(BOOL didStop){
-		if(didStop)
-				[self stopViews:views completionHandler:handler];
-		else	handler(NO);
-	}];
 }
 
 - (void)windowWillClose:(NSNotification*)notification

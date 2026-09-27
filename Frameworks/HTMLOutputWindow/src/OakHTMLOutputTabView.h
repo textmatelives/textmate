@@ -2,6 +2,7 @@
 #import <OakTabBarView/OakTabBarView.h>
 
 @class OakHTMLOutputTabView;
+@class HTMLOutputWindowController;
 
 @protocol OakHTMLOutputTabViewDelegate <NSObject>
 @optional
@@ -10,7 +11,7 @@
 
 // Several HTML output views behind one tab strip. Only the selected view is
 // shown; every view keeps its own page, history, environment and command.
-@interface OakHTMLOutputTabView : NSView
+@interface OakHTMLOutputTabView : NSView <OakTabBarViewDataSource, OakTabBarViewDelegate>
 @property (nonatomic, weak) id <OakHTMLOutputTabViewDelegate> delegate;
 @property (nonatomic, readonly) OakTabBarView* tabBarView;
 @property (nonatomic) BOOL hostsTabBar; // NO when the owner places the tab bar itself, e.g. in the title bar
@@ -19,7 +20,13 @@
 @property (nonatomic) OakHTMLOutputView* selectedHTMLOutputView;
 
 - (void)addHTMLOutputView:(OakHTMLOutputView*)aView; // appends and selects
+- (OakHTMLOutputView*)htmlOutputViewForIdentifier:(NSUUID*)aCommandIdentifier busy:(BOOL)busyFlag; // a reusable view showing the command, a running one only when asked
+- (void)insertHTMLOutputView:(OakHTMLOutputView*)aView atIndex:(NSUInteger)anIndex; // takes the view from any other strip, keeping it on screen throughout
 - (void)removeHTMLOutputView:(OakHTMLOutputView*)aView;
+- (HTMLOutputWindowController*)tearOffHTMLOutputView:(OakHTMLOutputView*)aView atScreenPoint:(NSPoint)aPoint; // moves the view into a new window there
+
+// Asks to stop each running command in turn; didStopAll is NO when the user keeps one running
+- (void)stopRunningCommandsWithCompletionHandler:(void(^)(BOOL didStopAll))handler;
 
 // Selects the tab holding the view. Reachable from the view through the responder chain.
 - (void)revealHTMLOutputView:(OakHTMLOutputView*)aView;
