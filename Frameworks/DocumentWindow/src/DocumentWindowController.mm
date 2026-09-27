@@ -1304,12 +1304,17 @@ static NSArray* const kObservedKeyPaths = @[ @"arrayController.arrangedObjects.p
 
 	NSMutableArray <OakHTMLOutputView*>* htmlOutputViews = [NSMutableArray array];
 	if(self.htmlOutputWindowController)
-		[htmlOutputViews addObject:self.htmlOutputWindowController.htmlOutputView];
+		[htmlOutputViews addObjectsFromArray:self.htmlOutputWindowController.tabView.htmlOutputViews];
 
+	HTMLOutputWindowController* frontmostController = nil;
 	for(NSWindow* window in [NSApp orderedWindows])
 	{
 		if([window isVisible] && ![window isMiniaturized] && [window.delegate isKindOfClass:[HTMLOutputWindowController class]])
-			[htmlOutputViews addObject:[(HTMLOutputWindowController*)window.delegate htmlOutputView]];
+		{
+			HTMLOutputWindowController* controller = (HTMLOutputWindowController*)window.delegate;
+			frontmostController = frontmostController ?: controller;
+			[htmlOutputViews addObjectsFromArray:controller.tabView.htmlOutputViews];
+		}
 	}
 
 	NSArray* allHTMLViews = [htmlOutputViews filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"needsNewWebView == NO AND isReusable == YES AND commandIdentifier == %@", identifier]];
@@ -1321,6 +1326,8 @@ static NSArray* const kObservedKeyPaths = @[ @"arrayController.arrangedObjects.p
 	}
 	else if(createFlag)
 	{
+		if(frontmostController) // a new tab in the output window in front, like a browser
+			return [frontmostController newHTMLOutputView];
 		self.htmlOutputWindowController = [[HTMLOutputWindowController alloc] initWithIdentifier:identifier];
 		return self.htmlOutputWindowController.htmlOutputView;
 	}

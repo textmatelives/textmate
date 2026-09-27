@@ -633,6 +633,7 @@ static pid_t run_command (dispatch_group_t rootGroup, std::string const& cmd, in
 
 	if(view)
 	{
+		[view tryToPerform:@selector(revealHTMLOutputView:) with:view]; // select its tab
 		if([view.window.delegate respondsToSelector:@selector(showWindow:)])
 			[view.window.delegate performSelector:@selector(showWindow:) withObject:self];
 		[view.window makeFirstResponder:view.webView];
