@@ -108,6 +108,7 @@ static void show_command_error (std::string const& message, oak::uuid_t const& u
 @property (nonatomic) HTMLOutputWindowController* htmlOutputWindowController;
 @property (nonatomic) OakHTMLOutputTabView*       htmlOutputTabView; // the split pane's tabs
 @property (nonatomic) BOOL                        htmlOutputInWindow;
+@property (nonatomic) NSString*                   htmlOutputPlacement; // bottom, right, left or window: this window's own, seeded from the preference
 
 @property (nonatomic) NSSegmentedControl*         previousNextTouchBarControl;
 
@@ -198,6 +199,7 @@ static NSArray* const kObservedKeyPaths = @[ @"arrayController.arrangedObjects.p
 
 		self.layoutView = [[ProjectLayoutView alloc] initWithFrame:NSZeroRect];
 		self.layoutView.documentView = self.documentView;
+		self.htmlOutputPlacement = [NSUserDefaults.standardUserDefaults stringForKey:kUserDefaultsHTMLOutputPlacementKey];
 
 		NSUInteger windowStyle = (NSWindowStyleMaskTitled|NSWindowStyleMaskClosable|NSWindowStyleMaskResizable|NSWindowStyleMaskMiniaturizable);
 		self.window = [[NSWindow alloc] initWithContentRect:[NSWindow contentRectForFrameRect:[self frameRectForNewWindow] styleMask:windowStyle] styleMask:windowStyle backing:NSBackingStoreBuffered defer:NO];
@@ -377,7 +379,6 @@ static NSArray* const kObservedKeyPaths = @[ @"arrayController.arrangedObjects.p
 
 - (void)userDefaultsDidChange:(NSNotification*)aNotification
 {
-	self.htmlOutputInWindow = [[NSUserDefaults.standardUserDefaults stringForKey:kUserDefaultsHTMLOutputPlacementKey] isEqualToString:@"window"];
 	self.disableFileBrowserWindowResize = [NSUserDefaults.standardUserDefaults boolForKey:kUserDefaultsDisableFileBrowserWindowResizeKey];
 	self.autoRevealFile = [NSUserDefaults.standardUserDefaults boolForKey:kUserDefaultsAutoRevealFileKey];
 	self.documentView.hideStatusBar = [NSUserDefaults.standardUserDefaults boolForKey:kUserDefaultsHideStatusBarKey];
@@ -2026,6 +2027,14 @@ static NSArray* const kObservedKeyPaths = @[ @"arrayController.arrangedObjects.p
 	}
 }
 
+- (void)setHtmlOutputPlacement:(NSString*)placement
+{
+	_htmlOutputPlacement = placement ?: @"bottom";
+	self.htmlOutputInWindow = [_htmlOutputPlacement isEqualToString:@"window"];
+	if(!self.htmlOutputInWindow)
+		self.layoutView.htmlOutputPlacement = [_htmlOutputPlacement isEqualToString:@"right"] ? ProjectLayoutHTMLOutputRight : [_htmlOutputPlacement isEqualToString:@"left"] ? ProjectLayoutHTMLOutputLeft : ProjectLayoutHTMLOutputBelow;
+}
+
 - (void)setHtmlOutputInWindow:(BOOL)showInWindowFlag
 {
 	if(_htmlOutputInWindow == showInWindowFlag)
@@ -2621,6 +2630,8 @@ static NSUInteger DisableSessionSavingCount = 0;
 		self.fileBrowserWidth = [fileBrowserWidth floatValue];
 	if(NSString* htmlOutputSize = project[@"htmlOutputSize"])
 		self.htmlOutputSize = NSSizeFromString(htmlOutputSize);
+	if(NSString* htmlOutputPlacement = project[@"htmlOutputPlacement"])
+		self.htmlOutputPlacement = htmlOutputPlacement;
 
 	self.defaultProjectPath = project[@"projectPath"];
 	self.projectPath        = project[@"projectPath"];
@@ -2686,6 +2697,7 @@ static NSUInteger DisableSessionSavingCount = 0;
 
 	res[@"miniaturized"]       = @([self.window isMiniaturized]);
 	res[@"htmlOutputSize"]     = NSStringFromSize(self.htmlOutputSize);
+	res[@"htmlOutputPlacement"] = self.htmlOutputPlacement;
 	res[@"fileBrowserVisible"] = @(self.fileBrowserVisible);
 	res[@"fileBrowserWidth"]   = @(self.fileBrowserWidth);
 
