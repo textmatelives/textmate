@@ -31,9 +31,9 @@
 		self.tabView.hostsTabBar = NO;
 
 		_titlebarViewController = [[NSTitlebarAccessoryViewController alloc] init];
-		self.tabView.tabBarView.frameSize = self.tabView.tabBarView.intrinsicContentSize;
-		_titlebarViewController.view = self.tabView.tabBarView;
-		_titlebarViewController.fullScreenMinHeight = NSHeight(self.tabView.tabBarView.frame);
+		self.tabView.tabStripView.frameSize = NSMakeSize(NSWidth(self.tabView.tabStripView.frame), self.tabView.tabBarView.intrinsicContentSize.height);
+		_titlebarViewController.view = self.tabView.tabStripView;
+		_titlebarViewController.fullScreenMinHeight = NSHeight(self.tabView.tabStripView.frame);
 		[self.window addTitlebarAccessoryViewController:_titlebarViewController];
 
 		[self.window bind:NSTitleBinding toObject:self.tabView withKeyPath:@"selectedHTMLOutputView.mainFrameTitle" options:nil];
