@@ -646,6 +646,8 @@ static pid_t run_command (dispatch_group_t rootGroup, std::string const& cmd, in
 {
 	if(id target = [self targetForAction:_cmd])
 		[target discardHTMLOutputView:htmlOutputView];
+	else if([htmlOutputView tryToPerform:@selector(removeHTMLOutputView:) with:htmlOutputView])
+		; // its tab closed
 	else if([htmlOutputView tryToPerform:@selector(toggleHTMLOutput:) with:self])
 		; // handled
 	else

@@ -1,10 +1,11 @@
 #import "OakHTMLOutputTabView.h"
+#import "HTMLOutputWindow.h"
 #import <OakAppKit/OakUIConstructionFunctions.h>
 #import <OakFoundation/OakFoundation.h>
 
 static void* kTabTitleObservationContext = &kTabTitleObservationContext;
 
-@interface OakHTMLOutputTabView () <OakTabBarViewDataSource, OakTabBarViewDelegate>
+@interface OakHTMLOutputTabView ()
 @property (nonatomic, readwrite) OakTabBarView* tabBarView;
 @property (nonatomic) NSView* contentView;
 @property (nonatomic) NSMutableArray<OakHTMLOutputView*>* views;
@@ -22,6 +23,7 @@ static void* kTabTitleObservationContext = &kTabTitleObservationContext;
 		_tabBarView = [[OakTabBarView alloc] initWithFrame:NSZeroRect];
 		_tabBarView.dataSource = self;
 		_tabBarView.delegate   = self;
+		_tabBarView.hidesNewTabButton = YES; // output tabs come from commands
 
 		_contentView = [[NSView alloc] initWithFrame:NSZeroRect];
 
@@ -84,21 +86,55 @@ static void* kTabTitleObservationContext = &kTabTitleObservationContext;
 
 - (void)addHTMLOutputView:(OakHTMLOutputView*)aView
 {
-	if([_views containsObject:aView])
-		return [self setSelectedHTMLOutputView:aView];
+	[self insertHTMLOutputView:aView atIndex:_views.count];
+}
 
-	[_views addObject:aView];
+- (void)insertHTMLOutputView:(OakHTMLOutputView*)aView atIndex:(NSUInteger)anIndex
+{
+	NSUInteger current = [_views indexOfObject:aView];
+	if(current != NSNotFound) // reorder
+	{
+		[_views removeObjectAtIndex:current];
+		[_views insertObject:aView atIndex:MIN(anIndex > current ? anIndex-1 : anIndex, _views.count)];
+		[_tabBarView reloadData];
+		return [self setSelectedHTMLOutputView:aView];
+	}
+
+	// Take the view over first, so it never leaves the window hierarchy: its refresher stops when it does
+	OakHTMLOutputTabView* previousOwner = [OakHTMLOutputTabView ownerOfHTMLOutputView:aView];
+	[_views insertObject:aView atIndex:MIN(anIndex, _views.count)];
 	aView.hidden = YES;
 	OakAddAutoLayoutViewsToSuperview(@[ aView ], _contentView);
 	[_contentView addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|[view]|" options:0 metrics:nil views:@{ @"view": aView }]];
 	[_contentView addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|[view]|" options:0 metrics:nil views:@{ @"view": aView }]];
 	[self observeView:aView];
+	[previousOwner detachHTMLOutputView:aView];
 
 	[_tabBarView reloadData];
 	[self setSelectedHTMLOutputView:aView];
 }
 
++ (OakHTMLOutputTabView*)ownerOfHTMLOutputView:(OakHTMLOutputView*)aView
+{
+	for(NSView* view = aView.superview; view; view = view.superview)
+	{
+		if([view isKindOfClass:[OakHTMLOutputTabView class]] && [[(OakHTMLOutputTabView*)view views] containsObject:aView])
+			return (OakHTMLOutputTabView*)view;
+	}
+	return nil;
+}
+
 - (void)removeHTMLOutputView:(OakHTMLOutputView*)aView
+{
+	if([_views containsObject:aView])
+	{
+		[self detachHTMLOutputView:aView];
+		[aView removeFromSuperview];
+	}
+}
+
+// Forgets the view without taking it off screen; another strip may already hold it
+- (void)detachHTMLOutputView:(OakHTMLOutputView*)aView
 {
 	NSUInteger index = [_views indexOfObject:aView];
 	if(index == NSNotFound)
@@ -106,7 +142,6 @@ static void* kTabTitleObservationContext = &kTabTitleObservationContext;
 
 	[self stopObservingView:aView];
 	[_views removeObjectAtIndex:index];
-	[aView removeFromSuperview];
 	[_tabBarView reloadData];
 
 	if(_selectedHTMLOutputView == aView)
@@ -118,6 +153,50 @@ static void* kTabTitleObservationContext = &kTabTitleObservationContext;
 
 	if(_views.count == 0 && [_delegate respondsToSelector:@selector(htmlOutputTabViewDidRemoveLastView:)])
 		[_delegate htmlOutputTabViewDidRemoveLastView:self];
+}
+
+- (HTMLOutputWindowController*)tearOffHTMLOutputView:(OakHTMLOutputView*)aView atScreenPoint:(NSPoint)aPoint
+{
+	if(![_views containsObject:aView])
+		return nil;
+
+	HTMLOutputWindowController* controller = [[HTMLOutputWindowController alloc] init];
+	NSRect frame = controller.window.frame;
+	frame.origin = NSMakePoint(aPoint.x - 40, aPoint.y - NSHeight(frame) + 20); // the dragged tab lands under the pointer
+	[controller.window setFrameOrigin:frame.origin];
+	[controller.tabView addHTMLOutputView:aView];
+	[controller showWindow:self];
+	return controller;
+}
+
+- (OakHTMLOutputView*)htmlOutputViewForIdentifier:(NSUUID*)aCommandIdentifier busy:(BOOL)busyFlag
+{
+	for(OakHTMLOutputView* view in _views)
+	{
+		if(view.isReusable && !view.needsNewWebView && [view.commandIdentifier isEqual:aCommandIdentifier] && view.isRunningCommand == busyFlag)
+			return view;
+	}
+	return nil;
+}
+
+- (void)stopRunningCommandsWithCompletionHandler:(void(^)(BOOL didStopAll))handler
+{
+	NSArray<OakHTMLOutputView*>* running = [_views filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"isRunningCommand == YES"]];
+	[self stopViews:running.objectEnumerator completionHandler:handler];
+}
+
+- (void)stopViews:(NSEnumerator<OakHTMLOutputView*>*)views completionHandler:(void(^)(BOOL didStopAll))handler
+{
+	OakHTMLOutputView* view = views.nextObject;
+	if(!view)
+		return handler(YES);
+
+	[self setSelectedHTMLOutputView:view]; // the stop prompt is about this view
+	[view stopLoadingWithUserInteraction:YES completionHandler:^(BOOL didStop){
+		if(didStop)
+				[self stopViews:views completionHandler:handler];
+		else	handler(NO);
+	}];
 }
 
 - (void)setSelectedHTMLOutputView:(OakHTMLOutputView*)aView
@@ -141,10 +220,10 @@ static void* kTabTitleObservationContext = &kTabTitleObservationContext;
 	[self setSelectedHTMLOutputView:aView];
 }
 
-// The selected tab closes on ⌘W; the window's own close button still closes the window
+// ⌘W closes the selected tab; closing the last one closes the window or hides the pane, via the delegate
 - (void)performClose:(id)sender
 {
-	if(_views.count > 1 && _selectedHTMLOutputView)
+	if(_selectedHTMLOutputView)
 			[self closeHTMLOutputView:_selectedHTMLOutputView];
 	else	[self.window performClose:sender];
 }
@@ -211,6 +290,39 @@ static void* kTabTitleObservationContext = &kTabTitleObservationContext;
 	NSUInteger index = sender.tag;
 	if(index < _views.count)
 		[self closeHTMLOutputView:_views[index]];
+}
+
+- (BOOL)performDropOfTabItem:(NSUUID*)tabItemUUID fromTabBar:(OakTabBarView*)sourceTabBar index:(NSUInteger)dragIndex toTabBar:(OakTabBarView*)destTabBar index:(NSUInteger)droppedIndex operation:(NSDragOperation)operation
+{
+	id source = sourceTabBar.delegate;
+	if(![source isKindOfClass:[OakHTMLOutputTabView class]])
+		return NO; // only output tabs can come here
+
+	for(OakHTMLOutputView* view in [(OakHTMLOutputTabView*)source views])
+	{
+		if([view.viewIdentifier isEqual:tabItemUUID])
+		{
+			[self insertHTMLOutputView:view atIndex:droppedIndex];
+			return YES;
+		}
+	}
+	return NO;
+}
+
+- (void)tabBarView:(OakTabBarView*)aTabBarView didEndDraggingTabItem:(NSUUID*)tabItemUUID atScreenPoint:(NSPoint)aPoint operation:(NSDragOperation)operation
+{
+	if(operation != NSDragOperationNone)
+		return;
+
+	for(OakHTMLOutputView* view in [_views copy])
+	{
+		if(![view.viewIdentifier isEqual:tabItemUUID])
+			continue;
+		if(_views.count == 1 && [self.window.delegate isKindOfClass:[HTMLOutputWindowController class]])
+			return; // already alone in its own window
+		[self tearOffHTMLOutputView:view atScreenPoint:aPoint];
+		return;
+	}
 }
 
 - (void)performCloseOtherTabsXYZ:(OakTabBarView*)sender

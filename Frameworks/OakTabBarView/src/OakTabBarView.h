@@ -11,6 +11,7 @@
 - (void)performClose:(id)sender;
 
 @property (nonatomic) BOOL neverHideLeftBorder;
+@property (nonatomic) BOOL hidesNewTabButton; // for tab bars whose tabs cannot be created by hand
 @end
 
 @protocol OakTabBarViewDelegate <NSObject>
@@ -22,6 +23,9 @@
 
 // Methods sent to the delegate which the tab was dragged to
 - (BOOL)performDropOfTabItem:(NSUUID*)tabItemUUID fromTabBar:(OakTabBarView*)sourceTabBar index:(NSUInteger)dragIndex toTabBar:(OakTabBarView*)destTabBar index:(NSUInteger)droppedIndex operation:(NSDragOperation)operation;
+
+// Sent to the source tab bar's delegate when a dragged tab is let go without a tab bar taking it (operation is then NSDragOperationNone)
+- (void)tabBarView:(OakTabBarView*)aTabBarView didEndDraggingTabItem:(NSUUID*)tabItemUUID atScreenPoint:(NSPoint)aPoint operation:(NSDragOperation)operation;
 
 - (void)performCloseTab:(OakTabBarView*)sender;
 - (void)performCloseOtherTabsXYZ:(OakTabBarView*)sender;

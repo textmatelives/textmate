@@ -79,7 +79,7 @@ static void show_command_error (std::string const& message, oak::uuid_t const& u
 	}];
 }
 
-@interface DocumentWindowController () <NSWindowDelegate, NSTouchBarDelegate, OakTabBarViewDelegate, OakTabBarViewDataSource, OakTextViewDelegate, OakUserDefaultsObserver, FileBrowserDelegate, FindDelegate>
+@interface DocumentWindowController () <NSWindowDelegate, NSTouchBarDelegate, OakTabBarViewDelegate, OakTabBarViewDataSource, OakTextViewDelegate, OakUserDefaultsObserver, FileBrowserDelegate, FindDelegate, OakHTMLOutputTabViewDelegate>
 {
 	NSMutableSet<NSUUID*>*                 _stickyDocumentIdentifiers;
 
@@ -106,7 +106,7 @@ static void show_command_error (std::string const& message, oak::uuid_t const& u
 @property (nonatomic) NSRect                      newWindowFrame;
 
 @property (nonatomic) HTMLOutputWindowController* htmlOutputWindowController;
-@property (nonatomic) OakHTMLOutputView*          htmlOutputView;
+@property (nonatomic) OakHTMLOutputTabView*       htmlOutputTabView; // the split pane's tabs
 @property (nonatomic) BOOL                        htmlOutputInWindow;
 
 @property (nonatomic) NSSegmentedControl*         previousNextTouchBarControl;
@@ -632,10 +632,10 @@ static NSArray* const kObservedKeyPaths = @[ @"arrayController.arrangedObjects.p
 
 - (BOOL)windowShouldClose:(id)sender
 {
-	if(!self.htmlOutputInWindow && _htmlOutputView.isRunningCommand)
+	if(!self.htmlOutputInWindow && [_htmlOutputTabView.htmlOutputViews filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"isRunningCommand == YES"]].count)
 	{
-		[_htmlOutputView stopLoadingWithUserInteraction:YES completionHandler:^(BOOL didStop){
-			if(didStop)
+		[_htmlOutputTabView stopRunningCommandsWithCompletionHandler:^(BOOL didStopAll){
+			if(didStopAll)
 				[sender performSelector:@selector(performClose:) withObject:self afterDelay:0];
 		}];
 		return NO;
@@ -1293,13 +1293,19 @@ static NSArray* const kObservedKeyPaths = @[ @"arrayController.arrangedObjects.p
 
 	if(!self.htmlOutputInWindow)
 	{
-		BOOL nonExistingOrNonBusy   = !self.htmlOutputView || !self.htmlOutputView.isRunningCommand;
-		BOOL existsForOurIdentifier = self.htmlOutputView && [self.htmlOutputView.commandIdentifier isEqual:identifier];
-		if(createFlag ? nonExistingOrNonBusy : existsForOurIdentifier)
+		// Each command gets its own tab in the pane, reused across runs
+		OakHTMLOutputView* view = [self.htmlOutputTabView htmlOutputViewForIdentifier:identifier busy:NO];
+		if(!view && createFlag)
+		{
+			view = [[OakHTMLOutputView alloc] initWithFrame:NSZeroRect];
+			[self.htmlOutputTabView addHTMLOutputView:view];
+		}
+		if(view)
 		{
 			self.htmlOutputVisible = YES;
-			return self.htmlOutputView;
+			return view;
 		}
+		return [self.htmlOutputTabView htmlOutputViewForIdentifier:identifier busy:YES];
 	}
 
 	NSMutableArray <OakHTMLOutputView*>* htmlOutputViews = [NSMutableArray array];
@@ -2006,9 +2012,7 @@ static NSArray* const kObservedKeyPaths = @[ @"arrayController.arrangedObjects.p
 		}
 		else
 		{
-			if(!self.htmlOutputView || self.htmlOutputView.needsNewWebView)
-				self.htmlOutputView = [[OakHTMLOutputView alloc] initWithFrame:NSZeroRect];
-			self.layoutView.htmlOutputView = self.htmlOutputView;
+			self.layoutView.htmlOutputView = self.htmlOutputTabView;
 		}
 	}
 	else
@@ -2030,12 +2034,28 @@ static NSArray* const kObservedKeyPaths = @[ @"arrayController.arrangedObjects.p
 	if(_htmlOutputInWindow = showInWindowFlag)
 	{
 		self.layoutView.htmlOutputView = nil;
-		self.htmlOutputView = nil;
+		self.htmlOutputTabView = nil;
 	}
 	else
 	{
 		self.htmlOutputWindowController = nil;
 	}
+}
+
+- (OakHTMLOutputTabView*)htmlOutputTabView
+{
+	if(!_htmlOutputTabView)
+	{
+		_htmlOutputTabView = [[OakHTMLOutputTabView alloc] initWithFrame:NSZeroRect];
+		_htmlOutputTabView.delegate = self;
+	}
+	return _htmlOutputTabView;
+}
+
+- (void)htmlOutputTabViewDidRemoveLastView:(OakHTMLOutputTabView*)tabView
+{
+	if(tabView == _htmlOutputTabView)
+		self.htmlOutputVisible = NO;
 }
 
 - (IBAction)toggleHTMLOutput:(id)sender

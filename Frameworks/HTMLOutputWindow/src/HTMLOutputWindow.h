@@ -5,6 +5,7 @@
 @interface HTMLOutputWindowController : NSWindowController
 @property (nonatomic, readonly) OakHTMLOutputTabView* tabView;
 @property (nonatomic, readonly) OakHTMLOutputView* htmlOutputView; // the selected tab's view
-- (instancetype)initWithIdentifier:(NSUUID*)anIdentifier;
+- (instancetype)init; // an empty window, for tabs handed over from elsewhere
+- (instancetype)initWithIdentifier:(NSUUID*)anIdentifier; // a window with one tab, its frame saved under the command
 - (OakHTMLOutputView*)newHTMLOutputView; // opens a new tab and selects it
 @end
