@@ -75,11 +75,12 @@ void test_removing_the_selected_view_selects_a_neighbour ()
 void test_the_tab_bar_can_live_outside_the_view ()
 {
 	OakHTMLOutputTabView* tabView = [[OakHTMLOutputTabView alloc] initWithFrame:NSMakeRect(0, 0, 600, 400)];
-	OAK_ASSERT(tabView.tabBarView.superview == tabView);
+	OAK_ASSERT(tabView.tabStripView.superview == tabView);
+	OAK_ASSERT(tabView.tabBarView.superview == tabView.tabStripView);
 	tabView.hostsTabBar = NO;
-	OAK_ASSERT(tabView.tabBarView.superview == nil);
+	OAK_ASSERT(tabView.tabStripView.superview == nil);
 	tabView.hostsTabBar = YES;
-	OAK_ASSERT(tabView.tabBarView.superview == tabView);
+	OAK_ASSERT(tabView.tabStripView.superview == tabView);
 }
 
 // The window shows one tab per output view and its title follows the selected one
@@ -90,7 +91,7 @@ void test_the_output_window_hosts_tabs ()
 	OakHTMLOutputView* first = controller.htmlOutputView;
 	OAK_ASSERT(first != nil);
 	OAK_ASSERT_EQ(controller.tabView.htmlOutputViews.count, 1);
-	OAK_ASSERT(controller.tabView.tabBarView.superview != controller.tabView); // the tab bar sits in the title bar
+	OAK_ASSERT(controller.tabView.tabStripView.superview != controller.tabView); // the strip sits in the title bar
 
 	OakHTMLOutputView* second = [controller newHTMLOutputView];
 	OAK_ASSERT_EQ(controller.tabView.htmlOutputViews.count, 2);
@@ -209,4 +210,30 @@ void test_a_tab_let_go_outside_any_strip_tears_off_into_a_window ()
 
 	[controller close];
 	[source.window close];
+}
+
+// The whole strip can move to another container at once, in order, keeping every view on screen
+void test_all_tabs_move_to_another_strip_together ()
+{
+	[NSApplication sharedApplication];
+	OutputTabsDelegate* delegate = [OutputTabsDelegate new];
+	OakHTMLOutputTabView* source = strip_in_window();
+	OakHTMLOutputTabView* dest   = strip_in_window();
+	source.delegate = delegate;
+	OakHTMLOutputView* a = add_view(source);
+	OakHTMLOutputView* b = add_view(source);
+	OakHTMLOutputView* c = add_view(dest);
+	[source setSelectedHTMLOutputView:a];
+	[delegate watchView:a];
+	[delegate watchView:b];
+
+	[source moveHTMLOutputViewsToTabView:dest];
+	OAK_ASSERT([dest.htmlOutputViews isEqualToArray:(@[ c, a, b ])]);
+	OAK_ASSERT(dest.selectedHTMLOutputView == a); // the selection travels with the strip
+	OAK_ASSERT_EQ(source.htmlOutputViews.count, 0);
+	OAK_ASSERT_EQ(delegate.removedLastViewCount, 1);
+	OAK_ASSERT_EQ(delegate.lostWindowCount, 0);
+
+	[source.window close];
+	[dest.window close];
 }

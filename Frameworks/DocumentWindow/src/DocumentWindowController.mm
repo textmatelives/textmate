@@ -19,6 +19,7 @@
 #import <FileBrowser/FileBrowserViewController.h>
 #import <OakCommand/OakCommand.h>
 #import <HTMLOutputWindow/HTMLOutputWindow.h>
+#import <HTMLOutputWindow/OakHTMLOutputDocking.h>
 #import <OakFilterList/FileChooser.h>
 #import <OakSystem/application.h>
 #import <Find/Find.h>
@@ -79,7 +80,7 @@ static void show_command_error (std::string const& message, oak::uuid_t const& u
 	}];
 }
 
-@interface DocumentWindowController () <NSWindowDelegate, NSTouchBarDelegate, OakTabBarViewDelegate, OakTabBarViewDataSource, OakTextViewDelegate, OakUserDefaultsObserver, FileBrowserDelegate, FindDelegate, OakHTMLOutputTabViewDelegate>
+@interface DocumentWindowController () <NSWindowDelegate, NSTouchBarDelegate, OakTabBarViewDelegate, OakTabBarViewDataSource, OakTextViewDelegate, OakUserDefaultsObserver, FileBrowserDelegate, FindDelegate, OakHTMLOutputTabViewDelegate, OakHTMLOutputDockTarget>
 {
 	NSMutableSet<NSUUID*>*                 _stickyDocumentIdentifiers;
 
@@ -2065,6 +2066,31 @@ static NSArray* const kObservedKeyPaths = @[ @"arrayController.arrangedObjects.p
 {
 	if(tabView == _htmlOutputTabView)
 		self.htmlOutputVisible = NO;
+}
+
+- (void)htmlOutputTabView:(OakHTMLOutputTabView*)tabView didTearOffIntoWindowController:(HTMLOutputWindowController*)controller
+{
+	if(tabView != _htmlOutputTabView)
+		return;
+	self.htmlOutputPlacement        = @"window"; // output keeps going to the window the tabs went to
+	self.htmlOutputWindowController = controller;
+}
+
+// ===========================
+// = OakHTMLOutputDockTarget =
+// ===========================
+
+- (NSView*)htmlOutputDockAreaView
+{
+	return self.layoutView;
+}
+
+- (void)dockHTMLOutputTabView:(OakHTMLOutputTabView*)tabView atEdge:(OakHTMLOutputDockEdge)edge
+{
+	self.htmlOutputPlacement = edge == OakHTMLOutputDockEdgeLeft ? @"left" : edge == OakHTMLOutputDockEdgeRight ? @"right" : @"bottom";
+	self.htmlOutputVisible   = YES; // the pane must be on screen before views move in, or their refreshers stop
+	if(tabView != self.htmlOutputTabView) // a strip from a window or another document window: take its tabs, which empties it
+		[tabView moveHTMLOutputViewsToTabView:self.htmlOutputTabView];
 }
 
 - (IBAction)toggleHTMLOutput:(id)sender

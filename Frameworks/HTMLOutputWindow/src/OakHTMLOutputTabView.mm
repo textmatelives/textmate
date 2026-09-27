@@ -1,5 +1,6 @@
 #import "OakHTMLOutputTabView.h"
 #import "HTMLOutputWindow.h"
+#import "OakHTMLOutputGripView.h"
 #import <OakAppKit/OakUIConstructionFunctions.h>
 #import <OakFoundation/OakFoundation.h>
 
@@ -7,6 +8,8 @@ static void* kTabTitleObservationContext = &kTabTitleObservationContext;
 
 @interface OakHTMLOutputTabView ()
 @property (nonatomic, readwrite) OakTabBarView* tabBarView;
+@property (nonatomic, readwrite) NSView* tabStripView;
+@property (nonatomic) OakHTMLOutputGripView* gripView;
 @property (nonatomic) NSView* contentView;
 @property (nonatomic) NSMutableArray<OakHTMLOutputView*>* views;
 @property (nonatomic) NSArray<NSLayoutConstraint*>* layoutConstraints;
@@ -25,9 +28,18 @@ static void* kTabTitleObservationContext = &kTabTitleObservationContext;
 		_tabBarView.delegate   = self;
 		_tabBarView.hidesNewTabButton = YES; // output tabs come from commands
 
+		_gripView = [[OakHTMLOutputGripView alloc] initWithFrame:NSZeroRect];
+		_gripView.tabView = self;
+
+		_tabStripView = [[NSView alloc] initWithFrame:NSZeroRect];
+		OakAddAutoLayoutViewsToSuperview(@[ _gripView, _tabBarView ], _tabStripView);
+		[_tabStripView addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|[grip][tabBar]|" options:0 metrics:nil views:@{ @"grip": _gripView, @"tabBar": _tabBarView }]];
+		[_tabStripView addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|[grip]|" options:0 metrics:nil views:@{ @"grip": _gripView }]];
+		[_tabStripView addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|[tabBar]|" options:0 metrics:nil views:@{ @"tabBar": _tabBarView }]];
+
 		_contentView = [[NSView alloc] initWithFrame:NSZeroRect];
 
-		OakAddAutoLayoutViewsToSuperview(@[ _tabBarView, _contentView ], self);
+		OakAddAutoLayoutViewsToSuperview(@[ _tabStripView, _contentView ], self);
 		[self updateLayout];
 	}
 	return self;
@@ -47,20 +59,20 @@ static void* kTabTitleObservationContext = &kTabTitleObservationContext;
 		[NSLayoutConstraint deactivateConstraints:_layoutConstraints];
 
 	NSMutableArray* constraints = [NSMutableArray array];
-	NSDictionary* views = @{ @"tabBar": _tabBarView, @"content": _contentView };
+	NSDictionary* views = @{ @"tabBar": _tabStripView, @"content": _contentView };
 	[constraints addObjectsFromArray:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|[content]|" options:0 metrics:nil views:views]];
 	if(_hostsTabBar)
 	{
-		if(_tabBarView.superview != self)
-			[self addSubview:_tabBarView];
+		if(_tabStripView.superview != self)
+			[self addSubview:_tabStripView];
 		[constraints addObjectsFromArray:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|[tabBar]|" options:0 metrics:nil views:views]];
 		[constraints addObjectsFromArray:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|[tabBar][content]|" options:0 metrics:nil views:views]];
-		[constraints addObject:[NSLayoutConstraint constraintWithItem:_tabBarView attribute:NSLayoutAttributeHeight relatedBy:NSLayoutRelationEqual toItem:nil attribute:NSLayoutAttributeNotAnAttribute multiplier:1 constant:_tabBarView.intrinsicContentSize.height]];
+		[constraints addObject:[NSLayoutConstraint constraintWithItem:_tabStripView attribute:NSLayoutAttributeHeight relatedBy:NSLayoutRelationEqual toItem:nil attribute:NSLayoutAttributeNotAnAttribute multiplier:1 constant:_tabBarView.intrinsicContentSize.height]];
 	}
 	else
 	{
-		if(_tabBarView.superview == self)
-			[_tabBarView removeFromSuperview];
+		if(_tabStripView.superview == self)
+			[_tabStripView removeFromSuperview];
 		[constraints addObjectsFromArray:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|[content]|" options:0 metrics:nil views:views]];
 	}
 	[NSLayoutConstraint activateConstraints:constraints];
@@ -155,17 +167,46 @@ static void* kTabTitleObservationContext = &kTabTitleObservationContext;
 		[_delegate htmlOutputTabViewDidRemoveLastView:self];
 }
 
+- (HTMLOutputWindowController*)windowControllerAtScreenPoint:(NSPoint)aPoint
+{
+	HTMLOutputWindowController* controller = [[HTMLOutputWindowController alloc] init];
+	NSRect frame = controller.window.frame;
+	frame.origin = NSMakePoint(aPoint.x - 40, aPoint.y - NSHeight(frame) + 20); // the dragged tab lands under the pointer
+	[controller.window setFrameOrigin:frame.origin];
+	return controller;
+}
+
 - (HTMLOutputWindowController*)tearOffHTMLOutputView:(OakHTMLOutputView*)aView atScreenPoint:(NSPoint)aPoint
 {
 	if(![_views containsObject:aView])
 		return nil;
 
-	HTMLOutputWindowController* controller = [[HTMLOutputWindowController alloc] init];
-	NSRect frame = controller.window.frame;
-	frame.origin = NSMakePoint(aPoint.x - 40, aPoint.y - NSHeight(frame) + 20); // the dragged tab lands under the pointer
-	[controller.window setFrameOrigin:frame.origin];
+	HTMLOutputWindowController* controller = [self windowControllerAtScreenPoint:aPoint];
 	[controller.tabView addHTMLOutputView:aView];
 	[controller showWindow:self];
+	return controller;
+}
+
+- (void)moveHTMLOutputViewsToTabView:(OakHTMLOutputTabView*)aTabView
+{
+	OakHTMLOutputView* selected = _selectedHTMLOutputView;
+	for(OakHTMLOutputView* view in [_views copy])
+		[aTabView addHTMLOutputView:view];
+	if(selected)
+		[aTabView setSelectedHTMLOutputView:selected];
+}
+
+- (HTMLOutputWindowController*)tearOffAllHTMLOutputViewsAtScreenPoint:(NSPoint)aPoint
+{
+	if(_views.count == 0 || [self.window.delegate isKindOfClass:[HTMLOutputWindowController class]])
+		return nil; // an output window is already on its own
+
+	id <OakHTMLOutputTabViewDelegate> delegate = _delegate;
+	HTMLOutputWindowController* controller = [self windowControllerAtScreenPoint:aPoint];
+	[self moveHTMLOutputViewsToTabView:controller.tabView];
+	[controller showWindow:self];
+	if([delegate respondsToSelector:@selector(htmlOutputTabView:didTearOffIntoWindowController:)])
+		[delegate htmlOutputTabView:self didTearOffIntoWindowController:controller];
 	return controller;
 }
 

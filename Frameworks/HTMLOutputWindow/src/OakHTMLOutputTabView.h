@@ -7,6 +7,7 @@
 @protocol OakHTMLOutputTabViewDelegate <NSObject>
 @optional
 - (void)htmlOutputTabViewDidRemoveLastView:(OakHTMLOutputTabView*)tabView;
+- (void)htmlOutputTabView:(OakHTMLOutputTabView*)tabView didTearOffIntoWindowController:(HTMLOutputWindowController*)controller; // the whole strip left for a window of its own
 @end
 
 // Several HTML output views behind one tab strip. Only the selected view is
@@ -14,7 +15,8 @@
 @interface OakHTMLOutputTabView : NSView <OakTabBarViewDataSource, OakTabBarViewDelegate>
 @property (nonatomic, weak) id <OakHTMLOutputTabViewDelegate> delegate;
 @property (nonatomic, readonly) OakTabBarView* tabBarView;
-@property (nonatomic) BOOL hostsTabBar; // NO when the owner places the tab bar itself, e.g. in the title bar
+@property (nonatomic, readonly) NSView* tabStripView; // the grip and the tab bar together
+@property (nonatomic) BOOL hostsTabBar; // NO when the owner places the strip itself, e.g. in the title bar
 
 @property (nonatomic, readonly) NSArray<OakHTMLOutputView*>* htmlOutputViews;
 @property (nonatomic) OakHTMLOutputView* selectedHTMLOutputView;
@@ -24,6 +26,8 @@
 - (void)insertHTMLOutputView:(OakHTMLOutputView*)aView atIndex:(NSUInteger)anIndex; // takes the view from any other strip, keeping it on screen throughout
 - (void)removeHTMLOutputView:(OakHTMLOutputView*)aView;
 - (HTMLOutputWindowController*)tearOffHTMLOutputView:(OakHTMLOutputView*)aView atScreenPoint:(NSPoint)aPoint; // moves the view into a new window there
+- (void)moveHTMLOutputViewsToTabView:(OakHTMLOutputTabView*)aTabView; // every tab, in order, selection included
+- (HTMLOutputWindowController*)tearOffAllHTMLOutputViewsAtScreenPoint:(NSPoint)aPoint;
 
 // Asks to stop each running command in turn; didStopAll is NO when the user keeps one running
 - (void)stopRunningCommandsWithCompletionHandler:(void(^)(BOOL didStopAll))handler;
