@@ -202,6 +202,9 @@ static std::string page_key (NSURL* url)
 		}
 	}
 
+	// The tab already names the page: drop the header band Bundle Support puts on top of it, using its own hook
+	[webView evaluateJavaScript:@"if(typeof hide_header === 'function' && document.getElementById('tm_webpreview_header')) hide_header();" completionHandler:nil];
+
 	// Restore scroll position if pending
 	if(self.pendingScrollPosition)
 	{
