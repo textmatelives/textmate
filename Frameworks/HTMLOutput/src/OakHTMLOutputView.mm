@@ -41,7 +41,8 @@ static std::string page_key (NSURL* url)
 {
 	if(self = [super initWithFrame:aRect])
 	{
-		_reusable = YES;
+		_reusable       = YES;
+		_viewIdentifier = [NSUUID UUID];
 	}
 	return self;
 }

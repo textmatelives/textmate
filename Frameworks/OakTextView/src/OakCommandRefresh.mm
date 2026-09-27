@@ -171,6 +171,7 @@ static NSMutableSet<OakCommandRefresher*>* CommandRefreshers = [NSMutableSet set
 
 - (void)bringHTMLOutputToFront:(id)sender
 {
+	[_command.htmlOutputView tryToPerform:@selector(revealHTMLOutputView:) with:_command.htmlOutputView]; // select its tab
 	[[_command.htmlOutputView window] makeKeyAndOrderFront:sender];
 }
 
