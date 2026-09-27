@@ -7,3 +7,5 @@ target_link_libraries(DocumentWindow PUBLIC
   OakTabBarView OakCommand OakFilterList OakFoundation OakSystem OakTextView Preferences
   bundles crash document file io kvdb ns regexp scm settings text
   "-framework Cocoa" "-framework SystemConfiguration")
+
+textmate_add_tests(DocumentWindow)

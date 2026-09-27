@@ -23,7 +23,7 @@
 	if(self = [super initWithNibName:nil label:@"Projects" image:icon])
 	{
 		[OakStringListTransformer createTransformerWithName:@"OakFileBrowserPlacementSettingsTransformer" andObjectsArray:@[ @"left", @"right" ]];
-		[OakStringListTransformer createTransformerWithName:@"OakHTMLOutputPlacementSettingsTransformer" andObjectsArray:@[ @"bottom", @"right", @"window" ]];
+		[OakStringListTransformer createTransformerWithName:@"OakHTMLOutputPlacementSettingsTransformer" andObjectsArray:@[ @"bottom", @"right", @"left", @"window" ]];
 
 		self.defaultsProperties = @{
 			@"foldersOnTop":                 kUserDefaultsFoldersOnTopKey,
@@ -151,7 +151,8 @@
 	MBMenu const showCommandOutputMenuItems = {
 		{ @"Below text view",    .tag = 0 },
 		{ @"Right of text view", .tag = 1 },
-		{ @"New window",         .tag = 2 },
+		{ @"Left of text view",  .tag = 2 },
+		{ @"New window",         .tag = 3 },
 	};
 	MBCreateMenu(showCommandOutputMenuItems, showCommandOutputPopUp.menu);
 
@@ -173,7 +174,7 @@
 		@[ OakCreateLabel(@"Include files matching:"), includeFilesTextField                    ],
 		@[ OakCreateLabel(@"Non-text files:"),         nonTextFilesTextField                    ],
 		@[ ],
-		@[ OakCreateLabel(@"Show command output:"),    showCommandOutputPopUp                   ],
+		@[ OakCreateLabel(@"New windows show command output:"), showCommandOutputPopUp                   ],
 	]];
 
 	for(NSView* popUpButton in @[ fileBrowserPositionPopUp, showCommandOutputPopUp ])
