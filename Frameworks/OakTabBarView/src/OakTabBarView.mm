@@ -185,6 +185,7 @@ static NSString* const OakTabItemPasteboardType = @"com.macromates.TextMate.tabI
 @property (nonatomic, getter = isOverflowButtonVisible) BOOL overflowButtonVisible;
 
 @property (nonatomic, getter = isMouseInside) BOOL mouseInside;
+@property (nonatomic, readonly, getter = isPointerInside) BOOL pointerInside; // the pointer is over this tab and no other window is in the way
 @property (nonatomic, getter = isVoiceOverEnabled) BOOL voiceOverEnabled;
 
 @property (nonatomic, readonly) BOOL shouldShowCloseButton;
@@ -347,9 +348,18 @@ static void* kOakTabViewSelectedContext  = &kOakTabViewSelectedContext;
 	if(!flag)
 	{
 		DisableImplicitAnimationForBlock(^{
-			self.mouseInside = NSMouseInRect([self convertPoint:self.window.mouseLocationOutsideOfEventStream fromView:nil], self.visibleRect, self.isFlipped);
+			self.mouseInside = self.isPointerInside;
 		});
 	}
+}
+
+// The pointer's position alone is not enough: another window may be over us, e.g. the one a torn-off tab just opened
+- (BOOL)isPointerInside
+{
+	NSPoint screenPoint = NSEvent.mouseLocation;
+	if(!self.window || [NSWindow windowNumberAtPoint:screenPoint belowWindowWithWindowNumber:0] != self.window.windowNumber)
+		return NO;
+	return NSMouseInRect([self convertPoint:[self.window convertPointFromScreen:screenPoint] fromView:nil], self.visibleRect, self.isFlipped);
 }
 
 - (void)setMouseInside:(BOOL)flag
@@ -615,7 +625,7 @@ static void* kOakTabViewSelectedContext  = &kOakTabViewSelectedContext;
 	NSTrackingAreaOptions options = NSTrackingMouseEnteredAndExited|NSTrackingActiveAlways;
 	if(!self.tabBarView.isDragging)
 	{
-		BOOL isInside = NSMouseInRect([self convertPoint:self.window.mouseLocationOutsideOfEventStream fromView:nil], self.visibleRect, self.isFlipped);
+		BOOL isInside = self.isPointerInside;
 		if(isInside)
 			options |= NSTrackingAssumeInside;
 		if(self.mouseInside != isInside)
@@ -743,6 +753,27 @@ static void* kOakTabViewSelectedContext  = &kOakTabViewSelectedContext;
 - (BOOL)mouseDownCanMoveWindow
 {
 	return NO;
+}
+
+- (void)viewWillMoveToWindow:(NSWindow*)newWindow
+{
+	[super viewWillMoveToWindow:newWindow];
+	for(NSString* name in @[ NSWindowDidBecomeKeyNotification, NSWindowDidResignKeyNotification ])
+	{
+		[NSNotificationCenter.defaultCenter removeObserver:self name:name object:self.window];
+		if(newWindow)
+			[NSNotificationCenter.defaultCenter addObserver:self selector:@selector(windowDidChangeKey:) name:name object:newWindow];
+	}
+}
+
+- (void)windowDidChangeKey:(NSNotification*)aNotification
+{
+	// A window came over us or went away: the hover look of a tab under the pointer may be stale either way
+	for(OakTabItem* tabItem in _tabItems)
+	{
+		if(tabItem.tabView && !tabItem.tabView.isHidden)
+			tabItem.tabView.mouseInside = tabItem.tabView.isPointerInside;
+	}
 }
 
 - (void)uiFontScaleFactorDidChange:(NSNotification*)aNotification
