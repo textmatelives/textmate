@@ -322,8 +322,16 @@ static void* kTabTitleObservationContext = &kTabTitleObservationContext;
 // ===========================
 
 - (NSUInteger)numberOfRowsInTabBarView:(OakTabBarView*)aTabBarView                     { return _views.count; }
-- (NSString*)tabBarView:(OakTabBarView*)aTabBarView titleForIndex:(NSUInteger)anIndex  { return OakIsEmptyString(_views[anIndex].mainFrameTitle) ? @"Untitled" : _views[anIndex].mainFrameTitle; }
-- (NSString*)tabBarView:(OakTabBarView*)aTabBarView pathForIndex:(NSUInteger)anIndex   { return @""; }
+- (NSString*)tabBarView:(OakTabBarView*)aTabBarView pathForIndex:(NSUInteger)anIndex   { return _views[anIndex].documentPath ?: @""; }
+
+// The page title, with the document's name when the page was produced for one: several previews share a title
+- (NSString*)tabBarView:(OakTabBarView*)aTabBarView titleForIndex:(NSUInteger)anIndex
+{
+	OakHTMLOutputView* view = _views[anIndex];
+	NSString* title = OakIsEmptyString(view.mainFrameTitle) ? @"Untitled" : view.mainFrameTitle;
+	NSString* name  = view.documentPath.lastPathComponent;
+	return OakIsEmptyString(name) ? title : [NSString stringWithFormat:@"%@ \u2014 %@", name, title];
+}
 - (NSUUID*)tabBarView:(OakTabBarView*)aTabBarView UUIDForIndex:(NSUInteger)anIndex     { return _views[anIndex].viewIdentifier; }
 - (BOOL)tabBarView:(OakTabBarView*)aTabBarView isEditedAtIndex:(NSUInteger)anIndex     { return _views[anIndex].isRunningCommand; }
 
