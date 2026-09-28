@@ -16,6 +16,7 @@
 #import <OakFoundation/NSString Additions.h>
 #import <Preferences/Keys.h>
 #import <OakTextView/OakDocumentView.h>
+#import <OakTextView/OakCommandRefresh.h>
 #import <FileBrowser/FileBrowserViewController.h>
 #import <OakCommand/OakCommand.h>
 #import <HTMLOutputWindow/HTMLOutputWindow.h>
@@ -1656,11 +1657,38 @@ static NSArray* const kObservedKeyPaths = @[ @"arrayController.arrangedObjects.p
 
 		self.documentView.document = _selectedDocument;
 		[[self class] scheduleSessionBackup:self];
+		[self revealHTMLOutputForDocument:_selectedDocument];
 	}
 	else
 	{
 		self.projectPath = nil;
 	}
+}
+
+// With the preference on, selecting a document brings forward the output tab its page was produced for, wherever that strip is
+- (void)revealHTMLOutputForDocument:(OakDocument*)document
+{
+	if(!document || ![NSUserDefaults.standardUserDefaults boolForKey:kUserDefaultsHTMLOutputFollowsDocumentKey])
+		return;
+
+	OakHTMLOutputView* view = [OakCommandRefresher htmlOutputViewForDocument:document];
+	if(!view && document.path)
+	{
+		NSMutableArray<OakHTMLOutputTabView*>* strips = [NSMutableArray array];
+		if(_htmlOutputTabView)
+			[strips addObject:_htmlOutputTabView];
+		for(NSWindow* window in NSApp.orderedWindows)
+		{
+			if(window.isVisible && [window.delegate isKindOfClass:[HTMLOutputWindowController class]])
+				[strips addObject:[(HTMLOutputWindowController*)window.delegate tabView]];
+		}
+		for(OakHTMLOutputTabView* strip in strips)
+		{
+			if((view = [strip htmlOutputViewForDocumentPath:document.path]))
+				break;
+		}
+	}
+	[view tryToPerform:@selector(revealHTMLOutputView:) with:view];
 }
 
 - (void)setSelectedTabIndex:(NSUInteger)newSelectedTabIndex

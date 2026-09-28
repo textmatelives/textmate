@@ -237,3 +237,18 @@ void test_all_tabs_move_to_another_strip_together ()
 	[source.window close];
 	[dest.window close];
 }
+
+// A view remembers which document its page was produced for, so a strip can bring that page forward for the document
+void test_a_view_is_found_by_the_document_it_shows ()
+{
+	OakHTMLOutputTabView* tabView = [[OakHTMLOutputTabView alloc] initWithFrame:NSMakeRect(0, 0, 600, 400)];
+	OakHTMLOutputView* a = add_view(tabView);
+	OakHTMLOutputView* b = add_view(tabView);
+	[b loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"about:blank"]] environment:{ { "TM_FILEPATH", "/tmp/notes.md" } } autoScrolls:NO];
+
+	OAK_ASSERT([b.documentPath isEqualToString:@"/tmp/notes.md"]);
+	OAK_ASSERT(a.documentPath == nil);
+	OAK_ASSERT([tabView htmlOutputViewForDocumentPath:@"/tmp/notes.md"] == b);
+	OAK_ASSERT([tabView htmlOutputViewForDocumentPath:@"/tmp/other.md"] == nil);
+	OAK_ASSERT([tabView htmlOutputViewForDocumentPath:nil] == nil);
+}

@@ -150,6 +150,12 @@ static std::string page_key (NSURL* url)
 	}
 }
 
+- (NSString*)documentPath
+{
+	auto path = _environment.find("TM_FILEPATH");
+	return path != _environment.end() ? [NSString stringWithCxxString:path->second] : nil;
+}
+
 - (NSString*)mainFrameTitle
 {
 	if(OakIsEmptyString(self.webView.title))
