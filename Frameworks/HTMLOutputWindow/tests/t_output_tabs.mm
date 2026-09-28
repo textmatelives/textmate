@@ -251,4 +251,9 @@ void test_a_view_is_found_by_the_document_it_shows ()
 	OAK_ASSERT([tabView htmlOutputViewForDocumentPath:@"/tmp/notes.md"] == b);
 	OAK_ASSERT([tabView htmlOutputViewForDocumentPath:@"/tmp/other.md"] == nil);
 	OAK_ASSERT([tabView htmlOutputViewForDocumentPath:nil] == nil);
+
+	// the strip names the document on the tab and shows its path in the tooltip
+	OAK_ASSERT([[tabView tabBarView:tabView.tabBarView pathForIndex:1] isEqualToString:@"/tmp/notes.md"]);
+	OAK_ASSERT([[tabView tabBarView:tabView.tabBarView titleForIndex:1] hasPrefix:@"notes.md"]);
+	OAK_ASSERT([[tabView tabBarView:tabView.tabBarView pathForIndex:0] isEqualToString:@""]);
 }
