@@ -33,6 +33,7 @@
 			@"autoRevealFile":               kUserDefaultsAutoRevealFileKey,
 			@"fileBrowserPlacement":         kUserDefaultsFileBrowserPlacementKey,
 			@"htmlOutputPlacement":          kUserDefaultsHTMLOutputPlacementKey,
+			@"htmlOutputFollowsDocument":    kUserDefaultsHTMLOutputFollowsDocumentKey,
 
 			@"allowExpandingLinks":          kUserDefaultsAllowExpandingLinksKey,
 			@"fileBrowserSingleClickToOpen": kUserDefaultsFileBrowserSingleClickToOpenKey,
@@ -141,6 +142,7 @@
 	NSTextField* nonTextFilesTextField                 = [NSTextField textFieldWithString:@""];
 
 	NSPopUpButton* showCommandOutputPopUp              = OakCreatePopUpButton();
+	NSButton* outputFollowsDocumentCheckBox            = OakCreateCheckBox(@"Output tabs follow the selected document");
 
 	MBMenu const fileBrowserPositionMenuItems = {
 		{ @"Left side",  .tag = 0 },
@@ -175,6 +177,7 @@
 		@[ OakCreateLabel(@"Non-text files:"),         nonTextFilesTextField                    ],
 		@[ ],
 		@[ OakCreateLabel(@"New windows show command output:"), showCommandOutputPopUp                   ],
+		@[ NSGridCell.emptyContentView,                outputFollowsDocumentCheckBox            ],
 	]];
 
 	for(NSView* popUpButton in @[ fileBrowserPositionPopUp, showCommandOutputPopUp ])
@@ -198,6 +201,7 @@
 	[showForSingleDocumentCheckBox            bind:NSValueBinding       toObject:self withKeyPath:@"disableTabBarCollapsing"      options:nil];
 	[reOrderWhenOpeningAFileCheckBox          bind:NSValueBinding       toObject:self withKeyPath:@"disableTabReordering"         options:@{ NSValueTransformerNameBindingOption: NSNegateBooleanTransformerName }];
 	[automaticallyCloseUnusedTabsCheckBox     bind:NSValueBinding       toObject:self withKeyPath:@"disableTabAutoClose"          options:@{ NSValueTransformerNameBindingOption: NSNegateBooleanTransformerName }];
+	[outputFollowsDocumentCheckBox            bind:NSValueBinding       toObject:self withKeyPath:@"htmlOutputFollowsDocument"    options:nil];
 	[excludeFilesTextField                    bind:NSValueBinding       toObject:self withKeyPath:@"excludePattern"               options:nil];
 	[includeFilesTextField                    bind:NSValueBinding       toObject:self withKeyPath:@"includePattern"               options:nil];
 	[nonTextFilesTextField                    bind:NSValueBinding       toObject:self withKeyPath:@"binaryPattern"                options:nil];

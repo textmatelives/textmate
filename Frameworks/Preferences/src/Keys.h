@@ -25,6 +25,7 @@ extern NSString* const kUserDefaultsFileBrowserSingleClickToOpenKey;
 extern NSString* const kUserDefaultsFileBrowserOpenAnimationDisabled;
 extern NSString* const kUserDefaultsFileBrowserStyleKey;
 extern NSString* const kUserDefaultsHTMLOutputPlacementKey;
+extern NSString* const kUserDefaultsHTMLOutputFollowsDocumentKey;
 extern NSString* const kUserDefaultsDisableFileBrowserWindowResizeKey;
 extern NSString* const kUserDefaultsAutoRevealFileKey;
 extern NSString* const kUserDefaultsAllowExpandingLinksKey;

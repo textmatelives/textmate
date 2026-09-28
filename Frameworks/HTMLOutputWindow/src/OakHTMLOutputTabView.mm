@@ -220,6 +220,18 @@ static void* kTabTitleObservationContext = &kTabTitleObservationContext;
 	return nil;
 }
 
+- (OakHTMLOutputView*)htmlOutputViewForDocumentPath:(NSString*)aPath
+{
+	if(!aPath)
+		return nil;
+	for(OakHTMLOutputView* view in _views)
+	{
+		if([view.documentPath isEqualToString:aPath])
+			return view;
+	}
+	return nil;
+}
+
 - (void)stopRunningCommandsWithCompletionHandler:(void(^)(BOOL didStopAll))handler
 {
 	NSArray<OakHTMLOutputView*>* running = [_views filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"isRunningCommand == YES"]];

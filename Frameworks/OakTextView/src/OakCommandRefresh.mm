@@ -46,6 +46,16 @@ static NSMutableSet<OakCommandRefresher*>* CommandRefreshers = [NSMutableSet set
 	return nil;
 }
 
++ (OakHTMLOutputView*)htmlOutputViewForDocument:(OakDocument*)document
+{
+	for(OakCommandRefresher* refresher in CommandRefreshers)
+	{
+		if(document && [refresher.document isEqual:document] && refresher.command.htmlOutputView)
+			return refresher.command.htmlOutputView;
+	}
+	return nil;
+}
+
 - (id)initWithCommand:(OakCommand*)aCommand document:(OakDocument*)document window:(NSWindow*)window options:(OakCommandRefresherOptions)options variables:(std::map<std::string, std::string> const&)variables
 {
 	if((self = [super init]))
