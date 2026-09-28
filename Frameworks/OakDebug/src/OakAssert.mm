@@ -6,9 +6,17 @@
 @interface OakExceptionHandlerDelegate : NSObject { }
 @end
 
-static BOOL IsAppKitMenuAccessibilityCompatibilityException (NSException* exception)
+static BOOL IsAppKitAccessibilityCompatibilityException (NSException* exception)
 {
 	/*
+	 * AppKit's accessibility entry points catch NSAccessibilityException
+	 * themselves: the legacy NSAccessibility protocol raises it for an attribute,
+	 * parameterized attribute or action an element does not support, and
+	 * assistive clients ask for those all the time (VoiceOver on macOS 27 asks
+	 * every element for AXFocused, AXEnabled, AXDescription, …). NSExceptionHandler
+	 * observes the exception before AppKit catches it, so treating it as fatal
+	 * aborts TextMate as soon as VoiceOver reaches such an element.
+	 *
 	 * On macOS 26.6.2, -[NSMenu accessibilityPerformShowMenu] still dispatches
 	 * through the deprecated accessibilityPerformAction: API. AppKit's NSMenu
 	 * implementation forwards that selector to NSObject, which no longer
@@ -17,6 +25,8 @@ static BOOL IsAppKitMenuAccessibilityCompatibilityException (NSException* except
 	 * it, though, so treating every observed exception as fatal makes menu
 	 * inspection by accessibility clients such as KeyCue abort TextMate.
 	 */
+	if([exception.name isEqualToString:@"NSAccessibilityException"]) // the constant is deprecated
+		return YES;
 	return [exception.name isEqualToString:NSInvalidArgumentException] &&
 	       [exception.reason hasPrefix:@"-[NSMenu accessibilityPerformAction:]: unrecognized selector sent to instance "];
 }
@@ -133,7 +143,7 @@ void OakPrintBadAssertion (char const* lhs, char const* op, char const* rhs, std
 
 - (BOOL)exceptionHandler:(NSExceptionHandler*)sender shouldLogException:(NSException*)exception mask:(NSUInteger)mask
 {
-	if([exception.name isEqualToString:@"FSExecutionErrorException"] || IsAppKitMenuAccessibilityCompatibilityException(exception))
+	if([exception.name isEqualToString:@"FSExecutionErrorException"] || IsAppKitAccessibilityCompatibilityException(exception))
 		return NO;
 	os_log_error(OS_LOG_DEFAULT, "%{public}@: %{public}@\n", exception.name, exception.reason);
 	abort();

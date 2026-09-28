@@ -302,6 +302,13 @@ namespace ng
 	std::map<size_t, std::string> buffer_t::symbols () const    { return _symbols->symbols(this);      }
 	std::string buffer_t::symbol_at (size_t i) const            { return _symbols->symbol_at(this, i); }
 
+	accessibility_t& buffer_t::accessibility ()
+	{
+		if(!_accessibility)
+			add_meta_data((_accessibility = std::make_shared<accessibility_t>()).get());
+		return *_accessibility;
+	}
+
 	// ==================
 	// = Spell Checking =
 	// ==================

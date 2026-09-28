@@ -2,6 +2,8 @@
 #define BUFFER_META_DATA_H_Z0JQSBGY
 
 #include "buffer.h"
+#include "symbol_transform.h"
+#include <ns/language.h>
 
 namespace ng
 {
@@ -37,6 +39,69 @@ namespace ng
 
 		typedef indexed_map_t<std::string> tree_t;
 		tree_t _symbols;
+	};
+
+	// What assistive clients are told about the text, from the scope settings
+	// ‘accessibilityLanguage’, ‘accessibilityTextStyle’, ‘accessibilityLink’ and
+	// ‘accessibilityRotor’, the way ‘showInSymbolList’ works. Nothing is computed
+	// until asked for: edits and parsing only widen the range the next query updates.
+	struct accessibility_t : meta_data_t, bundles::callback_t
+	{
+		accessibility_t ();
+		~accessibility_t ();
+
+		enum text_style_t { kTextStyleBold = 1, kTextStyleItalic = 2, kTextStyleUnderline = 4, kTextStyleStrikethrough = 8 };
+		enum class extent_t { run, line, block };
+
+		struct link_t       { size_t first, last; std::string title, url; };
+		struct rotor_t      { std::string name; double order; };
+		struct rotor_item_t { size_t first, last; std::string label; };
+
+		size_t generation () const { return _generation; } // changes when links or rotor items may have
+		std::vector<link_t> const& links (buffer_t const* buffer);
+		std::vector<rotor_t> const& rotors (buffer_t const* buffer);
+		std::vector<rotor_item_t> const& rotor_items (buffer_t const* buffer, std::string const& rotor);
+		std::vector<ns::language_run_t> languages (buffer_t const* buffer, size_t from, size_t to);
+		unsigned text_style (scope::scope_t const& scope);
+
+	private:
+		void replace (buffer_t* buffer, size_t from, size_t to, size_t len);
+		void did_parse (buffer_t const* buffer, size_t from, size_t to);
+		void bundles_did_change ();
+
+		struct rule_t
+		{
+			std::string language;
+			unsigned styles = 0;
+			bool link = false;
+			std::shared_ptr<symbol_transform_t> link_title, link_url;
+			std::string rotor;
+			std::shared_ptr<symbol_transform_t> rotor_transform;
+			extent_t extent = extent_t::run;
+			double order = 100;
+		};
+
+		struct link_entry_t  { size_t length; std::string title, url; };
+		struct rotor_entry_t { size_t length; std::string rotor, label; extent_t extent; };
+
+		rule_t const& rule_for (scope::scope_t const& scope);
+		void update (buffer_t const* buffer);
+		void update_items (buffer_t const* buffer);
+		void invalidate (size_t from, size_t to);
+		typedef std::shared_ptr<std::vector<ns::language_run_t>> language_runs_ptr;
+		language_runs_ptr languages_for_line (buffer_t const* buffer, size_t n);
+
+		std::map<scope::scope_t, rule_t> _rules;
+		indexed_map_t<link_entry_t> _links;
+		indexed_map_t<rotor_entry_t> _rotor_items;
+		indexed_map_t<language_runs_ptr> _languages; // per line, offsets relative to the line
+		size_t _dirty_from = 0, _dirty_to = SIZE_T_MAX;
+		size_t _generation = 0;
+
+		bool _cached = false;
+		std::vector<link_t> _links_cache;
+		std::vector<rotor_t> _rotors_cache;
+		std::map<std::string, std::vector<rotor_item_t>> _rotor_items_cache;
 	};
 
 	struct marks_t : meta_data_t
