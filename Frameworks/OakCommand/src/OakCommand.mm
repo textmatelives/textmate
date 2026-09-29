@@ -633,8 +633,9 @@ static pid_t run_command (dispatch_group_t rootGroup, std::string const& cmd, in
 
 	if(view)
 	{
-		// A command that refreshes as the document changes is watched while typing: the editor keeps the focus
-		BOOL const keepFocus = (_bundleCommand.auto_refresh & auto_refresh::on_document_change) != 0;
+		// Output in the pane never takes the focus; an output window takes it unless the command refreshes as the document changes, which is watched while typing
+		BOOL const inPane    = ![view.window.delegate isKindOfClass:[HTMLOutputWindowController class]];
+		BOOL const keepFocus = inPane || (_bundleCommand.auto_refresh & auto_refresh::on_document_change) != 0;
 		NSWindow* keyWindow  = NSApp.keyWindow;
 
 		[view tryToPerform:@selector(revealHTMLOutputView:) with:view]; // select its tab
