@@ -129,6 +129,7 @@ BOOL HasDocumentWindow (NSArray* windows)
 				{ /* -------- */ },
 				{ @"Close",                   @selector(performClose:),             @"w"   },
 				{ @"Close Window",            @selector(performCloseWindow:),       @"W"   },
+				{ @"Close All Output Tabs",   @selector(closeAllOutputTabs:),       @"W", .modifierFlags = NSEventModifierFlagCommand|NSEventModifierFlagOption },
 				{ @"Close All Tabs",          @selector(performCloseAllTabs:),      @"w", .modifierFlags = NSEventModifierFlagCommand|NSEventModifierFlagOption|NSEventModifierFlagControl },
 				{ @"Close Other Tabs",        @selector(performCloseOtherTabsXYZ:), @"w", .modifierFlags = NSEventModifierFlagCommand|NSEventModifierFlagControl },
 				{ @"Close Tabs to the Right", @selector(performCloseTabsToTheRight:)       },

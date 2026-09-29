@@ -41,4 +41,5 @@ extern NSNotificationName const OakHTMLOutputTabViewDidSelectViewNotification;
 
 - (IBAction)selectNextOutputTab:(id)sender;
 - (IBAction)selectPreviousOutputTab:(id)sender;
+- (IBAction)closeAllOutputTabs:(id)sender; // stops running commands first, through the usual prompt
 @end
