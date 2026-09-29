@@ -34,6 +34,7 @@
 			@"fileBrowserPlacement":         kUserDefaultsFileBrowserPlacementKey,
 			@"htmlOutputPlacement":          kUserDefaultsHTMLOutputPlacementKey,
 			@"htmlOutputFollowsDocument":    kUserDefaultsHTMLOutputFollowsDocumentKey,
+			@"htmlOutputTakesFocus":         kUserDefaultsHTMLOutputTakesFocusKey,
 
 			@"allowExpandingLinks":          kUserDefaultsAllowExpandingLinksKey,
 			@"fileBrowserSingleClickToOpen": kUserDefaultsFileBrowserSingleClickToOpenKey,
@@ -143,6 +144,8 @@
 
 	NSPopUpButton* showCommandOutputPopUp              = OakCreatePopUpButton();
 	NSButton* outputFollowsDocumentCheckBox            = OakCreateCheckBox(@"Output tabs follow the selected document");
+	NSButton* outputTakesFocusCheckBox                 = OakCreateCheckBox(@"Output takes the focus when it opens");
+	showCommandOutputPopUp.toolTip = @"Where new windows show command output. Each window keeps its own placement; drag the output strip by its handle to move it.";
 
 	MBMenu const fileBrowserPositionMenuItems = {
 		{ @"Left side",  .tag = 0 },
@@ -176,8 +179,9 @@
 		@[ OakCreateLabel(@"Include files matching:"), includeFilesTextField                    ],
 		@[ OakCreateLabel(@"Non-text files:"),         nonTextFilesTextField                    ],
 		@[ ],
-		@[ OakCreateLabel(@"New windows show command output:"), showCommandOutputPopUp                   ],
+		@[ OakCreateLabel(@"Command output:"),         showCommandOutputPopUp                   ],
 		@[ NSGridCell.emptyContentView,                outputFollowsDocumentCheckBox            ],
+		@[ NSGridCell.emptyContentView,                outputTakesFocusCheckBox                 ],
 	]];
 
 	for(NSView* popUpButton in @[ fileBrowserPositionPopUp, showCommandOutputPopUp ])
@@ -202,6 +206,7 @@
 	[reOrderWhenOpeningAFileCheckBox          bind:NSValueBinding       toObject:self withKeyPath:@"disableTabReordering"         options:@{ NSValueTransformerNameBindingOption: NSNegateBooleanTransformerName }];
 	[automaticallyCloseUnusedTabsCheckBox     bind:NSValueBinding       toObject:self withKeyPath:@"disableTabAutoClose"          options:@{ NSValueTransformerNameBindingOption: NSNegateBooleanTransformerName }];
 	[outputFollowsDocumentCheckBox            bind:NSValueBinding       toObject:self withKeyPath:@"htmlOutputFollowsDocument"    options:nil];
+	[outputTakesFocusCheckBox                 bind:NSValueBinding       toObject:self withKeyPath:@"htmlOutputTakesFocus"         options:nil];
 	[excludeFilesTextField                    bind:NSValueBinding       toObject:self withKeyPath:@"excludePattern"               options:nil];
 	[includeFilesTextField                    bind:NSValueBinding       toObject:self withKeyPath:@"includePattern"               options:nil];
 	[nonTextFilesTextField                    bind:NSValueBinding       toObject:self withKeyPath:@"binaryPattern"                options:nil];

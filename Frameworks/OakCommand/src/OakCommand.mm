@@ -1,6 +1,7 @@
 #import "OakCommand.h"
 #import <HTMLOutput/OakHTMLOutputRequestMetadata.h>
 #import <document/OakDocument.h>
+#import <Preferences/Keys.h>
 #import <document/OakDocumentController.h>
 #import <oak/datatypes.h>
 #import <oak/compat.h>
@@ -633,9 +634,8 @@ static pid_t run_command (dispatch_group_t rootGroup, std::string const& cmd, in
 
 	if(view)
 	{
-		// Output in the pane never takes the focus; an output window takes it unless the command refreshes as the document changes, which is watched while typing
-		BOOL const inPane    = ![view.window.delegate isKindOfClass:[HTMLOutputWindowController class]];
-		BOOL const keepFocus = inPane || (_bundleCommand.auto_refresh & auto_refresh::on_document_change) != 0;
+		// Output leaves the focus where it is unless the preference says otherwise
+		BOOL const keepFocus = ![NSUserDefaults.standardUserDefaults boolForKey:kUserDefaultsHTMLOutputTakesFocusKey];
 		NSWindow* keyWindow  = NSApp.keyWindow;
 
 		[view tryToPerform:@selector(revealHTMLOutputView:) with:view]; // select its tab
