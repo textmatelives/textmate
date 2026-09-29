@@ -402,6 +402,8 @@ BOOL HasDocumentWindow (NSArray* windows)
 				{ @"Show Next Tab",          @selector(selectNextTab:),         .modifierFlags = NSEventModifierFlagOption|NSEventModifierFlagCommand, .key = NSRightArrowFunctionKey, .hidden = YES },
 				{ @"Show Previous Tab",      @selector(selectPreviousTab:),     @"{", .hidden = YES },
 				{ @"Show Next Tab",          @selector(selectNextTab:),         @"}", .hidden = YES },
+				{ @"Show Previous Output Tab", @selector(selectPreviousOutputTab:), @"{", .modifierFlags = NSEventModifierFlagCommand|NSEventModifierFlagOption },
+				{ @"Show Next Output Tab",     @selector(selectNextOutputTab:),     @"}", .modifierFlags = NSEventModifierFlagCommand|NSEventModifierFlagOption },
 				{ @"Show Tab",               .delegate = [MBMenuDelegate delegateUsingSelector:@selector(updateShowTabMenu:)] },
 				{ /* -------- */ },
 				{ @"Move Tab to New Window", @selector(moveDocumentToNewWindow:)     },

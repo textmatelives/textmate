@@ -4,6 +4,9 @@
 @class OakHTMLOutputTabView;
 @class HTMLOutputWindowController;
 
+// Posted with the strip as object and the view under @"view" when the user picks a tab, by click or shortcut
+extern NSNotificationName const OakHTMLOutputTabViewDidSelectViewNotification;
+
 @protocol OakHTMLOutputTabViewDelegate <NSObject>
 @optional
 - (void)htmlOutputTabViewDidRemoveLastView:(OakHTMLOutputTabView*)tabView;
@@ -35,4 +38,7 @@
 
 // Selects the tab holding the view. Reachable from the view through the responder chain.
 - (void)revealHTMLOutputView:(OakHTMLOutputView*)aView;
+
+- (IBAction)selectNextOutputTab:(id)sender;
+- (IBAction)selectPreviousOutputTab:(id)sender;
 @end

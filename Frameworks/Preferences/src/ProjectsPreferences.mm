@@ -35,6 +35,7 @@
 			@"htmlOutputPlacement":          kUserDefaultsHTMLOutputPlacementKey,
 			@"htmlOutputFollowsDocument":    kUserDefaultsHTMLOutputFollowsDocumentKey,
 			@"htmlOutputTakesFocus":         kUserDefaultsHTMLOutputTakesFocusKey,
+			@"htmlOutputSelectsDocument":    kUserDefaultsHTMLOutputSelectsDocumentKey,
 
 			@"allowExpandingLinks":          kUserDefaultsAllowExpandingLinksKey,
 			@"fileBrowserSingleClickToOpen": kUserDefaultsFileBrowserSingleClickToOpenKey,
@@ -145,6 +146,11 @@
 	NSPopUpButton* showCommandOutputPopUp              = OakCreatePopUpButton();
 	NSButton* outputFollowsDocumentCheckBox            = OakCreateCheckBox(@"Output tabs follow the selected document");
 	NSButton* outputTakesFocusCheckBox                 = OakCreateCheckBox(@"Output takes the focus when it opens");
+	NSButton* documentFollowsOutputCheckBox            = OakCreateCheckBox(@"Document follows the output tab");
+	NSView* documentFollowsOutputRow = [[NSView alloc] initWithFrame:NSZeroRect]; // indented under its parent
+	OakAddAutoLayoutViewsToSuperview(@[ documentFollowsOutputCheckBox ], documentFollowsOutputRow);
+	[documentFollowsOutputRow addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|-(20)-[box]|" options:0 metrics:nil views:@{ @"box": documentFollowsOutputCheckBox }]];
+	[documentFollowsOutputRow addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|[box]|" options:0 metrics:nil views:@{ @"box": documentFollowsOutputCheckBox }]];
 	showCommandOutputPopUp.toolTip = @"Where new windows show command output. Each window keeps its own placement; drag the output strip by its handle to move it.";
 
 	MBMenu const fileBrowserPositionMenuItems = {
@@ -181,6 +187,7 @@
 		@[ ],
 		@[ OakCreateLabel(@"Command output:"),         showCommandOutputPopUp                   ],
 		@[ NSGridCell.emptyContentView,                outputFollowsDocumentCheckBox            ],
+		@[ NSGridCell.emptyContentView,                documentFollowsOutputRow                 ],
 		@[ NSGridCell.emptyContentView,                outputTakesFocusCheckBox                 ],
 	]];
 
@@ -207,6 +214,8 @@
 	[automaticallyCloseUnusedTabsCheckBox     bind:NSValueBinding       toObject:self withKeyPath:@"disableTabAutoClose"          options:@{ NSValueTransformerNameBindingOption: NSNegateBooleanTransformerName }];
 	[outputFollowsDocumentCheckBox            bind:NSValueBinding       toObject:self withKeyPath:@"htmlOutputFollowsDocument"    options:nil];
 	[outputTakesFocusCheckBox                 bind:NSValueBinding       toObject:self withKeyPath:@"htmlOutputTakesFocus"         options:nil];
+	[documentFollowsOutputCheckBox            bind:NSValueBinding       toObject:self withKeyPath:@"htmlOutputSelectsDocument"    options:nil];
+	[documentFollowsOutputCheckBox            bind:NSEnabledBinding     toObject:self withKeyPath:@"htmlOutputFollowsDocument"    options:nil];
 	[excludeFilesTextField                    bind:NSValueBinding       toObject:self withKeyPath:@"excludePattern"               options:nil];
 	[includeFilesTextField                    bind:NSValueBinding       toObject:self withKeyPath:@"includePattern"               options:nil];
 	[nonTextFilesTextField                    bind:NSValueBinding       toObject:self withKeyPath:@"binaryPattern"                options:nil];

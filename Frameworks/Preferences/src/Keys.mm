@@ -68,6 +68,7 @@ NSString* const kUserDefaultsFileBrowserStyleKey               = @"fileBrowserSt
 NSString* const kUserDefaultsHTMLOutputPlacementKey            = @"htmlOutputPlacement";
 NSString* const kUserDefaultsHTMLOutputFollowsDocumentKey      = @"htmlOutputFollowsDocument";
 NSString* const kUserDefaultsHTMLOutputTakesFocusKey           = @"htmlOutputTakesFocus";
+NSString* const kUserDefaultsHTMLOutputSelectsDocumentKey      = @"htmlOutputSelectsDocument";
 NSString* const kUserDefaultsDisableFileBrowserWindowResizeKey = @"disableFileBrowserWindowResize";
 NSString* const kUserDefaultsAutoRevealFileKey                 = @"autoRevealFile";
 NSString* const kUserDefaultsDisableTabReorderingKey           = @"disableTabReordering";

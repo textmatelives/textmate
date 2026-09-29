@@ -6,6 +6,8 @@
 #import <document/OakDocument.h>
 #import <Preferences/Keys.h>
 
+NSNotificationName const OakHTMLOutputTabViewDidSelectViewNotification = @"OakHTMLOutputTabViewDidSelectViewNotification";
+
 static void* kTabTitleObservationContext = &kTabTitleObservationContext;
 
 @interface OakHTMLOutputTabView ()
@@ -292,6 +294,28 @@ static void* kTabTitleObservationContext = &kTabTitleObservationContext;
 	[self setSelectedHTMLOutputView:aView];
 }
 
+// A choice the user made, as opposed to one a command or a document made for them
+- (void)userDidSelectHTMLOutputView:(OakHTMLOutputView*)aView
+{
+	[self setSelectedHTMLOutputView:aView];
+	if(aView)
+		[NSNotificationCenter.defaultCenter postNotificationName:OakHTMLOutputTabViewDidSelectViewNotification object:self userInfo:@{ @"view": aView }];
+}
+
+- (IBAction)selectNextOutputTab:(id)sender
+{
+	NSUInteger index = [_views indexOfObject:_selectedHTMLOutputView];
+	if(_views.count)
+		[self userDidSelectHTMLOutputView:_views[index == NSNotFound ? 0 : (index + 1) % _views.count]];
+}
+
+- (IBAction)selectPreviousOutputTab:(id)sender
+{
+	NSUInteger index = [_views indexOfObject:_selectedHTMLOutputView];
+	if(_views.count)
+		[self userDidSelectHTMLOutputView:_views[index == NSNotFound ? _views.count - 1 : (index + _views.count - 1) % _views.count]];
+}
+
 // ⌘W closes the selected tab; closing the last one closes the window or hides the pane, via the delegate
 - (void)performClose:(id)sender
 {
@@ -361,7 +385,7 @@ static void* kTabTitleObservationContext = &kTabTitleObservationContext;
 - (BOOL)tabBarView:(OakTabBarView*)aTabBarView shouldSelectIndex:(NSUInteger)anIndex
 {
 	if(anIndex < _views.count)
-		[self setSelectedHTMLOutputView:_views[anIndex]];
+		[self userDidSelectHTMLOutputView:_views[anIndex]];
 	return YES;
 }
 
