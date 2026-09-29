@@ -1,3 +1,4 @@
+#import <document/OakDocument.h>
 #import <HTMLOutputWindow/HTMLOutputWindow.h>
 #import <HTMLOutputWindow/OakHTMLOutputTabView.h>
 #import "OutputTabsDelegate.h" // the test runner puts test bodies in a namespace, where an Objective-C class cannot be declared
@@ -256,4 +257,18 @@ void test_a_view_is_found_by_the_document_it_shows ()
 	OAK_ASSERT([[tabView tabBarView:tabView.tabBarView pathForIndex:1] isEqualToString:@"/tmp/notes.md"]);
 	OAK_ASSERT([[tabView tabBarView:tabView.tabBarView titleForIndex:1] hasPrefix:@"notes.md"]);
 	OAK_ASSERT([[tabView tabBarView:tabView.tabBarView pathForIndex:0] isEqualToString:@""]);
+}
+
+// Output tabs belong to their document: when it closes, the tabs produced for it go too, unless a command still runs there
+void test_a_documents_tabs_close_with_it ()
+{
+	OakHTMLOutputTabView* tabView = [[OakHTMLOutputTabView alloc] initWithFrame:NSMakeRect(0, 0, 600, 400)];
+	OakHTMLOutputView* other  = add_view(tabView);
+	OakHTMLOutputView* forDoc = add_view(tabView);
+	[other  loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"about:blank"]] environment:{ { "TM_FILEPATH", "/tmp/other.rb" } } autoScrolls:NO];
+	[forDoc loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"about:blank"]] environment:{ { "TM_FILEPATH", "/tmp/script.rb" } } autoScrolls:NO];
+
+	OakDocument* document = [OakDocument documentWithPath:@"/tmp/script.rb"];
+	[NSNotificationCenter.defaultCenter postNotificationName:OakDocumentWillCloseNotification object:document];
+	OAK_ASSERT([tabView.htmlOutputViews isEqualToArray:(@[ other ])]);
 }
