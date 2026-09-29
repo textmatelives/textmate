@@ -73,6 +73,12 @@ static NSString* EscapeHTML (NSString* str)
 		[config.userContentController addUserScript:script];
 	}
 
+	// The tab already names the page: hide the header band Bundle Support puts on top of it before it can paint,
+	// the same way its own hide_header() does after the fact
+	WKUserScript* hideHeader = [[WKUserScript alloc] initWithSource:@"(function(){ var style = document.createElement('style'); style.textContent = '#tm_webpreview_header { display: none !important; } #tm_webpreview_content { margin-top: 1em !important; }'; document.documentElement.appendChild(style); })();"
+		injectionTime:WKUserScriptInjectionTimeAtDocumentStart forMainFrameOnly:YES];
+	[config.userContentController addUserScript:hideHeader];
+
 	// Allow file:// access from custom scheme pages
 	[config.preferences setValue:@YES forKey:@"allowFileAccessFromFileURLs"];
 	[config setValue:@YES forKey:@"allowUniversalAccessFromFileURLs"];
