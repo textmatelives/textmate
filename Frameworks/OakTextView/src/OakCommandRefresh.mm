@@ -4,6 +4,7 @@
 #import <document/OakDocumentController.h>
 #import <HTMLOutput/HTMLOutput.h>
 #import <settings/settings.h>
+#import <Preferences/Keys.h>
 #import <file/type.h>
 #import <ns/ns.h>
 
@@ -175,7 +176,9 @@ static NSMutableSet<OakCommandRefresher*>* CommandRefreshers = [NSMutableSet set
 		[self executeForAction:@"DocumentClosed" afterDelay:NO];
 	}
 
-	[_command closeHTMLOutputView];
+	// With output tabs following their document, the page leaves with it; otherwise it stays, no longer refreshing
+	if([NSUserDefaults.standardUserDefaults boolForKey:kUserDefaultsHTMLOutputFollowsDocumentKey])
+		[_command closeHTMLOutputView];
 	[self teardown];
 }
 
