@@ -292,3 +292,30 @@ void test_tabs_stay_when_not_following_documents ()
 	[NSNotificationCenter.defaultCenter postNotificationName:OakDocumentWillCloseNotification object:[OakDocument documentWithPath:@"/tmp/script.rb"]];
 	OAK_ASSERT([tabView.htmlOutputViews isEqualToArray:(@[ forDoc ])]);
 }
+
+// The output tab shortcuts cycle the strip, and a selection made by hand is announced so a document can follow it
+void test_output_tabs_cycle_and_announce_a_choice ()
+{
+	OakHTMLOutputTabView* tabView = [[OakHTMLOutputTabView alloc] initWithFrame:NSMakeRect(0, 0, 600, 400)];
+	OakHTMLOutputView* a = add_view(tabView);
+	OakHTMLOutputView* b = add_view(tabView);
+	OakHTMLOutputView* c = add_view(tabView);
+
+	__block NSMutableArray* announced = [NSMutableArray array];
+	id token = [NSNotificationCenter.defaultCenter addObserverForName:OakHTMLOutputTabViewDidSelectViewNotification object:tabView queue:nil usingBlock:^(NSNotification* notification){
+		[announced addObject:notification.userInfo[@"view"]];
+	}];
+
+	[tabView selectNextOutputTab:nil];
+	OAK_ASSERT(tabView.selectedHTMLOutputView == a); // wraps around from the last
+	[tabView selectPreviousOutputTab:nil];
+	OAK_ASSERT(tabView.selectedHTMLOutputView == c);
+	[tabView selectPreviousOutputTab:nil];
+	OAK_ASSERT(tabView.selectedHTMLOutputView == b);
+	OAK_ASSERT([announced isEqualToArray:(@[ a, c, b ])]);
+
+	[tabView setSelectedHTMLOutputView:a]; // a selection made by code is not announced
+	OAK_ASSERT_EQ(announced.count, 3);
+
+	[NSNotificationCenter.defaultCenter removeObserver:token];
+}

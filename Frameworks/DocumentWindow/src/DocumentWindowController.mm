@@ -202,6 +202,7 @@ static NSArray* const kObservedKeyPaths = @[ @"arrayController.arrangedObjects.p
 		self.layoutView = [[ProjectLayoutView alloc] initWithFrame:NSZeroRect];
 		self.layoutView.documentView = self.documentView;
 		self.htmlOutputPlacement = [NSUserDefaults.standardUserDefaults stringForKey:kUserDefaultsHTMLOutputPlacementKey];
+		[NSNotificationCenter.defaultCenter addObserver:self selector:@selector(outputTabWasSelected:) name:OakHTMLOutputTabViewDidSelectViewNotification object:nil];
 
 		NSUInteger windowStyle = (NSWindowStyleMaskTitled|NSWindowStyleMaskClosable|NSWindowStyleMaskResizable|NSWindowStyleMaskMiniaturizable);
 		self.window = [[NSWindow alloc] initWithContentRect:[NSWindow contentRectForFrameRect:[self frameRectForNewWindow] styleMask:windowStyle] styleMask:windowStyle backing:NSBackingStoreBuffered defer:NO];
@@ -2121,6 +2122,43 @@ static NSArray* const kObservedKeyPaths = @[ @"arrayController.arrangedObjects.p
 		[tabView moveHTMLOutputViewsToTabView:self.htmlOutputTabView];
 }
 
+// With both preferences on, picking an output tab selects the document its page was produced for
+- (void)outputTabWasSelected:(NSNotification*)aNotification
+{
+	NSUserDefaults* defaults = NSUserDefaults.standardUserDefaults;
+	if(![defaults boolForKey:kUserDefaultsHTMLOutputFollowsDocumentKey] || ![defaults boolForKey:kUserDefaultsHTMLOutputSelectsDocumentKey])
+		return;
+
+	OakHTMLOutputView* view = aNotification.userInfo[@"view"];
+	OakDocument* document = [OakCommandRefresher documentForHTMLOutputView:view];
+	if(!document && view.documentPath)
+		document = [OakDocumentController.sharedInstance documentWithPath:view.documentPath];
+	if(!document || [document isEqual:self.selectedDocument])
+		return;
+
+	// The window that has the document selects it; a document nobody has opens in the window whose pane the tab is in, or else the front one
+	DocumentWindowController* owner = [DocumentWindowController controllerForDocument:document];
+	BOOL const inMyPane = _htmlOutputTabView && aNotification.object == _htmlOutputTabView;
+	if(owner ? owner == self : (inMyPane || self == [SortedControllers() firstObject]))
+		[self openAndSelectDocument:document activate:NO];
+}
+
+// The output tab shortcuts reach the pane's strip, or the front output window's when there is no pane
+- (OakHTMLOutputTabView*)outputTabViewForShortcuts
+{
+	if(self.layoutView.htmlOutputView)
+		return _htmlOutputTabView;
+	for(NSWindow* window in NSApp.orderedWindows)
+	{
+		if(window.isVisible && [window.delegate isKindOfClass:[HTMLOutputWindowController class]])
+			return [(HTMLOutputWindowController*)window.delegate tabView];
+	}
+	return nil;
+}
+
+- (IBAction)selectNextOutputTab:(id)sender     { [[self outputTabViewForShortcuts] selectNextOutputTab:sender]; }
+- (IBAction)selectPreviousOutputTab:(id)sender { [[self outputTabViewForShortcuts] selectPreviousOutputTab:sender]; }
+
 - (IBAction)toggleHTMLOutput:(id)sender
 {
 	if(self.htmlOutputVisible && self.htmlOutputInWindow && ![self.htmlOutputWindowController.window isKeyWindow])
@@ -2453,6 +2491,8 @@ static NSArray* const kObservedKeyPaths = @[ @"arrayController.arrangedObjects.p
 		active = self.fileBrowserVisible && [self.fileBrowser validateMenuItem:menuItem];
 	else if([menuItem action] == @selector(moveDocumentToNewWindow:))
 		active = _documents.count > 1;
+	else if([menuItem action] == @selector(selectNextOutputTab:) || [menuItem action] == @selector(selectPreviousOutputTab:))
+		active = [self outputTabViewForShortcuts].htmlOutputViews.count > 1;
 	else if([menuItem action] == @selector(selectNextTab:) || [menuItem action] == @selector(selectPreviousTab:))
 		active = _documents.count > 1;
 	else if([menuItem action] == @selector(revealFileInProject:) || [menuItem action] == @selector(revealFileInProjectByExpandingAncestors:))
