@@ -2,6 +2,28 @@ Title: Release Notes
 
 # Changes
 
+## 2026-09-28 (v2.5.0-undead-exp.1)
+
+An experimental release: command output gets tabs. It is offered only on the experimental update channel (Preferences → Software Update), and the experimental channel is never offered a stable release in its place. See [all changes since v2.4.1-undead](https://github.com/textmatelives/textmate/compare/v2.4.1-undead...v2.5.0-undead-exp.1).
+
+### HTML Output
+
+* **Output tabs.** Every command’s HTML output opens in a tab, in the pane and in the output window alike; the pane puts the tab bar above the page, the window puts it in the title bar. Tabs drag between strips, a tab dragged out of a strip becomes its own window, and ⌘W closes the selected tab. (`253e7c6e`, `46713e03`)
+* **A grip moves the whole strip.** Drag the handle at the left of the tab bar to dock the output below, right or left of the text view, or drop it outside the window to tear the strip off into an output window. Each window keeps its own placement, saved with the project. (`55bb9145`, `43cace32`)
+* **One tab per document.** A command run from a document reuses that document’s tab rather than the first tab of the same command, and the tab is named after the document. (`6cbb0894`, `1f822f98`)
+* **Tabs can follow the document.** With “Output tabs follow the selected document” on, selecting a document reveals its output tab and closing the document closes its tabs. The sub-preference “Document follows the output tab” does the reverse. Both take effect as soon as they are changed. (`2c5db6f6`, `950dabe4`, `230c0310`, `90e07c3c`)
+* **Output no longer takes the focus.** Output that opens in the pane or in a window leaves the keyboard focus where it was, unless “Output takes the focus when it opens” is turned on. (`ee99e93a`, `39c0e6dc`, `8f19d47a`)
+* **Shortcuts.** ⌘⌥⇧{ and ⌘⌥⇧} move between output tabs, and ⌘⌥⇧W closes all of them. (`90e07c3c`, `b1f24d37`)
+* **Quieter refreshes.** The page header band is hidden under a tab, and a refreshing page no longer flashes its header or jumps to its anchor. (`7f4379e7`, `03f02032`)
+
+### Preferences
+
+* **“Command output:”** in Projects gained “Left of text view”, and the setting seeds new windows only; each window keeps its own placement after that. (`43cace32`, `8f19d47a`)
+
+### Tabs
+
+* **Fixed: a tab kept its hover look while another window sat over it.** (`147a690b`)
+
 ## 2026-09-27 (v2.4.1-undead)
 
 A hotfix: on macOS 27, the preview stopped following edits. See [all changes since v2.4.0-undead](https://github.com/textmatelives/textmate/compare/v2.4.0-undead...v2.4.1-undead).
