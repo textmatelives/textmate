@@ -142,7 +142,10 @@ static std::string page_key (NSURL* url)
 	if(_environmentByPage.count(key))
 	{
 		[OakHTMLOutputPageCache.sharedCache setData:[rewritten dataUsingEncoding:NSUTF8StringEncoding] forKey:[NSString stringWithCxxString:key]];
-		[self.webView reload];
+		// Drop a fragment the page set (the preview's scroll_to_here), or the reload scrolls to the anchor before the saved position is put back
+		[self.webView evaluateJavaScript:@"if(location.hash) history.replaceState(null, '', location.href.split('#')[0])" completionHandler:^(id result, NSError* error){
+			[self.webView reload];
+		}];
 	}
 	else
 	{
@@ -207,9 +210,6 @@ static std::string page_key (NSURL* url)
 			self.systemCommandHandler.environment = _environment;
 		}
 	}
-
-	// The tab already names the page: drop the header band Bundle Support puts on top of it, using its own hook
-	[webView evaluateJavaScript:@"if(typeof hide_header === 'function' && document.getElementById('tm_webpreview_header')) hide_header();" completionHandler:nil];
 
 	// Restore scroll position if pending
 	if(self.pendingScrollPosition)
