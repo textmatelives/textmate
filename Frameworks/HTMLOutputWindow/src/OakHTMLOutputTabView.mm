@@ -3,6 +3,7 @@
 #import "OakHTMLOutputGripView.h"
 #import <OakAppKit/OakUIConstructionFunctions.h>
 #import <OakFoundation/OakFoundation.h>
+#import <document/OakDocument.h>
 
 static void* kTabTitleObservationContext = &kTabTitleObservationContext;
 
@@ -41,12 +42,26 @@ static void* kTabTitleObservationContext = &kTabTitleObservationContext;
 
 		OakAddAutoLayoutViewsToSuperview(@[ _tabStripView, _contentView ], self);
 		[self updateLayout];
+
+		[NSNotificationCenter.defaultCenter addObserver:self selector:@selector(documentWillClose:) name:OakDocumentWillCloseNotification object:nil];
 	}
 	return self;
 }
 
+// Output tabs belong to their document: when it closes, the tabs produced for it go too, unless a command still runs there
+- (void)documentWillClose:(NSNotification*)aNotification
+{
+	NSString* path = [(OakDocument*)aNotification.object path];
+	for(OakHTMLOutputView* view in [_views copy])
+	{
+		if(path && [view.documentPath isEqualToString:path] && !view.isRunningCommand)
+			[self removeHTMLOutputView:view];
+	}
+}
+
 - (void)dealloc
 {
+	[NSNotificationCenter.defaultCenter removeObserver:self];
 	_tabBarView.dataSource = nil;
 	_tabBarView.delegate   = nil;
 	for(OakHTMLOutputView* view in _views)
