@@ -633,10 +633,18 @@ static pid_t run_command (dispatch_group_t rootGroup, std::string const& cmd, in
 
 	if(view)
 	{
+		// A command that refreshes as the document changes is watched while typing: the editor keeps the focus
+		BOOL const keepFocus = (_bundleCommand.auto_refresh & auto_refresh::on_document_change) != 0;
+		NSWindow* keyWindow  = NSApp.keyWindow;
+
 		[view tryToPerform:@selector(revealHTMLOutputView:) with:view]; // select its tab
 		if([view.window.delegate respondsToSelector:@selector(showWindow:)])
 			[view.window.delegate performSelector:@selector(showWindow:) withObject:self];
-		[view.window makeFirstResponder:view.webView];
+
+		if(keepFocus && keyWindow && keyWindow != view.window)
+			[keyWindow makeKeyWindow]; // the output window stays in front, the editor keeps typing
+		else if(!keepFocus)
+			[view.window makeFirstResponder:view.webView];
 	}
 
 	return view;
