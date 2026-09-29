@@ -1,4 +1,5 @@
 #import <document/OakDocument.h>
+#import <Preferences/Keys.h>
 #import <HTMLOutputWindow/HTMLOutputWindow.h>
 #import <HTMLOutputWindow/OakHTMLOutputTabView.h>
 #import "OutputTabsDelegate.h" // the test runner puts test bodies in a namespace, where an Objective-C class cannot be declared
@@ -259,9 +260,15 @@ void test_a_view_is_found_by_the_document_it_shows ()
 	OAK_ASSERT([[tabView tabBarView:tabView.tabBarView pathForIndex:0] isEqualToString:@""]);
 }
 
-// Output tabs belong to their document: when it closes, the tabs produced for it go too, unless a command still runs there
+static void follow_documents (BOOL flag)
+{
+	[NSUserDefaults.standardUserDefaults setVolatileDomain:(flag ? @{ kUserDefaultsHTMLOutputFollowsDocumentKey: @YES } : @{ }) forName:NSArgumentDomain];
+}
+
+// With output tabs following their document, the tabs produced for a closing document go with it, unless a command still runs there
 void test_a_documents_tabs_close_with_it ()
 {
+	follow_documents(YES);
 	OakHTMLOutputTabView* tabView = [[OakHTMLOutputTabView alloc] initWithFrame:NSMakeRect(0, 0, 600, 400)];
 	OakHTMLOutputView* other  = add_view(tabView);
 	OakHTMLOutputView* forDoc = add_view(tabView);
@@ -271,4 +278,17 @@ void test_a_documents_tabs_close_with_it ()
 	OakDocument* document = [OakDocument documentWithPath:@"/tmp/script.rb"];
 	[NSNotificationCenter.defaultCenter postNotificationName:OakDocumentWillCloseNotification object:document];
 	OAK_ASSERT([tabView.htmlOutputViews isEqualToArray:(@[ other ])]);
+	follow_documents(NO);
+}
+
+// Without the preference, tabs are independent of documents and stay
+void test_tabs_stay_when_not_following_documents ()
+{
+	follow_documents(NO);
+	OakHTMLOutputTabView* tabView = [[OakHTMLOutputTabView alloc] initWithFrame:NSMakeRect(0, 0, 600, 400)];
+	OakHTMLOutputView* forDoc = add_view(tabView);
+	[forDoc loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"about:blank"]] environment:{ { "TM_FILEPATH", "/tmp/script.rb" } } autoScrolls:NO];
+
+	[NSNotificationCenter.defaultCenter postNotificationName:OakDocumentWillCloseNotification object:[OakDocument documentWithPath:@"/tmp/script.rb"]];
+	OAK_ASSERT([tabView.htmlOutputViews isEqualToArray:(@[ forDoc ])]);
 }

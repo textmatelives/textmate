@@ -4,6 +4,7 @@
 #import <OakAppKit/OakUIConstructionFunctions.h>
 #import <OakFoundation/OakFoundation.h>
 #import <document/OakDocument.h>
+#import <Preferences/Keys.h>
 
 static void* kTabTitleObservationContext = &kTabTitleObservationContext;
 
@@ -48,9 +49,12 @@ static void* kTabTitleObservationContext = &kTabTitleObservationContext;
 	return self;
 }
 
-// Output tabs belong to their document: when it closes, the tabs produced for it go too, unless a command still runs there
+// With output tabs following their document, the tabs produced for a closing document go with it, unless a command still runs there
 - (void)documentWillClose:(NSNotification*)aNotification
 {
+	if(![NSUserDefaults.standardUserDefaults boolForKey:kUserDefaultsHTMLOutputFollowsDocumentKey])
+		return;
+
 	NSString* path = [(OakDocument*)aNotification.object path];
 	for(OakHTMLOutputView* view in [_views copy])
 	{
