@@ -2158,6 +2158,7 @@ static NSArray* const kObservedKeyPaths = @[ @"arrayController.arrangedObjects.p
 
 - (IBAction)selectNextOutputTab:(id)sender     { [[self outputTabViewForShortcuts] selectNextOutputTab:sender]; }
 - (IBAction)selectPreviousOutputTab:(id)sender { [[self outputTabViewForShortcuts] selectPreviousOutputTab:sender]; }
+- (IBAction)closeAllOutputTabs:(id)sender      { [[self outputTabViewForShortcuts] closeAllOutputTabs:sender]; }
 
 - (IBAction)toggleHTMLOutput:(id)sender
 {
@@ -2493,6 +2494,8 @@ static NSArray* const kObservedKeyPaths = @[ @"arrayController.arrangedObjects.p
 		active = _documents.count > 1;
 	else if([menuItem action] == @selector(selectNextOutputTab:) || [menuItem action] == @selector(selectPreviousOutputTab:))
 		active = [self outputTabViewForShortcuts].htmlOutputViews.count > 1;
+	else if([menuItem action] == @selector(closeAllOutputTabs:))
+		active = [self outputTabViewForShortcuts].htmlOutputViews.count > 0;
 	else if([menuItem action] == @selector(selectNextTab:) || [menuItem action] == @selector(selectPreviousTab:))
 		active = _documents.count > 1;
 	else if([menuItem action] == @selector(revealFileInProject:) || [menuItem action] == @selector(revealFileInProjectByExpandingAncestors:))

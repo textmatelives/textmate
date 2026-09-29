@@ -319,3 +319,17 @@ void test_output_tabs_cycle_and_announce_a_choice ()
 
 	[NSNotificationCenter.defaultCenter removeObserver:token];
 }
+
+void test_close_all_output_tabs_empties_the_strip ()
+{
+	OutputTabsDelegate* delegate = [OutputTabsDelegate new];
+	OakHTMLOutputTabView* tabView = [[OakHTMLOutputTabView alloc] initWithFrame:NSMakeRect(0, 0, 600, 400)];
+	tabView.delegate = delegate;
+	add_view(tabView);
+	add_view(tabView);
+	add_view(tabView);
+
+	[tabView closeAllOutputTabs:nil];
+	OAK_ASSERT_EQ(tabView.htmlOutputViews.count, 0);
+	OAK_ASSERT_EQ(delegate.removedLastViewCount, 1);
+}

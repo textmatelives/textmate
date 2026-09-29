@@ -309,6 +309,18 @@ static void* kTabTitleObservationContext = &kTabTitleObservationContext;
 		[self userDidSelectHTMLOutputView:_views[index == NSNotFound ? 0 : (index + 1) % _views.count]];
 }
 
+- (IBAction)closeAllOutputTabs:(id)sender
+{
+	__weak OakHTMLOutputTabView* weakSelf = self;
+	[self stopRunningCommandsWithCompletionHandler:^(BOOL didStopAll){
+		OakHTMLOutputTabView* tabView = weakSelf;
+		if(!didStopAll || !tabView)
+			return;
+		for(OakHTMLOutputView* view in [tabView->_views copy])
+			[tabView removeHTMLOutputView:view];
+	}];
+}
+
 - (IBAction)selectPreviousOutputTab:(id)sender
 {
 	NSUInteger index = [_views indexOfObject:_selectedHTMLOutputView];
