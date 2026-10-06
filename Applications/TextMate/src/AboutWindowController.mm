@@ -21,6 +21,56 @@ static NSString* const kUserDefaultsLastLaunchedVersionKey = @"lastLaunchedVersi
 	return sharedInstance;
 }
 
++ (NSWindow*)hostWindowForUpdateNotice
+{
+	for(NSWindow* window in NSApp.orderedWindows)
+	{
+		if(window.isVisible && !window.isSheet && window.canBecomeKeyWindow)
+			return window;
+	}
+	return nil;
+}
+
++ (void)beginUpdateNoticeForVersion:(NSString*)currentVersion onWindow:(NSWindow*)window
+{
+	NSAlert* alert        = [[NSAlert alloc] init];
+	alert.messageText     = @"TextMate Has Been Updated";
+	alert.informativeText = [NSString stringWithFormat:@"You are now running version %@.", currentVersion];
+
+	[alert addButtonWithTitle:@"Changelog"]; // first added is the default
+	[alert addButtonWithTitle:@"Cancel"];
+
+	// A sheet, not -runModal. The mate server accepts connections from a
+	// dispatch source on the main queue, and the modal loop does not drain
+	// that queue. mate launches us without activation, so a modal alert also
+	// sits hidden while mate blocks in read().
+	[alert beginSheetModalForWindow:window completionHandler:^(NSModalResponse returnCode) {
+		if(returnCode == NSAlertFirstButtonReturn)
+			[AboutWindowController.sharedInstance showChangesWindow:nil];
+	}];
+}
+
++ (void)presentUpdateNoticeForVersion:(NSString*)currentVersion
+{
+	if(NSWindow* window = [self hostWindowForUpdateNotice])
+	{
+		[self beginUpdateNoticeForVersion:currentVersion onWindow:window];
+		return;
+	}
+
+	// mate starts us with -disableNewDocumentAtStartup, so the document
+	// window does not exist yet. Wait until it does; the server can accept
+	// the connection in the meantime.
+	__block id token = nil;
+	token = [NSNotificationCenter.defaultCenter addObserverForName:NSWindowDidBecomeKeyNotification object:nil queue:NSOperationQueue.mainQueue usingBlock:^(NSNotification* note) {
+		NSWindow* window = note.object;
+		if(![window isKindOfClass:[NSWindow class]] || !window.isVisible || window.isSheet || !window.canBecomeKeyWindow)
+			return;
+		[NSNotificationCenter.defaultCenter removeObserver:token];
+		[self beginUpdateNoticeForVersion:currentVersion onWindow:window];
+	}];
+}
+
 + (void)showUpdateNoticeIfNeeded
 {
 	// Offers the changelog once, the first time a newly installed version is
@@ -47,17 +97,10 @@ static NSString* const kUserDefaultsLastLaunchedVersionKey = @"lastLaunchedVersi
 	if(!lastVersion.length || [lastVersion isEqualToString:currentVersion])
 		return;
 
-	// Deferred so the alert is not run modally from inside the launch sequence.
+	// After this method returns, so a document window from launch (or from the
+	// mate connection that is about to be accepted) can host the sheet.
 	dispatch_async(dispatch_get_main_queue(), ^{
-		NSAlert* alert        = [[NSAlert alloc] init];
-		alert.messageText     = @"TextMate Has Been Updated";
-		alert.informativeText = [NSString stringWithFormat:@"You are now running version %@.", currentVersion];
-
-		[alert addButtonWithTitle:@"Changelog"]; // first added is the default
-		[alert addButtonWithTitle:@"Cancel"];
-
-		if([alert runModal] == NSAlertFirstButtonReturn)
-			[AboutWindowController.sharedInstance showChangesWindow:self];
+		[self presentUpdateNoticeForVersion:currentVersion];
 	});
 }
 
