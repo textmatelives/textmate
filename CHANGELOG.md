@@ -2,6 +2,19 @@ Title: Release Notes
 
 # Changes
 
+## 2026-10-06 (v2.4.3-undead)
+
+Two crash fixes and a fix for `mate`, all from [@tbates](https://github.com/tbates). See [all changes since v2.4.2-undead](https://github.com/textmatelives/textmate/compare/v2.4.2-undead...v2.4.3-undead).
+
+### Stability
+
+* **Fixed: TextMate quit when the spell checker timed out.** AppleSpell answers over XPC, and when a request times out AppKit raises an exception in order to drop the dead connection and retry. TextMate’s exception handler treated it as fatal. The timeout is now expected, and the spell check catches it where it calls AppKit, leaving the rest of the buffer unchecked until the next parse rather than unwinding through the parser. [#101](https://github.com/textmatelives/textmate/issues/101). (`9235428e`)
+* **Fixed: an empty selection string built a range from a null pointer.** The fallback passed `0` to the range constructor, which bound to the string overload. It is now an explicit empty range. The parser always supplies a range, so this path did not run in practice; it accounted for 49 of the 179 warnings in a Release build. [#99](https://github.com/textmatelives/textmate/pull/99). (`1720ce2d`)
+
+### mate
+
+* **Fixed: `mate` hung on the first launch of a new version.** The “TextMate Has Been Updated” notice ran as a modal alert, which stopped the main queue from accepting `mate`’s connection until the alert was dismissed. It is now a sheet on the first window, so `mate` connects straight away. [#84](https://github.com/textmatelives/textmate/issues/84). (`9777cbba`)
+
 ## 2026-10-01 (v2.4.2-undead)
 
 A crash fix, a Bundle Editor fix and a new variable for commands. See [all changes since v2.4.1-undead](https://github.com/textmatelives/textmate/compare/v2.4.1-undead...v2.4.2-undead).
