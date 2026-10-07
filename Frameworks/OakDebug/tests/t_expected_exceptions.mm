@@ -37,6 +37,13 @@ void test_menu_accessibility_exception_is_expected ()
 	OAK_ASSERT(OakExceptionIsExpected(exception));
 }
 
+void test_spell_server_timeout_exception_is_expected ()
+{
+	NSException* exception = [NSException exceptionWithName:@"NSXPCSpellServerTimeoutException" reason:@"Spell server connection timeout sending findMisspelledWordInString" userInfo:nil];
+	OAK_ASSERT(OakExceptionIsExpected(exception));
+	OAK_ASSERT(!OakExceptionIsExpected([NSException exceptionWithName:NSGenericException reason:@"Spell server connection timeout sending findMisspelledWordInString" userInfo:nil]));
+}
+
 void test_other_exceptions_are_not_expected ()
 {
 	OAK_ASSERT(!OakExceptionIsExpected([NSException exceptionWithName:NSGenericException reason:@"something else went wrong" userInfo:nil]));

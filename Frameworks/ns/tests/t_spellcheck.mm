@@ -1,5 +1,20 @@
 #import <ns/spellcheck.h>
 #import <AppKit/NSApplication.h>
+#import <objc/runtime.h>
+
+static IMP SavedSpellcheckIMP;
+
+static NSRange SpellcheckRaisesTimeout (id, SEL, NSString*, NSInteger, NSString*, BOOL, NSInteger, NSInteger*)
+{
+	[NSException raise:@"NSXPCSpellServerTimeoutException" format:@"Spell server connection timeout sending findMisspelledWordInString"];
+	return NSMakeRange(NSNotFound, 0);
+}
+
+struct RestoreSpellcheck
+{
+	Method method;
+	~RestoreSpellcheck () { method_setImplementation(method, SavedSpellcheckIMP); }
+};
 
 void setup ()
 {
@@ -41,4 +56,16 @@ void test_newlines_2 ()
 	OAK_ASSERT_EQ(ranges.size(), 1);
 	OAK_ASSERT_EQ(ranges[0].first, 8);
 	OAK_ASSERT_EQ(ranges[0].last, 13);
+}
+
+void test_spell_server_timeout_leaves_text_unchecked ()
+{
+	Method method = class_getInstanceMethod([NSSpellChecker class], @selector(checkSpellingOfString:startingAt:language:wrap:inSpellDocumentWithTag:wordCount:));
+	SavedSpellcheckIMP = method_getImplementation(method);
+	method_setImplementation(method, (IMP)SpellcheckRaisesTimeout);
+	RestoreSpellcheck restore{ method };
+
+	std::string const str = "mispelled\nstil wrong";
+	std::vector<ns::range_t> ranges = ns::spellcheck(str.data(), str.data() + str.length(), "en");
+	OAK_ASSERT_EQ(ranges.size(), 0);
 }

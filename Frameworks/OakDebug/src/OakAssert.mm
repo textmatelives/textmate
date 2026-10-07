@@ -34,11 +34,24 @@ static BOOL IsAppKitUnsatisfiableLayoutException (NSException* exception)
 	       [exception.reason isEqualToString:@"layout constraints are not satisfiable."];
 }
 
+static BOOL IsAppKitSpellServerTimeoutException (NSException* exception)
+{
+	/*
+	 * NSSpellChecker asks AppleSpell over XPC. When that call times out,
+	 * -[NSXPCSpellServerClientContext finish] raises this. The checker method
+	 * on the stack is reconnectOnError:, so AppKit raises it in order to drop
+	 * the dead connection and try again. The handler observes the exception
+	 * before that retry (issue #101).
+	 */
+	return [exception.name isEqualToString:@"NSXPCSpellServerTimeoutException"];
+}
+
 BOOL OakExceptionIsExpected (NSException* exception)
 {
 	return [exception.name isEqualToString:@"FSExecutionErrorException"] ||
 	       IsAppKitMenuAccessibilityCompatibilityException(exception) ||
-	       IsAppKitUnsatisfiableLayoutException(exception);
+	       IsAppKitUnsatisfiableLayoutException(exception) ||
+	       IsAppKitSpellServerTimeoutException(exception);
 }
 
 std::string OakStackDump (int linesToSkip)
