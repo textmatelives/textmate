@@ -173,6 +173,10 @@ static void* kTabTitleObservationContext = &kTabTitleObservationContext;
 	if(index == NSNotFound)
 		return;
 
+	// Decide this before the view goes: the tab that takes its place inherits the focus,
+	// otherwise the window becomes first responder and the next ⌘W closes it
+	BOOL const hadFocus = [self.window.firstResponder isKindOfClass:[NSView class]] && [(NSView*)self.window.firstResponder isDescendantOf:aView];
+
 	[self stopObservingView:aView];
 	[_views removeObjectAtIndex:index];
 	[_tabBarView reloadData];
@@ -181,7 +185,11 @@ static void* kTabTitleObservationContext = &kTabTitleObservationContext;
 	{
 		_selectedHTMLOutputView = nil;
 		if(_views.count)
+		{
 			[self setSelectedHTMLOutputView:_views[MIN(index, _views.count-1)]];
+			if(hadFocus)
+				[self.window makeFirstResponder:_selectedHTMLOutputView.webView];
+		}
 	}
 
 	if(_views.count == 0 && [_delegate respondsToSelector:@selector(htmlOutputTabViewDidRemoveLastView:)])

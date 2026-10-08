@@ -333,3 +333,35 @@ void test_close_all_output_tabs_empties_the_strip ()
 	OAK_ASSERT_EQ(tabView.htmlOutputViews.count, 0);
 	OAK_ASSERT_EQ(delegate.removedLastViewCount, 1);
 }
+
+// Closing the tab that holds the focus must hand it to the tab that takes its place,
+// or the next ⌘W reaches the window and closes every remaining tab with it
+void test_closing_the_focused_tab_hands_focus_to_the_next ()
+{
+	[NSApplication sharedApplication];
+	OakHTMLOutputTabView* tabView = strip_in_window();
+	OakHTMLOutputView* first  = add_view(tabView);
+	OakHTMLOutputView* second = add_view(tabView);
+	[tabView setSelectedHTMLOutputView:first];
+	OAK_ASSERT([tabView.window makeFirstResponder:first.webView]);
+
+	[tabView removeHTMLOutputView:first];
+	OAK_ASSERT_EQ(tabView.selectedHTMLOutputView, second);
+	OAK_ASSERT([tabView.window.firstResponder isKindOfClass:[NSView class]]);
+	OAK_ASSERT([(NSView*)tabView.window.firstResponder isDescendantOf:second]);
+}
+
+// Closing a tab must not take the focus if it was not in that tab to begin with
+void test_closing_an_unfocused_tab_leaves_the_focus_alone ()
+{
+	[NSApplication sharedApplication];
+	OakHTMLOutputTabView* tabView = strip_in_window();
+	OakHTMLOutputView* first  = add_view(tabView);
+	OakHTMLOutputView* second = add_view(tabView);
+	[tabView setSelectedHTMLOutputView:first];
+	OAK_ASSERT([tabView.window makeFirstResponder:tabView.window]);
+
+	[tabView removeHTMLOutputView:first];
+	OAK_ASSERT_EQ(tabView.selectedHTMLOutputView, second);
+	OAK_ASSERT_EQ(tabView.window.firstResponder, tabView.window);
+}
