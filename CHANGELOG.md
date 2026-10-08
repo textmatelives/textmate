@@ -2,6 +2,32 @@ Title: Release Notes
 
 # Changes
 
+## 2026-10-07 (v2.5.0-undead-exp.2)
+
+The second experimental build of command output tabs. It is offered only on the experimental update channel (Preferences → Software Update), which is never offered a stable release in its place. This build is based on v2.4.3-undead, so it carries the fixes released since the first one, including the spell checker timeout and the Ask Siri crash. See [all changes since v2.5.0-undead-exp.1](https://github.com/textmatelives/textmate/compare/v2.5.0-undead-exp.1...v2.5.0-undead-exp.2).
+
+### Since the first experimental build
+
+* **Fixed: ⌘W closed the whole output window after a tab had been closed.** Closing the selected tab removed the view that held the focus, so the window became first responder and the next ⌘W closed it with every remaining tab. The tab that takes the closed one’s place now inherits the focus. Reported by [@tbates](https://github.com/tbates). (`2be48252`)
+
+### HTML Output
+
+* **Output tabs.** Every command’s HTML output opens in a tab, in the pane and in the output window alike; the pane puts the tab bar above the page, the window puts it in the title bar. Tabs drag between strips, a tab dragged out of a strip becomes its own window, and ⌘W closes the selected tab. (`ca243d89`, `9266669d`)
+* **A grip moves the whole strip.** Drag the handle at the left of the tab bar to dock the output below, right or left of the text view, or drop it outside the window to tear the strip off into an output window. Each window keeps its own placement, saved with the project. (`3471684f`, `fb1583ea`)
+* **One tab per document.** A command run from a document reuses that document’s tab rather than the first tab of the same command, and the tab is named after the document. (`874ab494`, `adbdd8ab`)
+* **Tabs can follow the document.** With “Output tabs follow the selected document” on, selecting a document reveals its output tab and closing the document closes its tabs. The sub-preference “Document follows the output tab” does the reverse. Both take effect as soon as they are changed. (`060777d1`, `cd11ed92`, `14779c9b`, `7a77bc2b`)
+* **Output no longer takes the focus.** Output that opens in the pane or in a window leaves the keyboard focus where it was, unless “Output takes the focus when it opens” is turned on. (`ebae8a08`, `b0c35dbf`, `9edb2746`)
+* **Shortcuts.** ⌘⌥⇧{ and ⌘⌥⇧} move between output tabs, and ⌘⌥⇧W closes all of them. (`7a77bc2b`, `e7b7fe81`)
+* **Quieter refreshes.** The page header band is hidden under a tab, and a refreshing page no longer flashes its header or jumps to its anchor. (`922cea22`, `f6dc1968`)
+
+### Preferences
+
+* **“Command output:”** in Projects gained “Left of text view”, and the setting seeds new windows only; each window keeps its own placement after that. (`fb1583ea`, `9edb2746`)
+
+### Tabs
+
+* **Fixed: a tab kept its hover look while another window sat over it.** (`dbe79853`)
+
 ## 2026-10-06 (v2.4.3-undead)
 
 Two crash fixes and a fix for `mate`, all from [@tbates](https://github.com/tbates). See [all changes since v2.4.2-undead](https://github.com/textmatelives/textmate/compare/v2.4.2-undead...v2.4.3-undead).
