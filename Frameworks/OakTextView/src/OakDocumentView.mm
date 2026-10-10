@@ -367,13 +367,7 @@ static NSString* const kFoldingsColumnIdentifier  = @"foldings";
 		gutterView.selectionIconPressedColor = [NSColor colorWithCGColor:styles.selectionIconsPressed];
 		gutterView.selectionBorderColor      = [NSColor colorWithCGColor:styles.selectionBorder];
 		gutterScrollView.backgroundColor     = gutterView.backgroundColor;
-
-		// Use dynamic system separator color so it adapts to Light/Dark Mode.
-		if(@available(macOS 10.14, *)) {
-		        gutterDividerView.activeBackgroundColor = [NSColor separatorColor];
-		} else {
-		        gutterDividerView.activeBackgroundColor = [NSColor colorWithCGColor:styles.divider];
-		}
+		gutterDividerView.activeBackgroundColor = [NSColor colorWithCGColor:styles.divider];
 
 		[gutterView setNeedsDisplay:YES];
 	}
