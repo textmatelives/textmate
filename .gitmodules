@@ -9,7 +9,7 @@
 	url = https://github.com/textmate/dialog-1.x.git
 [submodule "PlugIns/dialog"]
 	path = PlugIns/dialog
-	url = https://github.com/textmate/dialog.git
+	url = https://github.com/tbates/dialog.git
 [submodule "vendor/Onigmo/vendor"]
 	path = vendor/Onigmo/vendor
 	url = https://github.com/textmate/Onigmo.git
