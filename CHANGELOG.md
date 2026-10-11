@@ -2,6 +2,14 @@ Title: Release Notes
 
 # Changes
 
+## 2026-10-11 (v2.5.1-undead-exp.1)
+
+An experimental build of the updater fix in [#119](https://github.com/textmatelives/textmate/pull/119), on v2.5.0-undead. It is offered only on the experimental update channel (Preferences → Software Update). See [all changes since v2.5.0-undead](https://github.com/textmatelives/textmate/compare/v2.5.0-undead...v2.5.1-undead-exp.1).
+
+### Software Update
+
+* **The Dock and Finder are told about the new version after an update.** After the in-place replacement, TextMate sets the bundle’s modification time to the present and re-registers it with Launch Services before relaunching. The code that performs an update is the version already installed, so this takes effect for updates installed from this build onward. ([#119](https://github.com/textmatelives/textmate/pull/119), `41673f2a`)
+
 ## 2026-10-11 (v2.5.0-undead)
 
 Command output tabs, a new app icon, and two fixes. The output tabs went out as two experimental builds first; if you are on the experimental channel, set the channel back to “Normal releases” in Preferences → Software Update to receive this release and the ones after it. See [all changes since v2.4.3-undead](https://github.com/textmatelives/textmate/compare/v2.4.3-undead...v2.5.0-undead).
