@@ -2,6 +2,14 @@ Title: Release Notes
 
 # Changes
 
+## 2026-10-11 (v2.5.1-undead-exp.3)
+
+A test build. The code is that of v2.5.1-undead-exp.1 with the flower icon back; the one change is that the icon asset inside the app is named `textmate_lives_v2` instead of `textmate_lives`, to find out whether the Dock keys its cached tile on that name. See [all changes since v2.5.1-undead-exp.2](https://github.com/textmatelives/textmate/compare/v2.5.1-undead-exp.2...v2.5.1-undead-exp.3).
+
+### Test build
+
+* **Icon asset renamed to `textmate_lives_v2`.** The icon itself is the flower from v2.5.0-undead.
+
 ## 2026-10-11 (v2.5.1-undead-exp.1)
 
 An experimental build of the updater fix in [#119](https://github.com/textmatelives/textmate/pull/119), on v2.5.0-undead. It is offered only on the experimental update channel (Preferences → Software Update). See [all changes since v2.5.0-undead](https://github.com/textmatelives/textmate/compare/v2.5.0-undead...v2.5.1-undead-exp.1).

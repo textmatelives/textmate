@@ -19,7 +19,7 @@
 	<key>CFBundleHelpBookName</key>
 	<string>${TARGET_NAME} 2 Help</string>
 	<key>CFBundleIconName</key>
-	<string>textmate_lives</string>
+	<string>textmate_lives_v2</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundlePackageType</key>
