@@ -1,106 +1,53 @@
 {
-  "fill" : {
-    "linear-gradient" : [
-      "display-p3:0.81152,0.34521,0.92529,1.00000",
-      "display-p3:0.48242,0.15686,0.55273,1.00000"
-    ]
-  },
+  "color-space-for-untagged-svg-colors" : "display-p3",
+  "fill-specializations" : [
+    {
+      "value" : {
+        "linear-gradient" : [
+          "extended-gray:0.25000,1.00000",
+          "srgb:0.00000,0.00000,0.00000,1.00000"
+        ],
+        "orientation" : {
+          "start" : {
+            "x" : 0.5,
+            "y" : 0
+          },
+          "stop" : {
+            "x" : 0.5,
+            "y" : 0.7
+          }
+        }
+      }
+    },
+    {
+      "appearance" : "dark",
+      "value" : {
+        "linear-gradient" : [
+          "extended-gray:0.25000,1.00000",
+          "extended-gray:0.00000,1.00000"
+        ],
+        "orientation" : {
+          "start" : {
+            "x" : 0.5,
+            "y" : 0
+          },
+          "stop" : {
+            "x" : 0.5,
+            "y" : 0.7
+          }
+        }
+      }
+    }
+  ],
   "groups" : [
     {
       "layers" : [
         {
-          "blend-mode" : "darken",
-          "fill" : {
-            "automatic-gradient" : "display-p3:0.48242,0.15686,0.55273,1.00000"
-          },
+          "fill" : "automatic",
           "glass" : false,
-          "hidden" : false,
-          "image-name" : "textmate icon build-finder 3.svg",
-          "name" : "textmate icon build-finder 3",
-          "opacity" : 0.5
-        }
-      ],
-      "shadow" : {
-        "kind" : "neutral",
-        "opacity" : 0.5
-      },
-      "translucency" : {
-        "enabled" : true,
-        "value" : 0.5
-      }
-    },
-    {
-      "layers" : [
-        {
-          "blend-mode-specializations" : [
-            {
-              "appearance" : "dark",
-              "value" : "overlay"
-            }
-          ],
-          "fill-specializations" : [
-            {
-              "value" : {
-                "solid" : "extended-gray:1.00000,1.00000"
-              }
-            },
-            {
-              "appearance" : "dark",
-              "value" : {
-                "solid" : "display-p3:0.81152,0.34521,0.92529,1.00000"
-              }
-            }
-          ],
-          "glass" : true,
-          "image-name" : "textmate icon build-finder.svg",
-          "name" : "textmate icon build-finder",
-          "opacity-specializations" : [
-            {
-              "value" : 0.7
-            },
-            {
-              "appearance" : "dark",
-              "value" : 1
-            }
-          ]
-        }
-      ],
-      "shadow" : {
-        "kind" : "neutral",
-        "opacity" : 0.5
-      },
-      "translucency" : {
-        "enabled" : true,
-        "value" : 0.5
-      }
-    },
-    {
-      "layers" : [
-        {
-          "fill-specializations" : [
-            {
-              "value" : {
-                "solid" : "extended-gray:1.00000,1.00000"
-              }
-            },
-            {
-              "appearance" : "dark",
-              "value" : {
-                "solid" : "display-p3:0.70996,0.26660,0.78027,1.00000"
-              }
-            }
-          ],
-          "image-name" : "textmate icon build-finder 2.svg",
-          "name" : "textmate icon build-finder 2",
-          "opacity-specializations" : [
-            {
-              "value" : 0.5
-            },
-            {
-              "appearance" : "dark",
-              "value" : 0.95
-            }
-          ]
+          "image-name" : "Image.png",
+          "name" : "Image",
+          "opacity" : 1
         }
       ],
       "shadow" : {
@@ -114,6 +61,8 @@
     }
   ],
   "supported-platforms" : {
-    "squares" : "shared"
+    "squares" : [
+      "macOS"
+    ]
   }
 }

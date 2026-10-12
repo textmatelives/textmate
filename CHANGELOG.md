@@ -2,6 +2,14 @@ Title: Release Notes
 
 # Changes
 
+## 2026-10-11 (v2.5.1-undead-exp.2)
+
+A test build. The code is that of v2.5.1-undead-exp.1; the only change is that the app icon is temporarily the previous daisy, so that updating from exp.1 changes the icon and shows whether the Dock picks the change up after the updater’s own relaunch. The next build restores the flower. See [all changes since v2.5.1-undead-exp.1](https://github.com/textmatelives/textmate/compare/v2.5.1-undead-exp.1...v2.5.1-undead-exp.2).
+
+### Test build
+
+* **App icon temporarily reverted to the daisy**, as a visible marker for the update test. (`see this build’s commit`)
+
 ## 2026-10-11 (v2.5.1-undead-exp.1)
 
 An experimental build of the updater fix in [#119](https://github.com/textmatelives/textmate/pull/119), on v2.5.0-undead. It is offered only on the experimental update channel (Preferences → Software Update). See [all changes since v2.5.0-undead](https://github.com/textmatelives/textmate/compare/v2.5.0-undead...v2.5.1-undead-exp.1).
