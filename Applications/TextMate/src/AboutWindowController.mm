@@ -110,6 +110,13 @@ static NSString* const kUserDefaultsLastLaunchedVersionKey = @"lastLaunchedVersi
 	if(!lastVersion.length || [lastVersion isEqualToString:currentVersion])
 		return;
 
+	// The Dock can keep the tile it cached for the previous version, in its
+	// recents section in particular, and a Dock restart does not refresh it.
+	// Icon Services asked by path is what Finder uses and is current, so show
+	// that as this run’s Dock image.
+	if(NSImage* icon = [NSWorkspace.sharedWorkspace iconForFile:NSBundle.mainBundle.bundlePath])
+		NSApp.applicationIconImage = icon;
+
 	// After this method returns, so a document window from launch (or from the
 	// mate connection that is about to be accepted) can host the sheet.
 	dispatch_async(dispatch_get_main_queue(), ^{

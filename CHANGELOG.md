@@ -2,6 +2,14 @@ Title: Release Notes
 
 # Changes
 
+## 2026-10-11 (v2.5.1-undead-exp.4)
+
+A test build on top of exp.3. On the first launch of a new version, TextMate now asks Icon Services for its own icon by path, which is the route Finder uses and the one that stays current, and shows that as its Dock image for that run. The question this build answers is whether that corrects the stale tile in the Dock's recents section, and whether the corrected tile survives quitting. See [all changes since v2.5.1-undead-exp.3](https://github.com/textmatelives/textmate/compare/v2.5.1-undead-exp.3...v2.5.1-undead-exp.4).
+
+### Test build
+
+* **Dock image set from Icon Services on the first launch after an update.**
+
 ## 2026-10-11 (v2.5.1-undead-exp.3)
 
 A test build. The code is that of v2.5.1-undead-exp.1 with the flower icon back; the one change is that the icon asset inside the app is named `textmate_lives_v25` instead of `textmate_lives`, to find out whether the Dock keys its cached tile on that name. See [all changes since v2.5.1-undead-exp.2](https://github.com/textmatelives/textmate/compare/v2.5.1-undead-exp.2...v2.5.1-undead-exp.3).
