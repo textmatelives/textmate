@@ -71,7 +71,7 @@ file(GLOB _icons CONFIGURE_DEPENDS icons/*.icns)
 # is rendered from Markdown below (globbing it here would also copy the .md
 # sources into the bundle) and the xibs are compiled to .nib separately.
 file(GLOB _resources CONFIGURE_DEPENDS resources/*)
-list(FILTER _resources EXCLUDE REGEX "/(TextMate Help|English\\.lproj|textmate_lives_v2\\.icon)$")
+list(FILTER _resources EXCLUDE REGEX "/(TextMate Help|English\\.lproj|textmate_lives_v25\\.icon)$")
 set(_all_resources ${_icons} ${_resources})
 target_sources(TextMate PRIVATE ${_all_resources})
 set_source_files_properties(${_all_resources} PROPERTIES
@@ -147,8 +147,8 @@ set_source_files_properties(${_fw_res} PROPERTIES MACOSX_PACKAGE_LOCATION "Resou
 # Bundled tmbundles — rave's `copy support/* "SharedSupport"`.
 textmate_copy_tree(TextMate "${CMAKE_CURRENT_SOURCE_DIR}/support" "SharedSupport")
 
-# Assets.car — rave transforms resources/textmate_lives_v2.icon via actool.
-target_asset_catalog(TextMate "resources/textmate_lives_v2.icon")
+# Assets.car — rave transforms resources/textmate_lives_v25.icon via actool.
+target_asset_catalog(TextMate "resources/textmate_lives_v25.icon")
 
 # Embedded CLI tools
 textmate_embed(TextMate mate "MacOS")
