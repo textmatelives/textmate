@@ -8,7 +8,7 @@ A test build. The code is that of v2.5.1-undead-exp.1; the only change is that t
 
 ### Test build
 
-* **App icon temporarily reverted to the daisy**, as a visible marker for the update test. (`see this build’s commit`)
+* **App icon temporarily reverted to the daisy**, as a visible marker for the update test.
 
 ## 2026-10-11 (v2.5.1-undead-exp.1)
 
