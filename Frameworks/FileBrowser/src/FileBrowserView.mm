@@ -71,8 +71,18 @@
 
 		[NSNotificationCenter.defaultCenter addObserver:self selector:@selector(uiFontScaleFactorDidChange:) name:OakUIFontScaleFactorDidChangeNotification object:nil];
 
-		_outlineView.backgroundColor = NSColor.controlBackgroundColor; // dynamic (adapts to Light/Dark)
-		_scrollView.drawsBackground  = YES; // ensure adaptive system color is actually drawn
+		_outlineView.backgroundColor = NSColor.clearColor;
+		_scrollView.drawsBackground  = NO;
+
+		NSVisualEffectView* sidebarBackground = [[NSVisualEffectView alloc] initWithFrame:NSZeroRect];
+		sidebarBackground.material     = NSVisualEffectMaterialSidebar;
+		sidebarBackground.blendingMode = NSVisualEffectBlendingModeBehindWindow;
+		sidebarBackground.state        = NSVisualEffectStateFollowsWindowActiveState;
+		sidebarBackground.translatesAutoresizingMaskIntoConstraints = NO;
+		[self addSubview:sidebarBackground positioned:NSWindowBelow relativeTo:nil];
+		NSDictionary* bgViews = @{ @"bg": sidebarBackground };
+		[self addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|[bg]|" options:0 metrics:nil views:bgViews]];
+		[self addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|[bg]|" options:0 metrics:nil views:bgViews]];
 	}
 	return self;
 }
