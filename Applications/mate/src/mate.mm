@@ -1,5 +1,6 @@
 #include <authorization/constants.h>
 #include <authorization/authorization.h>
+#include <dispatch/dispatch.h>
 #include <oak/oak.h>
 #include <oak/compat.h>
 #include <text/format.h>
@@ -68,10 +69,30 @@ static void launch_app (bool disableUntitled)
 {
 	disable_sudo_helper_t helper;
 
-	NSError* error;
-	if(![NSWorkspace.sharedWorkspace launchApplicationAtURL:find_app() options:NSWorkspaceLaunchWithoutActivation|NSWorkspaceLaunchWithoutAddingToRecents configuration:(disableUntitled ? @{ NSWorkspaceLaunchConfigurationArguments: @[ @"-disableNewDocumentAtStartup", @"1" ] } : nil) error:&error])
+	NSWorkspaceOpenConfiguration* config = [[NSWorkspaceOpenConfiguration alloc] init];
+	[config setActivates:NO];
+	[config setAddsToRecentItems:NO];
+	if(disableUntitled)
+		[config setArguments:@[ @"-disableNewDocumentAtStartup", @"1" ]];
+
+	dispatch_semaphore_t sem = dispatch_semaphore_create(0);
+	__block NSError* launchError = nil;
+
+	[NSWorkspace.sharedWorkspace openApplicationAtURL:find_app() configuration:config completionHandler:^(NSRunningApplication* app, NSError* error){
+		launchError = error;
+		dispatch_semaphore_signal(sem);
+	}];
+
+	dispatch_time_t timeout = dispatch_time(DISPATCH_TIME_NOW, 30 * NSEC_PER_SEC);
+	if(dispatch_semaphore_wait(sem, timeout) != 0)
 	{
-		fprintf(stderr, "Can’t launch TextMate.app: %s\n", error.localizedDescription.UTF8String);
+		fprintf(stderr, "Timeout waiting for TextMate.app to launch\n");
+		exit(EX_UNAVAILABLE);
+	}
+
+	if(launchError)
+	{
+		fprintf(stderr, "Can’t launch TextMate.app: %s\n", launchError.localizedDescription.UTF8String);
 		exit(EX_UNAVAILABLE);
 	}
 }
@@ -403,7 +424,7 @@ int main (int argc, char const* argv[])
 
 	if(rc == -1)
 	{
-		perror("unable to bind to socket");
+		perror("unable to connect to socket");
 		exit(EX_IOERR);
 	}
 
