@@ -163,6 +163,33 @@ static NSImage* ImageNamed (NSString* imageName)
 	}
 }
 
+// TextMate’s own icon for a file name, by its full name, its compound
+// extension (“tar.gz”) or its last extension, or nil when it has none.
+static NSString* CustomImageName (NSDictionary* bindings, NSString* fileName)
+{
+	NSString* pathName  = fileName.lowercaseString;
+	NSString* imageName = bindings[pathName];
+
+	NSRange range = [pathName rangeOfString:@"."];
+	if(range.location != NSNotFound)
+	{
+		imageName = bindings[[pathName substringFromIndex:NSMaxRange(range)]];
+		imageName = imageName ?: bindings[pathName.pathExtension];
+	}
+	return imageName;
+}
+
+// The system icon for an item that is no longer on disk, judged by its URL alone.
+static NSImage* IconForMissingItem (NSURL* url)
+{
+	if(url.hasDirectoryPath)
+		return [NSWorkspace.sharedWorkspace iconForContentType:UTTypeFolder];
+
+	NSString* extension = url.pathExtension;
+	UTType* type = extension.length ? [UTType typeWithFilenameExtension:extension] : nil;
+	return [NSWorkspace.sharedWorkspace iconForContentType:type ?: UTTypeData];
+}
+
 - (NSImage*)image
 {
 	static NSDictionary* customBindings;
@@ -187,26 +214,20 @@ static NSImage* ImageNamed (NSString* imageName)
 			BOOL drawLinkBadge = NO;
 
 			NSImage* image;
+			CGFloat alpha = 1;
 			if(scmStatus == scm::status::deleted)
 			{
-				image = [NSWorkspace.sharedWorkspace iconForFileType:NSFileTypeForHFSTypeCode((OSType)kUnknownFSObjectIcon)];
+				// The file is gone, so show the icon of its type, dimmed, under
+				// the deletion badge: the badge says deleted, the icon says what.
+				image = (url.hasDirectoryPath ? nil : ImageNamed(CustomImageName(customBindings, url.lastPathComponent))) ?: IconForMissingItem(url);
+				alpha = 0.4;
 			}
 			else if(url.isFileURL)
 			{
 				NSError* error;
 				if(!url.hasDirectoryPath)
 				{
-					NSString* pathName  = url.lastPathComponent.lowercaseString;
-					NSString* imageName = customBindings[pathName];
-
-					NSRange range = [pathName rangeOfString:@"."];
-					if(range.location != NSNotFound)
-					{
-						imageName = customBindings[[pathName substringFromIndex:NSMaxRange(range)]];
-						imageName = imageName ?: customBindings[pathName.pathExtension];
-					}
-
-					if(image = ImageNamed(imageName))
+					if(image = ImageNamed(CustomImageName(customBindings, url.lastPathComponent)))
 					{
 						NSURLFileResourceType type;
 						if([url getResourceValue:&type forKey:NSURLFileResourceTypeKey error:&error])
@@ -234,7 +255,7 @@ static NSImage* ImageNamed (NSString* imageName)
 					image = [NSWorkspace.sharedWorkspace iconForContentType:UTTypeData];
 			}
 
-			[image drawInRect:dstRect fromRect:NSZeroRect operation:NSCompositingOperationCopy fraction:1];
+			[image drawInRect:dstRect fromRect:NSZeroRect operation:NSCompositingOperationCopy fraction:alpha];
 
 			if(scmStatus != scm::status::none)
 			{
