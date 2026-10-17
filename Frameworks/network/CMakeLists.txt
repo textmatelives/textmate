@@ -12,7 +12,7 @@ target_sources(network PRIVATE ${_src})
 # framework's directory is named "network". On a case-insensitive filesystem
 # that shadows Apple's Network.framework for any translation unit that pulls it
 # in transitively — which the force-included PCH does via Cocoa — producing
-# errors inside our own constants.h.
+# errors inside our own headers.
 #
 # rave avoided this by precompiling the PCH once, before the framework include
 # directories existed. Nothing outside Frameworks/network/tests actually

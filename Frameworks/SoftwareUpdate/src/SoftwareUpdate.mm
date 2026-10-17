@@ -613,7 +613,6 @@ BOOL OakNoteReplacedBundleAtURL (NSURL* bundleURL)
 }
 @property (nonatomic, getter = isUpdateBadgeVisible) BOOL updateBadgeVisible;
 @property (nonatomic) NSImage* dockImageBeforeUpdateBadge;
-@property (nonatomic) NSDictionary<NSString*, NSString*>* publicKeys;
 
 @property (nonatomic) OakTransitionViewController*  contentViewController;
 @property (nonatomic) SUInfoViewController*         infoViewController;
@@ -628,7 +627,6 @@ BOOL OakNoteReplacedBundleAtURL (NSURL* bundleURL)
 	if(self = [super initWithNibName:nil bundle:nil])
 	{
 		_completionHandler      = completionHandler;
-		_publicKeys             = NSBundle.mainBundle.infoDictionary[@"TMSigningKeys"];
 
 		_contentViewController  = [[OakTransitionViewController alloc] init];
 		_infoViewController     = [[SUInfoViewController alloc] init];
@@ -974,7 +972,7 @@ BOOL OakNoteReplacedBundleAtURL (NSURL* bundleURL)
 {
 	_remoteURL = downloadURL;
 
-	id <NSProgressReporting> progressReporting = [OakDownloadManager.sharedInstance downloadArchiveAtURL:downloadURL forReplacingURL:NSBundle.mainBundle.bundleURL publicKeys:self.publicKeys completionHandler:^(NSURL* extractedArchiveURL, NSError* error){
+	id <NSProgressReporting> progressReporting = [OakDownloadManager.sharedInstance downloadArchiveAtURL:downloadURL forReplacingURL:NSBundle.mainBundle.bundleURL completionHandler:^(NSURL* extractedArchiveURL, NSError* error){
 		self.progressViewController.progress = nil;
 
 		if(extractedArchiveURL)
