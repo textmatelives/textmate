@@ -48,8 +48,10 @@ namespace test
 		{
 			helper_t ()
 			{
-				root = path::resolve(path::temp("jail"));
-				path::make_dir(root);
+				root = path::join(path::temp(), "jail.XXXXXX");
+				if(!mkdtemp(&root[0]))
+					perror("jail_t: mkdtemp");
+				root = path::resolve(root);
 			}
 
 			~helper_t ()

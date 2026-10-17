@@ -833,6 +833,23 @@ namespace path
 		return passwd_entry()->pw_dir;
 	}
 
+	// mkstemp() creates 0600, this keeps the 0666 & ~umask that fopen() and CFWriteStream would give
+	static int create_unique_file (std::string& str)
+	{
+		static char const chars[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+		for(size_t attempt = 0; attempt < 100; ++attempt)
+		{
+			for(auto it = str.end() - 6; it != str.end(); ++it)
+				*it = chars[arc4random_uniform(sizeof(chars) - 1)];
+
+			int fd = open(str.c_str(), O_CREAT|O_EXCL|O_WRONLY|O_CLOEXEC, S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH);
+			if(fd != -1 || errno != EEXIST)
+				return fd;
+		}
+		errno = EEXIST;
+		return -1;
+	}
+
 	static std::string system_directory (int name, std::string const& file, std::string const& content)
 	{
 		std::string str(128, '\0');
@@ -859,9 +876,13 @@ namespace path
 				}
 				close(fd);
 			}
+			else if(int fd = create_unique_file(str); fd != -1)
+			{
+				close(fd);
+			}
 			else
 			{
-				mktemp(&str[0]);
+				perror("path::system_directory: open");
 			}
 		}
 		return str;
