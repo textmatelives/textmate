@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>English</string>
+	<key>CFBundleExecutable</key>
+	<string>${TARGET_NAME}</string>
+	<key>CFBundleName</key>
+	<string>${TARGET_NAME}</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.macromates.TextMate.${TARGET_NAME}</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundlePackageType</key>
+	<string>XPC!</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>14.0</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0.0</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>NSExtension</key>
+	<dict>
+		<key>NSExtensionAttributes</key>
+		<dict>
+			<key>QLIsDataBasedPreview</key>
+			<true/>
+			<key>QLSupportedContentTypes</key>
+			<array>
+				<string>public.source-code</string>
+				<string>public.plain-text</string>
+				<string>public.text</string>
+				<string>public.python-script</string>
+				<string>public.ruby-script</string>
+				<string>net.daringfireball.markdown</string>
+				<string>com.apple.rez-source</string>
+			</array>
+		</dict>
+		<key>NSExtensionPointIdentifier</key>
+		<string>com.apple.quicklook.preview</string>
+		<key>NSExtensionPrincipalClass</key>
+		<string>TMQuickLookPreviewProvider</string>
+	</dict>
+</dict>
+</plist>

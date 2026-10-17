@@ -1,0 +1,109 @@
+name: QuickLook validation
+
+on:
+  # Post-merge only: this job imports the Developer ID signing identity,
+  # which must never be exposed to unreviewed pull-request code.
+  push:
+    branches: [main]
+    paths:
+      - 'Applications/QuickLook*/**'
+      - 'Frameworks/quicklook/**'
+      - 'Applications/TextMate/CMakeLists.txt'
+      - '.github/workflows/quicklook-validate.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: macos-26
+    # Needs the Developer ID identity: ad-hoc signatures cannot launch app
+    # extensions (no Team ID), so unsigned CI cannot exercise this path.
+    environment: release
+    timeout-minutes: 60
+
+    env:
+      KEYCHAIN_PWD: ${{ github.run_id }}-${{ github.run_attempt }}
+      CERT_IDENTITY_NAME: "Developer ID Application"
+
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Install build dependencies
+        run: |
+          brew install multimarkdown ninja
+          command -v cmake >/dev/null || brew install cmake
+
+      - name: Import signing certificate into temporary keychain
+        env:
+          P12_B64: ${{ secrets.MAC_CERTIFICATE_P12 }}
+          P12_PWD: ${{ secrets.MAC_CERTIFICATE_PWD }}
+        run: |
+          set -euo pipefail
+          KEYCHAIN_PATH="$RUNNER_TEMP/build.keychain-db"
+          P12_PATH="$RUNNER_TEMP/cert.p12"
+
+          echo "$P12_B64" | base64 --decode > "$P12_PATH"
+
+          security create-keychain -p "$KEYCHAIN_PWD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PWD" "$KEYCHAIN_PATH"
+          security import "$P12_PATH" -P "$P12_PWD" -A -t cert -f pkcs12 \
+            -k "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: \
+            -s -k "$KEYCHAIN_PWD" "$KEYCHAIN_PATH"
+          security list-keychain -d user -s "$KEYCHAIN_PATH" login.keychain
+
+          IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" \
+            | grep "$CERT_IDENTITY_NAME" | head -n1 | awk '{print $2}')
+          if [ -z "$IDENTITY" ]; then
+            echo "ERROR: no Developer ID Application identity found in imported keychain"
+            security find-identity -v -p codesigning "$KEYCHAIN_PATH"
+            exit 1
+          fi
+          echo "Resolved identity hash: $IDENTITY"
+          echo "CS_IDENTITY=$IDENTITY" >> "$GITHUB_ENV"
+
+      - name: Configure
+        run: |
+          cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
+            -DCS_IDENTITY="${CS_IDENTITY}"
+
+      - name: Build signed TextMate.app
+        run: cmake --build build --target TextMate
+
+      - name: Run QuickLook core tests
+        run: |
+          cmake --build build --target quicklook_tests
+          ctest --test-dir build -R quicklook --output-on-failure
+
+      - name: Verify embedded extensions are signed with team + sandbox
+        id: app
+        run: |
+          set -euo pipefail
+          APP="$PWD/build/Applications/TextMate/TextMate.app"
+          echo "app_path=$APP" >> "$GITHUB_OUTPUT"
+          for EXT in TextMateQLPreview; do
+            APPEX="$APP/Contents/PlugIns/$EXT.appex"
+            test -d "$APPEX" || { echo "ERROR: $APPEX missing"; exit 1; }
+            codesign -dvv "$APPEX" 2>&1 | tee /tmp/sig.out
+            grep -q "TeamIdentifier=not set" /tmp/sig.out \
+              && { echo "ERROR: $EXT has no Team ID"; exit 1; }
+            codesign -d --entitlements :- "$APPEX" | grep -q "com.apple.security.app-sandbox" \
+              || { echo "ERROR: $EXT lacks sandbox entitlement"; exit 1; }
+            test "$(ls "$APPEX/Contents/Resources/Bundles/QuickLook.tmbundle/Syntaxes" | wc -l)" -gt 40 \
+              || { echo "ERROR: $EXT snapshot incomplete"; exit 1; }
+          done
+
+      - name: Launch app and check extension registration
+        run: |
+          set -euo pipefail
+          open "${{ steps.app.outputs.app_path }}"
+          sleep 10
+          pluginkit -mAvv | tee /tmp/pluginkit.out
+          grep -q "com.macromates.TextMate.TextMateQLPreview" /tmp/pluginkit.out
+
+      - name: Cleanup keychain
+        if: always()
+        run: security delete-keychain "$RUNNER_TEMP/build.keychain-db" || true

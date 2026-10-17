@@ -160,8 +160,7 @@ textmate_embed(TextMate PrivilegedTool "Resources")
 textmate_embed(TextMate Dialog "PlugIns" DIRECTORY)
 textmate_embed(TextMate Dialog2 "PlugIns" DIRECTORY)
 
-# Embedded QuickLook plugin
-textmate_embed(TextMate TextMateQL "Library/QuickLook" DIRECTORY)
+textmate_embed(TextMate TextMateQLPreview "PlugIns" DIRECTORY)
 
 # Sign embedded binaries (inner-to-outer, before app signature)
 textmate_codesign_file(TextMate "${CS_IDENTITY}"

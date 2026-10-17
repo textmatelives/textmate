@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>fileTypes</key>
+	<array/>
+	<key>hideFromUser</key>
+	<true/>
+	<key>injectionSelector</key>
+	<string>L:(text.html.markdown - (markup.italic.markdown | markup.bold.markdown | markup.raw))</string>
+	<key>name</key>
+	<string>Markdown (GitHub Italics)</string>
+	<key>patterns</key>
+	<array>
+		<dict>
+			<key>captures</key>
+			<dict>
+				<key>1</key>
+				<dict>
+					<key>name</key>
+					<string>punctuation.definition.italic.markdown.github</string>
+				</dict>
+			</dict>
+			<key>comment</key>
+			<string>This rule matches underscores inside words to avoid italicizing partial words
+				(the grammar gets injected into the main Markdown grammar, so its rules have higher
+				precedence and thus prevent the main Markdown grammar’s pattern for italic text from
+				matching these underscores.)</string>
+			<key>match</key>
+			<string>(?&lt;=\w)(_)(?=\w)</string>
+			<key>name</key>
+			<string>markup.other</string>
+		</dict>
+	</array>
+	<key>scopeName</key>
+	<string>text.html.markdown.github</string>
+	<key>uuid</key>
+	<string>8CD0FA72-F70B-446E-9B6B-A79FC90639EE</string>
+</dict>
+</plist>

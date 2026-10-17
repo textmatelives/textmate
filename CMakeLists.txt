@@ -154,6 +154,7 @@ add_subdirectory(Frameworks/scm)
 add_subdirectory(Frameworks/file)
 add_subdirectory(Frameworks/command)
 add_subdirectory(Frameworks/layout)
+add_subdirectory(Frameworks/quicklook)
 
 # === GUI frameworks ===
 # Retained in this fork; removed in tectiv3 along with the in-app updater.
@@ -187,7 +188,7 @@ add_subdirectory(Applications/indent)
 add_subdirectory(Applications/pretty_plist)
 add_subdirectory(Applications/tm_query)
 add_subdirectory(Applications/PrivilegedTool)
-add_subdirectory(Applications/QuickLookGenerator)
+add_subdirectory(Applications/QuickLookPreview)
 add_subdirectory(Applications/NewApplication)
 add_subdirectory(Applications/TextMate)
 

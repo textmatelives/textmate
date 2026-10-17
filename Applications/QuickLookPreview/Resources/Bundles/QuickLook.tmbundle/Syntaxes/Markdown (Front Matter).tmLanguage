@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>fileTypes</key>
+	<array/>
+	<key>injectionSelector</key>
+	<string>L:text.html.markdown</string>
+	<key>name</key>
+	<string>Markdown (Front Matter)</string>
+	<key>patterns</key>
+	<array>
+		<dict>
+			<key>begin</key>
+			<string>\A---\s*\n</string>
+			<key>comment</key>
+			<string>This matches a YAML frontmatter block at the beginning of the document. The block ends with `---` or `...` (the latter mainly used by Pandoc).</string>
+			<key>contentName</key>
+			<string>text.html.markdown.yaml</string>
+			<key>end</key>
+			<string>(^|\G)(---|\.\.\.)\s*\n</string>
+			<key>name</key>
+			<string>markup.raw.block.yaml</string>
+			<key>patterns</key>
+			<array>
+				<dict>
+					<key>include</key>
+					<string>source.yaml</string>
+				</dict>
+			</array>
+		</dict>
+	</array>
+	<key>uuid</key>
+	<string>3CA38491-D938-4BBE-9860-9B6EFD775E22</string>
+</dict>
+</plist>
