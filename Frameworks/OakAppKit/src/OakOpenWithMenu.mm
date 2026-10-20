@@ -116,28 +116,14 @@ static NSURL* CanonicalURL (NSURL* url, BOOL isDirectoryFlag = YES)
 
 - (void)openDocumentURLs:(NSArray<NSURL*>*)documentURLs withApplicationURL:(NSURL*)applicationURL
 {
-	// Since we can have multiple applications for the same bundle identifier, e.g. Xcode release and beta, we must open by URL.
-	// Unfortunately the API that is URL-based does not allow opening multiple documents at once, so we use AppleScript.
+	// Since we can have multiple applications for the same bundle identifier, e.g. Xcode release and beta, we must open by URL and must not let a running copy at another URL stand in for the one chosen.
+	NSWorkspaceOpenConfiguration* configuration = [NSWorkspaceOpenConfiguration configuration];
+	configuration.allowsRunningApplicationSubstitution = NO;
 
-	NSAppleEventDescriptor* listDesc = [NSAppleEventDescriptor listDescriptor];
-	NSInteger nextIndex = 1;
-
-	for(NSURL* url in documentURLs)
-	{
-		if(NSData* urlData = [url.absoluteString dataUsingEncoding:NSUTF8StringEncoding])
-		{
-			if(NSAppleEventDescriptor* urlDesc = [NSAppleEventDescriptor descriptorWithDescriptorType:typeFileURL data:urlData])
-				[listDesc insertDescriptor:urlDesc atIndex:nextIndex++];
-		}
-	}
-
-	NSAppleEventDescriptor* odocEvent = [NSAppleEventDescriptor appleEventWithEventClass:kCoreEventClass eventID:kAEOpenDocuments targetDescriptor:nil returnID:kAutoGenerateReturnID transactionID:kAnyTransactionID];
-	[odocEvent setParamDescriptor:listDesc forKeyword:keyDirectObject];
-	NSDictionary* launchOptions = @{ NSWorkspaceLaunchConfigurationAppleEvent: odocEvent };
-
-	NSError* err = nil;
-	if(![NSWorkspace.sharedWorkspace launchApplicationAtURL:applicationURL options:NSWorkspaceLaunchDefault configuration:launchOptions error:&err])
-		NSLog(@"%@: %@", applicationURL, err.localizedDescription);
+	[NSWorkspace.sharedWorkspace openURLs:documentURLs withApplicationAtURL:applicationURL configuration:configuration completionHandler:^(NSRunningApplication* app, NSError* error){
+		if(error)
+			NSLog(@"%@: %@", applicationURL, error.localizedDescription);
+	}];
 }
 
 // ==========================
