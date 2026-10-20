@@ -219,9 +219,7 @@ static NSUserInterfaceItemIdentifier const kTableColumnIdentifierActions     = @
 @implementation BundlesPreferences
 - (NSImage*)toolbarItemImage
 {
-	if(@available(macos 11.0, *))
-		return [NSImage imageWithSystemSymbolName:@"puzzlepiece.extension" accessibilityDescription:@"Bundles"];
-	return [NSWorkspace.sharedWorkspace iconForFileType:@"tmbundle"];
+	return [NSImage imageWithSystemSymbolName:@"puzzlepiece.extension" accessibilityDescription:@"Bundles"];
 }
 
 - (id)init

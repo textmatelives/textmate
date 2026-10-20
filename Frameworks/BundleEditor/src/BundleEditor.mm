@@ -1,4 +1,5 @@
 #import "BundleEditor.h"
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 #import "PropertiesViewController.h"
 #import "OakRot13Transformer.h"
 #import "be_entry.h"
@@ -2127,7 +2128,9 @@ static NSMutableDictionary* DictionaryForPropertyList (plist::dictionary_t const
 	else
 	{
 		self.window.representedFilename = NSHomeDirectory();
-		[self.window standardWindowButton:NSWindowDocumentIconButton].image = [NSWorkspace.sharedWorkspace iconForFileType:[NSString stringWithCxxString:info.file_type]];
+		// A bundle is a package, so a data-conforming lookup would miss its declared type
+		UTType* type = [UTType typeWithFilenameExtension:[NSString stringWithCxxString:info.file_type] conformingToType:info.kind == bundles::kItemTypeBundle ? UTTypePackage : UTTypeData];
+		[self.window standardWindowButton:NSWindowDocumentIconButton].image = [NSWorkspace.sharedWorkspace iconForContentType:type ?: UTTypeData];
 	}
 
 	plist::dictionary_t const& plist = it != changes.end() ? it->second : bundleItem->plist();

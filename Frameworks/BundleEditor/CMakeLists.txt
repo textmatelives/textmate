@@ -4,4 +4,5 @@ target_sources(BundleEditor PRIVATE ${_src})
 textmate_framework(BundleEditor)
 target_link_libraries(BundleEditor PUBLIC
   BundlesManager OakAppKit OakFoundation OakTextView TMFileReference bundles cf
-  command document io ns plist regexp settings text "-framework Cocoa" "-framework AddressBook")
+  command document io ns plist regexp settings text "-framework Cocoa" "-framework AddressBook"
+  "-framework UniformTypeIdentifiers")
