@@ -53,7 +53,7 @@
 	if(!_effectiveDrawAsHighlighted)
 		return [super drawSelectionInRect:dirtyRect];
 
-	[[NSColor alternateSelectedControlColor] set];
+	[NSColor.selectedContentBackgroundColor set];
 	NSRectFill(NSIntersectionRect(NSOffsetRect(NSInsetRect(self.bounds, 0, 0.5), 0, -0.5), dirtyRect));
 }
 @end

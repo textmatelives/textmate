@@ -49,7 +49,7 @@ static NSString* GetHardwareInfo (int field, BOOL isInteger = NO)
 
 - (void)userNotificationCenter:(UNUserNotificationCenter*)center willPresentNotification:(UNNotification*)notification withCompletionHandler:(void(^)(UNNotificationPresentationOptions options))completionHandler API_AVAILABLE(macosx(10.14))
 {
-	completionHandler(UNNotificationPresentationOptionAlert);
+	completionHandler(UNNotificationPresentationOptionList|UNNotificationPresentationOptionBanner);
 }
 
 - (void)postNewCrashReportsToURLString:(NSString*)urlString
