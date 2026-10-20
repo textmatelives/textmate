@@ -646,8 +646,8 @@ static CGFloat const kPaneWidth = 190;
 			// Reached only at pane 1 with the bundle behind it.
 			if(be::entry_ptr bundleEntry = [self selectedEntryInPane:0])
 			{
-				if(bundles::item_ptr bundleItem = bundleEntry->represented_item())
-					targetMenu = bundleItem->uuid();
+				if(bundles::item_ptr selectedBundle = bundleEntry->represented_item())
+					targetMenu = selectedBundle->uuid();
 			}
 			afterItem = oak::uuid_t();
 		}
