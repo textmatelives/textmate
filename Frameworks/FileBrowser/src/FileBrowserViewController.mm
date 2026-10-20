@@ -467,7 +467,7 @@ static NSMutableIndexSet* MutableLongestCommonSubsequence (NSArray* lhs, NSArray
 		[NSWorkspace.sharedWorkspace activateFileViewerSelectingURLs:[itemsToShowInFinder valueForKeyPath:@"URL"]];
 
 	for(FileItem* item in itemsToOpen)
-		[NSWorkspace.sharedWorkspace openFile:item.resolvedURL.path];
+		[NSWorkspace.sharedWorkspace openURL:item.resolvedURL];
 
 	if(itemsToOpenInTextMate.count > 0)
 		[self.delegate fileBrowser:self openURLs:[itemsToOpenInTextMate valueForKeyPath:@"URL"]];
