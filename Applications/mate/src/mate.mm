@@ -68,8 +68,22 @@ static void launch_app (bool disableUntitled)
 {
 	disable_sudo_helper_t helper;
 
-	NSError* error;
-	if(![NSWorkspace.sharedWorkspace launchApplicationAtURL:find_app() options:NSWorkspaceLaunchWithoutActivation|NSWorkspaceLaunchWithoutAddingToRecents configuration:(disableUntitled ? @{ NSWorkspaceLaunchConfigurationArguments: @[ @"-disableNewDocumentAtStartup", @"1" ] } : nil) error:&error])
+	NSWorkspaceOpenConfiguration* configuration = [NSWorkspaceOpenConfiguration configuration];
+	configuration.activates         = NO;
+	configuration.addsToRecentItems = NO;
+	if(disableUntitled)
+		configuration.arguments = @[ @"-disableNewDocumentAtStartup", @"1" ];
+
+	// The completion handler runs on a background queue, so we can block here like the old synchronous call did.
+	__block NSError* error;
+	dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
+	[NSWorkspace.sharedWorkspace openApplicationAtURL:find_app() configuration:configuration completionHandler:^(NSRunningApplication* app, NSError* launchError){
+		error = launchError;
+		dispatch_semaphore_signal(semaphore);
+	}];
+	dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
+
+	if(error)
 	{
 		fprintf(stderr, "Can’t launch TextMate.app: %s\n", error.localizedDescription.UTF8String);
 		exit(EX_UNAVAILABLE);
