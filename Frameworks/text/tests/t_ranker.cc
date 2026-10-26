@@ -72,3 +72,14 @@ void test_highlight_range ()
 	OAK_ASSERT_EQ(ranges[1].first,  4);
 	OAK_ASSERT_EQ(ranges[1].second, 5);
 }
+
+void test_large_candidate_is_still_matched ()
+{
+	std::string filter = "abcdefghijklmnopqrstuvwxy";
+	std::string candidate;
+	for(char ch : filter)
+		candidate += std::string(1, ch) + "/long/segment/";
+
+	OAK_ASSERT_GT(filter.size() * candidate.size(), 8096);
+	OAK_ASSERT_GT(oak::rank(filter, candidate), 0);
+}
