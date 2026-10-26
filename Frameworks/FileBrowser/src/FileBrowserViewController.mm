@@ -2279,20 +2279,20 @@ static NSMutableIndexSet* MutableLongestCommonSubsequence (NSArray* lhs, NSArray
 		return NSDragOperationNone;
 
 	NSPasteboard* pboard  = info.draggingPasteboard;
-	NSArray* draggedPaths = [pboard propertyListForType:NSFilenamesPboardType];
+	NSArray<NSURL*>* draggedURLs = [self URLsFromPasteboard:pboard];
 
 	dev_t targetDevice   = path::device(dropURL.fileSystemRepresentation);
 	BOOL linkOperation   = (NSApp.currentEvent.modifierFlags & NSEventModifierFlagControl) == NSEventModifierFlagControl;
 	BOOL toggleOperation = (NSApp.currentEvent.modifierFlags & NSEventModifierFlagOption) == NSEventModifierFlagOption;
 
 	// We accept the drop as long as it is valid for at least one of the items
-	for(NSString* draggedPath in draggedPaths)
+	for(NSURL* draggedURL in draggedURLs)
 	{
-		BOOL sameSource = (path::device(draggedPath.fileSystemRepresentation) == targetDevice);
+		BOOL sameSource = (path::device(draggedURL.fileSystemRepresentation) == targetDevice);
 		NSDragOperation operation = linkOperation ? NSDragOperationLink : ((sameSource != toggleOperation) ? NSDragOperationMove : NSDragOperationCopy);
 
 		// Can’t move into same location
-		NSString* parentPath = draggedPath.stringByDeletingLastPathComponent;
+		NSString* parentPath = draggedURL.path.stringByDeletingLastPathComponent;
 		if(operation == NSDragOperationMove && [parentPath isEqualToString:dropURL.path])
 			continue;
 
