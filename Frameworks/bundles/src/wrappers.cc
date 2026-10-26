@@ -211,7 +211,8 @@ namespace bundles
 		auto iter = cache.map.find(key);
 		if(iter == cache.map.end())
 		{
-			if(cache.map.size() > 1000)
+			// The cap bounds memory. A 3 MB file produces about 19,000 distinct keys, so the old cap of 1000 made the cache thrash.
+			if(cache.map.size() > 50000)
 				cache.map.clear();
 
 			auto items = query(kFieldSettingName, setting, scope, kItemTypeSettings);
