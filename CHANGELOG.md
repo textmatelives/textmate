@@ -2,6 +2,35 @@ Title: Release Notes
 
 # Changes
 
+## 2026-10-26 (v2.6.2-undead)
+
+Three bug fixes, Open Quickly finding deep files again, faster parsing of large files, and more deprecated-API work from [@tagliala](https://github.com/tagliala). See [all changes since v2.6.1-undead](https://github.com/textmatelives/textmate/compare/v2.6.1-undead...v2.6.2-undead).
+
+### File Browser
+
+* **Fixed: ⌘← and ⌘→ crashed TextMate when there was nowhere to go.** The keyboard shortcuts for back and forward stepped the history without checking its ends, so a fresh window, or one at the end of its history, took the app down. The menu items and the header buttons were always guarded; the shortcuts now are too. (`5cb577a7`)
+* **Drag and drop uses the current pasteboard types.** Dragging files onto a folder or to the Trash reads file URLs instead of the deprecated path list, as dropping already did. Drags from applications that still offer only the old type keep working. By [@tagliala](https://github.com/tagliala). (`a34468aa`)
+
+### Find
+
+* **Fixed: the Find window could open stretched, with a large empty area above the In: row.** The window remembers its size, and a size saved while search results were showing is tall. Opened in a new session to search the document, it kept that height and the options grid stretched to fill it. The window now snaps to its content while the results pane is hidden and cannot be dragged taller until results show. (`c851201b`)
+
+### Open Quickly
+
+* **Fixed: a long filter dropped files deep in a project.** The ranker skips its exact matching for long filter and path pairs and uses a rough score instead; that score was computed with integer division and came out as zero, which every chooser reads as “no match”. A 25-character filter against a path 375 characters long found nothing. The rough score is a real fraction now. By [@tagliala](https://github.com/tagliala). [#164](https://github.com/textmatelives/textmate/issues/164). (`a7f67bb5`)
+
+### Software Update
+
+* **Fixed: a blurry TextMate icon in the Dock and the ⌘Tab switcher on the first launch after an update.** The icon refresh that runs when a new version starts handed the Dock a 64-pixel image, which the switcher stretched to tile size until the next launch. It now hands over the full-resolution icon. (`ce5dd3e5`)
+
+### Performance
+
+* **Large files no longer thrash the settings cache.** The cache of resolved bundle settings cleared itself at 1,000 entries, and a 3 MB file produced about 19,000, so it refilled over and over while the file was parsed. The cap is 50,000 now; the cache is still cleared when bundles change. By [@tagliala](https://github.com/tagliala). (`553f13ee`)
+
+### Under the hood
+
+More of [#118](https://github.com/textmatelives/textmate/issues/118), none of it visible. By [@tagliala](https://github.com/tagliala): the text view accepts dropped files through the current pasteboard types (`3ec6945d`), proxy credentials are read from the keychain with the current API (`05b067d5`), the Radar link in the broken-user-database alert opens through `NSWorkspace` (`e751a0c8`), the filter list’s out-of-range accessibility exception is named by its string (`bc277157`), an unused text-clipping check is gone (`8a9652d3`), and the file browser’s Services menu keeps the legacy pasteboard types on purpose, since Finder and GPGServices still declare them, with the warning silenced and the reason recorded in [#160](https://github.com/textmatelives/textmate/issues/160) (`67732c2d`). By [@tbates](https://github.com/tbates): the dead `HOJSBridge` class from the WebView days is removed (`64ed31c8`). What remains on #118 is the Dialog plug-in’s WebView family and `NSConnection`, plus the placeholder icon decided in [#158](https://github.com/textmatelives/textmate/issues/158).
+
 ## 2026-10-25 (v2.6.1-undead)
 
 A fix for the experimental update channel and another round of deprecated-API work from [@tagliala](https://github.com/tagliala). See [all changes since v2.6.0-undead](https://github.com/textmatelives/textmate/compare/v2.6.0-undead...v2.6.1-undead).
