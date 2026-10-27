@@ -5,3 +5,5 @@ textmate_framework(Find)
 target_link_libraries(Find PUBLIC
   MenuBuilder OakAppKit OakFoundation Preferences document io ns regexp settings text
   "-framework Cocoa")
+
+textmate_add_tests(Find)

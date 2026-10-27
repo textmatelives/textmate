@@ -178,6 +178,24 @@ static NSButton* OakCreateHistoryButton (NSString* toolTip)
 	return self;
 }
 
+// Sets the window’s content height to the content’s fitting height (the
+// scaled container’s intrinsic size), keeping the top edge in place.
+static void SnapWindowToContent (NSWindow* window)
+{
+	[window layoutIfNeeded];
+	for(NSView* view in window.contentView.subviews)
+	{
+		if(![view isKindOfClass:[OakScaledContainerView class]])
+			continue;
+
+		CGFloat height  = view.intrinsicContentSize.height;
+		NSRect  content = [window contentRectForFrameRect:window.frame];
+		if(NSHeight(content) != height)
+			[window setFrame:[window frameRectForContentRect:NSMakeRect(NSMinX(content), NSMaxY(content) - height, NSWidth(content), height)] display:NO];
+		return;
+	}
+}
+
 - (void)loadWindow
 {
 	NSRect r = NSScreen.mainScreen.visibleFrame;
@@ -232,7 +250,9 @@ static NSButton* OakCreateHistoryButton (NSString* toolTip)
 		[NSNotificationCenter.defaultCenter addObserver:self selector:@selector(replaceClipboardDidChange:) name:OakPasteboardDidChangeNotification object:OakPasteboard.replacePasteboard];
 		[NSNotificationCenter.defaultCenter addObserver:self selector:@selector(textViewWillPerformFindOperation:) name:@"OakTextViewWillPerformFindOperation" object:nil];
 
-		[window layoutIfNeeded]; // Incase autosaved window frame includes results, we want to shrink the frame
+		// The autosaved frame may have been saved with the results pane showing
+		if(!_showsResultsOutlineView)
+			SnapWindowToContent(window);
 		self.window = window;
 		[self updateWindowTitle];
 	}
@@ -520,6 +540,15 @@ static NSButton* OakCreateHistoryButton (NSString* toolTip)
 {
 	if(self.showsResultsOutlineView)
 		self.findResultsHeight = NSHeight(_resultsViewController.view.frame);
+}
+
+// With the results pane hidden the window has nothing to grow into: the
+// options grid would stretch to fill the extra height. The pane’s own show
+// and hide path resizes the window programmatically (OakTransitionViewController),
+// which does not pass through windowWillResize:toSize:.
+- (NSSize)windowWillResize:(NSWindow*)sender toSize:(NSSize)frameSize
+{
+	return _showsResultsOutlineView ? frameSize : NSMakeSize(frameSize.width, NSHeight(sender.frame));
 }
 
 - (void)windowDidResignKey:(NSNotification*)aNotification
