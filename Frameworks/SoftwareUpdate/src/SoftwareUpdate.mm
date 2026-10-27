@@ -358,6 +358,17 @@ BOOL OakVersionChangedSinceLastLaunch (NSString* lastVersion, NSString* currentV
 	return lastVersion.length && currentVersion.length && ![lastVersion isEqualToString:currentVersion];
 }
 
+NSImage* OakDockIconImageForBundleAtPath (NSString* path)
+{
+	NSImage* icon = [NSWorkspace.sharedWorkspace iconForFile:path];
+	CGFloat largest = 0;
+	for(NSImageRep* rep in icon.representations)
+		largest = std::max(largest, std::max(rep.size.width, rep.size.height));
+	if(largest > 0)
+		icon.size = NSMakeSize(largest, largest);
+	return icon;
+}
+
 @interface SoftwareUpdate ()
 {
 	NSBackgroundActivityScheduler* _updateCheckScheduler;

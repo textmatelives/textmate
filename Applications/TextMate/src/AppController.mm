@@ -97,7 +97,9 @@ static NSString* const kUserDefaultsLastLaunchedVersionKey = @"lastLaunchedVersi
 // On the first launch of a new version, show the current icon in the Dock.
 // The Dock can keep the tile it cached for the previous version, in its
 // recents section in particular, and a Dock restart does not refresh it.
-// Icon Services asked by path is what Finder uses and is current.
+// Icon Services asked by path is what Finder uses and is current; the helper
+// sizes it so the Dock gets the full-resolution bitmap (2.6.1 shipped a 64 px
+// one, which the ⌘Tab switcher showed stretched until the next launch).
 static void RefreshDockIconIfUpdated ()
 {
 	NSUserDefaults* defaults = NSUserDefaults.standardUserDefaults;
@@ -110,7 +112,7 @@ static void RefreshDockIconIfUpdated ()
 	if(!OakVersionChangedSinceLastLaunch(lastVersion, currentVersion))
 		return;
 
-	if(NSImage* icon = [NSWorkspace.sharedWorkspace iconForFile:NSBundle.mainBundle.bundlePath])
+	if(NSImage* icon = OakDockIconImageForBundleAtPath(NSBundle.mainBundle.bundlePath))
 		NSApp.applicationIconImage = icon;
 }
 
