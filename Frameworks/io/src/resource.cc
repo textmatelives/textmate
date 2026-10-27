@@ -4,23 +4,6 @@
 
 namespace path
 {
-	bool is_text_clipping (std::string const& path)
-	{
-		bool res = false;
-		if(extension(path) == "textClipping")
-		{
-			res = true;
-		}
-		else if(CFURLRef url = CFURLCreateFromFileSystemRepresentation(kCFAllocatorDefault, (UInt8 const*)path.data(), path.size(), false))
-		{
-			LSItemInfoRecord info;
-			if(noErr == LSCopyItemInfoForURL(url, kLSRequestTypeCreator, &info))
-				res = info.filetype == kClippingTextType;
-			CFRelease(url);
-		}
-		return res;
-	}
-
 	std::string resource (std::string const& path, ResType theType, ResID theID)
 	{
 		std::string res = NULL_STR;

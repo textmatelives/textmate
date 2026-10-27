@@ -3,7 +3,6 @@
 
 namespace path
 {
-	bool is_text_clipping (std::string const& path);
 	std::string resource (std::string const& path, ResType theType, ResID theID);
 
 } /* path */
