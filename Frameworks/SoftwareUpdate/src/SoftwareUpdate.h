@@ -31,6 +31,13 @@ BOOL OakNoteReplacedBundleAtURL (NSURL* bundleURL);
 // updater offers those too.
 BOOL OakVersionChangedSinceLastLaunch (NSString* lastVersion, NSString* currentVersion);
 
+// The bundle’s icon from Icon Services, sized for NSApp.applicationIconImage.
+// AppKit rasterises that image at its nominal size, and Icon Services returns
+// app icons at a nominal 32×32 points, so handed over as-is the Dock and the
+// ⌘Tab switcher receive a 64×64 pixel bitmap and stretch it. This raises the
+// size to the largest representation. Returns nil when there is no icon.
+NSImage* OakDockIconImageForBundleAtPath (NSString* path);
+
 // The update feed is git’s smart-HTTP ref advertisement (the body of
 // GET {repo}.git/info/refs?service=git-upload-pack — what `git ls-remote`
 // uses). Unlike api.github.com it is unmetered, so update checks cannot be
