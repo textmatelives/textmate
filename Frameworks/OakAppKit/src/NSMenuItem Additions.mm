@@ -72,7 +72,7 @@ static char const* kOakMenuItemTabTrigger    = "OakMenuItemTabTrigger";
 	else if(OakNotEmptyString([path pathExtension]))
 		icon = [NSWorkspace.sharedWorkspace iconForContentType:[UTType typeWithFilenameExtension:[path pathExtension]] ?: UTTypeData];
 	else
-		icon = [NSWorkspace.sharedWorkspace iconForFileType:NSFileTypeForHFSTypeCode(kUnknownFSObjectIcon)];
+		icon = [NSWorkspace.sharedWorkspace iconForContentType:UTTypeItem];
 
 	if(icon)
 	{

@@ -938,7 +938,7 @@ static void* kOakTabViewSelectedContext  = &kOakTabViewSelectedContext;
 		}
 		else
 		{
-			item.image = [[NSWorkspace.sharedWorkspace iconForFileType:NSFileTypeForHFSTypeCode(kUnknownFSObjectIcon)] copy];
+			item.image = [[NSWorkspace.sharedWorkspace iconForContentType:UTTypeItem] copy];
 			item.image.size = NSMakeSize(16, 16);
 		}
 
