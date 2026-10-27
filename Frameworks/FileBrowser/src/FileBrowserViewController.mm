@@ -295,8 +295,8 @@ static NSMutableIndexSet* MutableLongestCommonSubsequence (NSArray* lhs, NSArray
 - (BOOL)canGoBack                    { return _historyIndex > 0; }
 - (BOOL)canGoForward                 { return _historyIndex+1 < self.history.count; }
 
-- (void)goBack:(id)sender            { self.historyIndex = _historyIndex - 1; }
-- (void)goForward:(id)sender         { self.historyIndex = _historyIndex + 1; }
+- (void)goBack:(id)sender            { if(self.canGoBack)    self.historyIndex = _historyIndex - 1; }
+- (void)goForward:(id)sender         { if(self.canGoForward) self.historyIndex = _historyIndex + 1; }
 
 - (NSMutableArray<NSDictionary*>*)history
 {
@@ -1161,7 +1161,7 @@ static NSMutableIndexSet* MutableLongestCommonSubsequence (NSArray* lhs, NSArray
 	if([newHistory isKindOfClass:[NSArray class]] && newHistory.count)
 	{
 		self.history      = [newHistory mutableCopy];
-		self.historyIndex = std::clamp<NSInteger>([state decodeIntegerForKey:@"historyIndex"], 0, newHistory.count);
+		self.historyIndex = std::clamp<NSInteger>([state decodeIntegerForKey:@"historyIndex"], 0, newHistory.count - 1);
 
 		NSArray<NSURL*>* expandedURLs = [state decodeArrayOfObjectsOfClass:[NSURL class] forKey:@"expandedURLs"];
 		NSArray<NSURL*>* selectedURLs = [state decodeArrayOfObjectsOfClass:[NSURL class] forKey:@"selectedURLs"];
@@ -1246,7 +1246,7 @@ static NSMutableIndexSet* MutableLongestCommonSubsequence (NSArray* lhs, NSArray
 		if(newHistory.count)
 		{
 			self.history      = newHistory;
-			self.historyIndex = std::clamp([fileBrowserState[@"historyIndex"] unsignedIntegerValue], (NSUInteger)0, newHistory.count);
+			self.historyIndex = std::clamp([fileBrowserState[@"historyIndex"] unsignedIntegerValue], (NSUInteger)0, newHistory.count - 1);
 
 			NSMutableArray<NSURL*>* expandedURLs = [NSMutableArray array];
 			for(NSString* urlString in fileBrowserState[@"expanded"])
