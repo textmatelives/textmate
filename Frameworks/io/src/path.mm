@@ -813,16 +813,7 @@ namespace path
 			}
 			else if((responseFlags & 0x3) == kCFUserNotificationAlternateResponse)
 			{
-				if(CFURLRef url = CFURLCreateWithString(kCFAllocatorDefault, cf::wrap("https://openradar.appspot.com/10261043"), nullptr))
-				{
-					if(CFMutableArrayRef urls = CFArrayCreateMutable(kCFAllocatorDefault, 0, &kCFTypeArrayCallBacks))
-					{
-						CFArrayAppendValue(urls, url);
-						LSOpenURLsWithRole(urls, kLSRolesViewer, nullptr, nullptr, nullptr, 0);
-						CFRelease(urls);
-					}
-					CFRelease(url);
-				}
+				[[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:@"https://openradar.appspot.com/10261043"]];
 			}
 		}
 		return entry;
