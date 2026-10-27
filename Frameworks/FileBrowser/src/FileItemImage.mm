@@ -7,7 +7,7 @@ NSImage* CreateIconImageForURL (NSURL* url, BOOL isModified, BOOL isMissing, BOO
 
 	if(isMissing && (scmStatus == scm::status::none || scmStatus == scm::status::unknown))
 	{
-		res = [NSWorkspace.sharedWorkspace iconForFileType:NSFileTypeForHFSTypeCode(kUnknownFSObjectIcon)];
+		res = [NSWorkspace.sharedWorkspace iconForContentType:UTTypeItem];
 	}
 	else
 	{
