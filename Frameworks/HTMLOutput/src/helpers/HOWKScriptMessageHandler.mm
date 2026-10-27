@@ -1,5 +1,4 @@
 #import "HOWKScriptMessageHandler.h"
-#import "HOJSBridge.h" // for HOJSBridgeDelegate protocol
 #import "add_to_buffer.h"
 #import <OakFoundation/NSString Additions.h>
 #import <document/OakDocument.h>

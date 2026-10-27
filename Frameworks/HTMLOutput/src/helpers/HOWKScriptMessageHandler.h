@@ -1,6 +1,9 @@
 #import <WebKit/WebKit.h>
 
-@protocol HOJSBridgeDelegate;
+@protocol HOJSBridgeDelegate
+@property (nonatomic, getter = isBusy) BOOL busy;
+@property (nonatomic) double progress;
+@end
 
 @interface HOWKScriptMessageHandler : NSObject <WKScriptMessageHandler>
 @property (nonatomic, weak) id<HOJSBridgeDelegate> delegate;

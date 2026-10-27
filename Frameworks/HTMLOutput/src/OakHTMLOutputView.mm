@@ -1,7 +1,6 @@
 #import "OakHTMLOutputView.h"
 #import "browser/HOStatusBar.h"
 #import "helpers/HOAutoScroll.h"
-#import "helpers/HOJSBridge.h"
 #import "helpers/HOWKScriptMessageHandler.h"
 #import "helpers/OakLocalLinkPolicy.h"
 #import "helpers/OakHTMLOutputPageCache.h"
