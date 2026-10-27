@@ -136,7 +136,11 @@ static NSMutableIndexSet* MutableLongestCommonSubsequence (NSArray* lhs, NSArray
 
 + (void)initialize
 {
+	// Services declare the legacy send types and AppKit matches them by exact string, see #160
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 	[NSApplication.sharedApplication registerServicesMenuSendTypes:@[ NSFilenamesPboardType, NSURLPboardType ] returnTypes:@[ ]];
+#pragma clang diagnostic pop
 
 	[NSUserDefaults.standardUserDefaults registerDefaults:@{
 		kUserDefaultsFoldersOnTopKey: [[[NSUserDefaults alloc] initWithSuiteName:@"com.apple.finder"] objectForKey:@"_FXSortFoldersFirst"] ?: @NO,
@@ -2255,7 +2259,11 @@ static NSMutableIndexSet* MutableLongestCommonSubsequence (NSArray* lhs, NSArray
 
 - (id)validRequestorForSendType:(NSString*)sendType returnType:(NSString*)returnType
 {
+	// Legacy types on purpose, see #160
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 	return returnType == nil && sendType != nil && [@[ NSFilenamesPboardType, NSURLPboardType ] containsObject:sendType] ? self : nil;
+#pragma clang diagnostic pop
 }
 
 - (BOOL)writeSelectionToPasteboard:(NSPasteboard*)pboard types:(NSArray*)types
