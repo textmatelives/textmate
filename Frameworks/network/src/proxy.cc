@@ -31,23 +31,21 @@ static proxy_settings_t user_pw_settings (CFStringRef server, CFNumberRef portNu
 		CFIndex numResults = CFArrayGetCount(results);
 		for(CFIndex i = 0; user == NULL_STR && i < numResults; ++i)
 		{
-			SecKeychainItemRef item = (SecKeychainItemRef)CFArrayGetValueAtIndex(results, i);
+			CFTypeRef itemKeys[] = { kSecClass, kSecValueRef, kSecReturnAttributes, kSecReturnData };
+			CFTypeRef itemVals[] = { kSecClassInternetPassword, CFArrayGetValueAtIndex(results, i), kCFBooleanTrue, kCFBooleanTrue };
+			CFDictionaryRef itemQuery = CFDictionaryCreate(kCFAllocatorDefault, itemKeys, itemVals, sizeofA(itemKeys), nullptr, nullptr);
 
-			UInt32 tag    = kSecAccountItemAttr;
-			UInt32 format = CSSM_DB_ATTRIBUTE_FORMAT_STRING;
-			SecKeychainAttributeInfo info = { 1, &tag, &format };
-
-			void* data = nullptr;
-			UInt32 dataLen = 0;
-
-			SecKeychainAttributeList* authAttrList = nullptr;
-			if(SecKeychainItemCopyAttributesAndData(item, &info, nullptr, &authAttrList, &dataLen, &data) == noErr)
+			CFDictionaryRef item = nullptr;
+			if(SecItemCopyMatching(itemQuery, (CFTypeRef*)&item) == errSecSuccess)
 			{
-				ASSERT(authAttrList->count == 1 && authAttrList->attr->tag == kSecAccountItemAttr);
-				user = std::string((char const*)authAttrList->attr->data, ((char const*)authAttrList->attr->data) + authAttrList->attr->length);
-				pw   = std::string((char const*)data, ((char const*)data) + dataLen);
-				SecKeychainItemFreeAttributesAndData(authAttrList, data);
+				CFStringRef account = (CFStringRef)CFDictionaryGetValue(item, kSecAttrAccount);
+				CFDataRef data      = (CFDataRef)CFDictionaryGetValue(item, kSecValueData);
+				// An empty account name is returned as a missing key
+				user = account ? cf::to_s(account) : "";
+				pw   = data ? std::string((char const*)CFDataGetBytePtr(data), CFDataGetLength(data)) : "";
+				CFRelease(item);
 			}
+			CFRelease(itemQuery);
 		}
 
 		CFRelease(results);
