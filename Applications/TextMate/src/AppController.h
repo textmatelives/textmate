@@ -2,6 +2,7 @@
 {
 	NSMenu* bundlesMenu;
 	NSMenu* themesMenu;
+	NSMenu* previewThemesMenu;
 	NSMenu* spellingMenu;
 	NSMenu* wrapColumnMenu;
 

@@ -13,6 +13,7 @@
 #import <OakTextView/OakTextView.h>
 #import <oak/debug.h>
 #import <BundleMenu/BundleMenu.h>
+#import <HTMLOutput/helpers/OakWebPreviewTheme.h>
 #import <theme/theme.h>
 #import <settings/settings.h>
 
@@ -93,6 +94,12 @@ static NSString* NameForLocaleIdentifier (NSString* languageCode)
 
 		[NSUserDefaults.standardUserDefaults removeObjectForKey:@"changeThemeBasedOnAppearance"];
 	}];
+}
+
+- (void)takeWebPreviewThemeFrom:(id)sender
+{
+	if(OakWebPreviewTheme* theme = [sender representedObject])
+		OakWebPreviewSelectTheme(theme);
 }
 
 - (void)takeThemeAppearanceFrom:(id)sender
@@ -257,6 +264,8 @@ static NSString* NameForLocaleIdentifier (NSString* languageCode)
 		[self bundlesMenuNeedsUpdate:aMenu];
 	else if(aMenu == themesMenu)
 		[self themesMenuNeedsUpdate:aMenu];
+	else if(aMenu == previewThemesMenu)
+		OakWebPreviewPopulateThemeMenu(aMenu, OakWebPreviewThemesInDirectories(OakWebPreviewThemeDirectories()), OakWebPreviewSelectedThemeClass(), self, @selector(takeWebPreviewThemeFrom:));
 	else if(aMenu == spellingMenu)
 		[self spellingMenuNeedsUpdate:aMenu];
 	else if(aMenu == wrapColumnMenu)

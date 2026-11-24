@@ -302,6 +302,7 @@ static void RefreshDockIconIfUpdated ()
 					}
 				},
 				{ @"Theme",                  .submenuRef = &themesMenu                },
+				{ @"Preview Theme",          .submenuRef = &previewThemesMenu         },
 				{ /* -------- */ },
 				{ @"Fold Current Block",     @selector(toggleCurrentFolding:), .modifierFlags = 0, .key = NSF1FunctionKey },
 				{ @"Toggle Foldings at Level",
@@ -447,6 +448,7 @@ static void RefreshDockIconIfUpdated ()
 	NSMenu* menu = MBCreateMenu(items, [[OakMainMenu alloc] initWithTitle:@"AMainMenu"]);
 	bundlesMenu.delegate    = self;
 	themesMenu.delegate     = self;
+	previewThemesMenu.delegate = self;
 	spellingMenu.delegate   = self;
 	wrapColumnMenu.delegate = self;
 	return menu;

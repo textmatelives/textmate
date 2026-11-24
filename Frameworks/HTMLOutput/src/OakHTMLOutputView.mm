@@ -1,4 +1,5 @@
 #import "OakHTMLOutputView.h"
+#import "helpers/OakWebPreviewZoom.h"
 #import "browser/HOStatusBar.h"
 #import "helpers/HOAutoScroll.h"
 #import "helpers/HOWKScriptMessageHandler.h"
@@ -352,7 +353,10 @@ static std::string page_key (NSURL* url)
 
 - (IBAction)printDocument:(id)sender
 {
-	NSPrintInfo* printInfo = [NSPrintInfo sharedPrintInfo];
+	// Half-inch margins instead of the shared print info's inch-plus, and the on-screen zoom carries over to paper
+	NSPrintInfo* printInfo = [NSPrintInfo.sharedPrintInfo copy];
+	printInfo.topMargin = printInfo.bottomMargin = printInfo.leftMargin = printInfo.rightMargin = 36;
+	printInfo.scalingFactor = OakWebPreviewZoom();
 	NSPrintOperation* printOp = [self.webView printOperationWithPrintInfo:printInfo];
 	[[printOp printPanel] setOptions:[[printOp printPanel] options] | NSPrintPanelShowsPaperSize | NSPrintPanelShowsOrientation];
 	[printOp runOperationModalForWindow:self.window delegate:nil didRunSelector:NULL contextInfo:nil];

@@ -5,6 +5,8 @@
 #import "../helpers/OakFileURLSchemeHandler.h"
 #import "../helpers/OakFileHandleURLSchemeHandler.h"
 #import "../helpers/OakSystemCommandURLSchemeHandler.h"
+#import "../helpers/OakWebPreviewTheme.h"
+#import "../helpers/OakWebPreviewZoom.h"
 #import <OakAppKit/OakUIConstructionFunctions.h>
 #import <OakAppKit/NSAlert Additions.h>
 
@@ -28,6 +30,8 @@ static NSString* EscapeHTML (NSString* str)
 	{
 		[self setupWebView];
 		[NSNotificationCenter.defaultCenter addObserver:self selector:@selector(uiFontScaleFactorDidChange:) name:OakUIFontScaleFactorDidChangeNotification object:nil];
+		[NSNotificationCenter.defaultCenter addObserver:self selector:@selector(uiFontScaleFactorDidChange:) name:OakWebPreviewZoomDidChangeNotification object:nil];
+		[NSNotificationCenter.defaultCenter addObserver:self selector:@selector(webPreviewThemeDidChange:) name:OakWebPreviewThemeDidChangeNotification object:nil];
 
 		_statusBar = [[HOStatusBar alloc] initWithFrame:NSZeroRect];
 		_statusBar.delegate = _webView;
@@ -86,7 +90,7 @@ static NSString* EscapeHTML (NSString* str)
 	_webView = [[WKWebView alloc] initWithFrame:NSZeroRect configuration:config];
 	_webView.navigationDelegate = self;
 	_webView.UIDelegate = self;
-	_webView.pageZoom = OakUIFontScaleFactor();
+	_webView.pageZoom = OakUIFontScaleFactor() * OakWebPreviewZoom();
 
 	_scriptMessageHandler.webView = _webView;
 }
@@ -98,7 +102,29 @@ static NSString* EscapeHTML (NSString* str)
 
 - (void)uiFontScaleFactorDidChange:(NSNotification*)aNotification
 {
-	_webView.pageZoom = OakUIFontScaleFactor();
+	_webView.pageZoom = OakUIFontScaleFactor() * OakWebPreviewZoom();
+}
+
+- (void)webPreviewThemeDidChange:(NSNotification*)aNotification
+{
+	if(OakWebPreviewTheme* theme = aNotification.object)
+		[_webView evaluateJavaScript:OakWebPreviewApplyThemeScript(theme) completionHandler:nil];
+}
+
+// ⌘+ / ⌘- / ⌘0 while the output view is in the responder chain; the zoom is shared by all output views and remembered
+- (IBAction)makeTextLarger:(id)sender       { OakWebPreviewSetZoom(OakWebPreviewZoomStep(OakWebPreviewZoom(), +1)); }
+- (IBAction)makeTextSmaller:(id)sender      { OakWebPreviewSetZoom(OakWebPreviewZoomStep(OakWebPreviewZoom(), -1)); }
+- (IBAction)makeTextStandardSize:(id)sender { OakWebPreviewSetZoom(1.0); }
+
+- (BOOL)validateMenuItem:(NSMenuItem*)item
+{
+	if(item.action == @selector(makeTextLarger:))
+		return OakWebPreviewZoom() < kOakWebPreviewZoomMaximum;
+	else if(item.action == @selector(makeTextSmaller:))
+		return OakWebPreviewZoom() > kOakWebPreviewZoomMinimum;
+	else if(item.action == @selector(makeTextStandardSize:))
+		return OakWebPreviewZoom() != 1.0;
+	return YES;
 }
 
 - (void)dealloc
