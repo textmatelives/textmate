@@ -18,6 +18,6 @@ if(NOT EXISTS "${_flat_include}/OakHTMLOutputRequestMetadata.h")
 endif()
 target_include_directories(HTMLOutput PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/include-flat")
 target_link_libraries(HTMLOutput PUBLIC
-  OakAppKit OakFoundation OakSystem cf document io ns text "-framework Cocoa" "-framework WebKit" "-framework UniformTypeIdentifiers")
+  OakAppKit OakFoundation OakSystem bundles cf document io ns text "-framework Cocoa" "-framework WebKit" "-framework UniformTypeIdentifiers")
 
 textmate_add_tests(HTMLOutput)
