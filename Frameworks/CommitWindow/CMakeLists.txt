@@ -8,6 +8,8 @@ target_link_libraries(CommitWindow PUBLIC
   "-framework Cocoa")
 
 # CLI tool: CommitWindowTool (embedded into CommitWindow as "commit")
-add_executable(CommitWindowTool tool/commit.mm)
+add_executable(CommitWindowTool tool/commit.mm src/OakMessagePort.mm)
 target_include_directories(CommitWindowTool PRIVATE
   $<TARGET_PROPERTY:CommitWindow,INTERFACE_INCLUDE_DIRECTORIES>)
+
+textmate_add_tests(CommitWindow)

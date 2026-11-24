@@ -1,61 +1,8 @@
 #include <CommitWindow/CommitWindow.h>
+#include <CommitWindow/OakMessagePort.h>
 #include <oak/oak.h>
 
-static double const AppVersion = 1.1;
-
-@interface OakCommitWindowClient : NSObject <OakCommitWindowClientProtocol>
-@property (nonatomic) NSString*     portName;
-@property (nonatomic) NSConnection* connection;
-@property (nonatomic) NSInteger     returnCode;
-@end
-
-@implementation OakCommitWindowClient
-- (id)init
-{
-	if(self = [super init])
-	{
-		_portName   = [NSString stringWithFormat:@"com.macromates.commit-window-client.%d", getpid()];
-		_connection = [NSConnection new];
-
-		[_connection setRootObject:self];
-		if([_connection registerName:_portName] == NO)
-		{
-			fprintf(stderr, "%s: failed vending object as ‘%s’\n", getprogname(), [_portName UTF8String]);
-			return nil;
-		}
-	}
-	return self;
-}
-
-- (void)connectFromServerWithOptions:(NSDictionary*)someOptions
-{
-	if(NSString* err = someOptions[kOakCommitWindowStandardError])
-		fprintf(stderr, "%s", [err UTF8String]);
-
-	if(NSString* out = someOptions[kOakCommitWindowStandardOutput])
-	{
-		fprintf(stdout, "%s", [out UTF8String]);
-
-		if([someOptions[kOakCommitWindowContinue] boolValue])
-			fprintf(stdout, "TM_SCM_COMMIT_CONTINUE=1\n");
-	}
-
-	_returnCode = [someOptions[kOakCommitWindowReturnCode] intValue];
-
-	// Tear down the connection in next run loop iteration.
-	// This should make us run long enough to allow the sender to get a reply.
-	[self performSelector:@selector(setConnection:) withObject:nil afterDelay:0];
-
-	// Prior to 10.9 the above does not cause runMode:beforeDate: to return,
-	// so for the benefit of 10.7 and 10.8 users, we explicitly call exit()
-	[self performSelector:@selector(terminate:) withObject:nil afterDelay:0];
-}
-
-- (void)terminate:(id)sender
-{
-	exit(self.returnCode);
-}
-@end
+static double const AppVersion = 1.2;
 
 int main (int argc, char* argv[])
 {
@@ -66,34 +13,52 @@ int main (int argc, char* argv[])
 	}
 
 	@autoreleasepool {
-		if(OakCommitWindowClient* client = [[OakCommitWindowClient alloc] init])
+		// The app answers on a port of ours once the user is done with the commit window
+		NSString* portName = [NSString stringWithFormat:@"com.macromates.commit-window-client.%d", getpid()];
+		__block NSDictionary* result;
+		OakMessagePortServer* client = [[OakMessagePortServer alloc] initWithName:portName handler:^NSDictionary*(NSDictionary* options){
+			result = options;
+			CFRunLoopStop(CFRunLoopGetCurrent());
+			return nil;
+		}];
+
+		if(!client)
 		{
-			NSMutableArray* arg = [NSMutableArray array];
-			for(size_t i = 0; i < argc; ++i)
-				[arg addObject:@(argv[i])];
-
-			NSDictionary* plist = @{
-				kOakCommitWindowClientPortName: client.portName,
-				kOakCommitWindowArguments:      arg,
-				kOakCommitWindowEnvironment:    [[NSProcessInfo processInfo] environment],
-			};
-
-			NSString* serviceName = [NSString stringWithFormat:@"%@.CommitWindow.%@", NSProcessInfo.processInfo.environment[@"TM_APP_IDENTIFIER"], NSProcessInfo.processInfo.environment[@"TM_PID"]];
-			if(id proxy = [NSConnection rootProxyForConnectionWithRegisteredName:serviceName host:nil])
-			{
-				[proxy setProtocolForProxy:@protocol(OakCommitWindowServerProtocol)];
-				[proxy connectFromClientWithOptions:plist];
-
-				while(client.connection)
-					[[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode beforeDate:[NSDate distantFuture]];
-
-				return client.returnCode;
-			}
-			else
-			{
-				fprintf(stderr, "%s: failed connecting to ‘%s’\n", getprogname(), serviceName.UTF8String);
-			}
+			fprintf(stderr, "%s: failed vending object as ‘%s’\n", getprogname(), portName.UTF8String);
+			return EX_OK;
 		}
+
+		NSMutableArray* arg = [NSMutableArray array];
+		for(size_t i = 0; i < argc; ++i)
+			[arg addObject:@(argv[i])];
+
+		NSDictionary* plist = @{
+			kOakCommitWindowClientPortName: portName,
+			kOakCommitWindowArguments:      arg,
+			kOakCommitWindowEnvironment:    [[NSProcessInfo processInfo] environment],
+		};
+
+		NSString* serviceName = [NSString stringWithFormat:@"%@.CommitWindow.%@", NSProcessInfo.processInfo.environment[@"TM_APP_IDENTIFIER"], NSProcessInfo.processInfo.environment[@"TM_PID"]];
+		if(!OakMessagePortSendRequest(serviceName, plist, 10))
+		{
+			fprintf(stderr, "%s: failed connecting to ‘%s’\n", getprogname(), serviceName.UTF8String);
+			return EX_OK;
+		}
+
+		while(!result)
+			CFRunLoopRun();
+
+		if(NSString* err = result[kOakCommitWindowStandardError])
+			fprintf(stderr, "%s", err.UTF8String);
+
+		if(NSString* out = result[kOakCommitWindowStandardOutput])
+		{
+			fprintf(stdout, "%s", out.UTF8String);
+			if([result[kOakCommitWindowContinue] boolValue])
+				fprintf(stdout, "TM_SCM_COMMIT_CONTINUE=1\n");
+		}
+
+		[client invalidate];
+		return [result[kOakCommitWindowReturnCode] intValue];
 	}
-	return EX_OK;
 }
