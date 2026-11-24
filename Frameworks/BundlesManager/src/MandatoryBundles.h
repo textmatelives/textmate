@@ -46,11 +46,11 @@ static struct TMMandatoryBundle const kTMMandatoryBundles[] = {
 		"24eb8e60b1cd842e778ac5fa80cd77db454f8c2e",
 		"Other",
 	},
-	// branch: master (upstream textmate/themes.tmbundle — pure data, no Ruby)
+	// branch: main (fork of textmate/themes.tmbundle — pure data, no Ruby)
 	{
 		"A4380B27-F366-4C70-A542-B00D26ED997E",
 		"Themes",
-		"https://github.com/textmate/themes.tmbundle",
+		"https://github.com/textmatelives/themes.tmbundle",
 		"e6e918506291b2dec178ad1b7e6f04653d25818c",
 		"Themes",
 	},

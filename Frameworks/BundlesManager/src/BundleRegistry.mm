@@ -134,6 +134,7 @@ static NSString* const kBundleSupportSupportSubpath = @"Support";
 		{
 			// The user may not rewrite url/ref for a mandatory bundle; we
 			// silently restore the pinned values on every load.
+			existing.url = [NSString stringWithUTF8String:m.url];
 			existing.ref = sha;
 		}
 		existing.category = category;
