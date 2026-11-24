@@ -14,7 +14,7 @@ A crash that any accessibility client could trigger is fixed, the HTML output wi
 
 * **⌘+ and ⌘- zoom the output window.** View → Font → Bigger, Smaller and Default Size work while an output view has the focus. The zoom is shared by every output view, remembered across launches, and limited to 50–300 percent. [#174](https://github.com/textmatelives/textmate/issues/174). (`aad2ba65`)
 * **View → Preview Theme picks the web preview theme.** The in-page theme switcher Bundle Support draws has been hidden since the output window got tabs; the themes are back as a menu. It lists the Themes bundle’s web themes and any in `~/Library/Application Support/TextMate/Themes/Webpreview`, checks the current one, switches open previews on the spot, and stores the choice where Bundle Support reads it for the next preview. [#174](https://github.com/textmatelives/textmate/issues/174). (`aad2ba65`)
-* **Printing uses half-inch margins and the on-screen zoom.** Printing took the shared print info’s margins, more than an inch a side, around the theme’s 10-point print font. The margins are half an inch now, and ⌘+ before printing makes the paper copy larger too. [#174](https://github.com/textmatelives/textmate/issues/174). (`aad2ba65`)
+* **Printing uses half-inch margins and the on-screen zoom.** Printing took whatever margins the shared print info carried. It sets half-inch margins now, and the zoom becomes the print scaling factor, so ⌘+ before printing makes the paper copy larger too. [#174](https://github.com/textmatelives/textmate/issues/174). (`aad2ba65`)
 
 ### Bundles
 
