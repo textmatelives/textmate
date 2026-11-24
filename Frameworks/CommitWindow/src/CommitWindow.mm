@@ -1,4 +1,5 @@
 #import "CommitWindow.h"
+#import "OakMessagePort.h"
 #import "CWItem.h"
 #import "CWStatusStringTransformer.h"
 #import "CWTableCellView.h"
@@ -561,36 +562,30 @@ static void* kOakCommitWindowIncludeItemObserverContext = &kOakCommitWindowInclu
 	if(!self.clientPortName) // Reply already sent
 		return;
 
-	if(id proxy = [NSConnection rootProxyForConnectionWithRegisteredName:self.clientPortName host:nil])
+	NSDictionary* reply = @{ kOakCommitWindowReturnCode: @1 };
+	if(success)
 	{
-		[proxy setProtocolForProxy:@protocol(OakCommitWindowClientProtocol)];
-
-		if(success)
+		NSString* commitMessage = self.documentView.document.content;
+		NSMutableArray* outputArray = [NSMutableArray array];
+		[outputArray addObject:[NSString stringWithFormat:@" -m '%@' ", [commitMessage stringByReplacingOccurrencesOfString:@"'" withString:@"'\"'\"'"]]];
+		for(CWItem* item in [_arrayController arrangedObjects])
 		{
-			NSString* commitMessage = self.documentView.document.content;
-			NSMutableArray* outputArray = [NSMutableArray array];
-			[outputArray addObject:[NSString stringWithFormat:@" -m '%@' ", [commitMessage stringByReplacingOccurrencesOfString:@"'" withString:@"'\"'\"'"]]];
-			for(CWItem* item in [_arrayController arrangedObjects])
-			{
-				if(item.commit)
-					[outputArray addObject:[NSString stringWithCxxString:path::escape(to_s(item.path))]];
-			}
-			[outputArray addObject:@"\n"];
-			[proxy connectFromServerWithOptions:@{
-				kOakCommitWindowStandardOutput: [outputArray componentsJoinedByString:@" "],
-				kOakCommitWindowReturnCode:     @0,
-				kOakCommitWindowContinue:       @(continueFlag),
-			}];
+			if(item.commit)
+				[outputArray addObject:[NSString stringWithCxxString:path::escape(to_s(item.path))]];
 		}
-		else
-		{
-			[proxy connectFromServerWithOptions:@{
-				kOakCommitWindowReturnCode:     @1,
-			}];
-		}
-		[self saveCommitMessage];
-		self.clientPortName = nil;
+		[outputArray addObject:@"\n"];
+		reply = @{
+			kOakCommitWindowStandardOutput: [outputArray componentsJoinedByString:@" "],
+			kOakCommitWindowReturnCode:     @0,
+			kOakCommitWindowContinue:       @(continueFlag),
+		};
 	}
+
+	if(!OakMessagePortSendRequest(self.clientPortName, reply, 5))
+		os_log_error(OS_LOG_DEFAULT, "Failed to reach the commit tool at ‘%{public}@’", self.clientPortName);
+
+	[self saveCommitMessage];
+	self.clientPortName = nil;
 
 	[self performSelector:@selector(setRetainedSelf:) withObject:nil afterDelay:0];
 }
@@ -881,7 +876,7 @@ static void* kOakCommitWindowIncludeItemObserverContext = &kOakCommitWindowInclu
 @end
 
 @interface OakCommitWindowServer ()
-@property (nonatomic) NSConnection* connection;
+@property (nonatomic) OakMessagePortServer* server;
 @end
 
 @implementation OakCommitWindowServer
@@ -895,12 +890,16 @@ static void* kOakCommitWindowIncludeItemObserverContext = &kOakCommitWindowInclu
 {
 	if(self = [super init])
 	{
-		_connection = [NSConnection new];
-		[_connection setRootObject:self];
-
 		NSString* serviceName = [NSString stringWithFormat:@"%@.CommitWindow.%d", NSBundle.mainBundle.bundleIdentifier, getpid()];
-		if([_connection registerName:serviceName] == NO)
-			os_log_error(OS_LOG_DEFAULT, "Failed to setup connection ‘%@’", serviceName);
+		__weak OakCommitWindowServer* weakSelf = self;
+		_server = [[OakMessagePortServer alloc] initWithName:serviceName handler:^NSDictionary*(NSDictionary* options){
+			dispatch_async(dispatch_get_main_queue(), ^{
+				[weakSelf connectFromClientWithOptions:options];
+			});
+			return nil; // the result goes to the tool's own port when the window closes
+		}];
+		if(!_server)
+			os_log_error(OS_LOG_DEFAULT, "Failed to setup connection ‘%{public}@’", serviceName);
 	}
 	return self;
 }

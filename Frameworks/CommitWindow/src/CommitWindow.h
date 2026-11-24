@@ -6,14 +6,8 @@ static NSString* const kOakCommitWindowStandardError        = @"stderr";
 static NSString* const kOakCommitWindowReturnCode           = @"returnCode";
 static NSString* const kOakCommitWindowContinue             = @"continue";
 
-@protocol OakCommitWindowClientProtocol <NSObject>
-- (void)connectFromServerWithOptions:(NSDictionary*)someOptions;
-@end
-
-@protocol OakCommitWindowServerProtocol <NSObject>
-- (void)connectFromClientWithOptions:(NSDictionary*)someOptions;
-@end
-
-@interface OakCommitWindowServer : NSObject <OakCommitWindowServerProtocol>
+// The tool sends its arguments and environment to the app's port and waits for the result on a port of its own (see OakMessagePort.h).
+@interface OakCommitWindowServer : NSObject
 @property (class, readonly) OakCommitWindowServer* sharedInstance;
+- (void)connectFromClientWithOptions:(NSDictionary*)someOptions;
 @end
