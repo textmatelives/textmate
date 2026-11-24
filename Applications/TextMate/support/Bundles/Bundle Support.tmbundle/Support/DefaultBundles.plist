@@ -378,6 +378,22 @@
 			<key>category</key>
 			<string>Languages</string>
 			<key>description</key>
+			<string>Syntax highlighting for Mermaid diagram source, in .mmd files and in fenced mermaid blocks of Markdown documents.</string>
+			<key>name</key>
+			<string>Mermaid</string>
+			<key>ref</key>
+			<string>main</string>
+			<key>url</key>
+			<string>https://github.com/textmatelives/mermaid.tmbundle</string>
+			<key>uuid</key>
+			<string>579F81BE-22E6-4793-B272-119AA6B3CE6F</string>
+		</dict>
+		<dict>
+			<key>autoUpdate</key>
+			<true/>
+			<key>category</key>
+			<string>Languages</string>
+			<key>description</key>
 			<string>Syntax highlighting and utilities for the Nix expression language</string>
 			<key>name</key>
 			<string>Nix</string>
