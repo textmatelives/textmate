@@ -4,9 +4,7 @@
 static id TranslateAXRange(NSRange range, NSUInteger length, id (^process)(NSUInteger left, NSRange range, NSUInteger right), NSUInteger leftMargin = 1, NSUInteger rightMargin = 1)
 {
 	if(NSMaxRange(range) > leftMargin + length + rightMargin)
-		@throw [NSException exceptionWithName:@"NSAccessibilityException"
-		                               reason:[NSString stringWithFormat:@"TranslateAXRange: requested range %@ out of bounds for (%@,%@,%@)", NSStringFromRange(range), @(leftMargin), @(length), @(rightMargin)]
-		                             userInfo:nil];
+		return nil;
 
 	NSRange const leftMarginRange = NSMakeRange(0, leftMargin);
 	NSRange const rightMarginRange = NSMakeRange(leftMargin + length, rightMargin);
