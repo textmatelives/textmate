@@ -805,7 +805,7 @@ namespace path
 			std::string message = text::format("Unable to obtain basic system information such as your home folder.\n\ngetpwuid(%d): %s", getuid(), errStr);
 
 			CFOptionFlags responseFlags;
-			CFUserNotificationDisplayAlert(0 /* timeout */, kCFUserNotificationStopAlertLevel, nullptr /* iconURL */, nullptr /* soundURL */, nullptr /* localizationURL */, CFSTR("Missing User Database"), cf::wrap(message), CFSTR("Retry"), CFSTR("Show Radar Entry"), nil /* otherButtonTitle */, &responseFlags);
+			CFUserNotificationDisplayAlert(0 /* timeout */, kCFUserNotificationStopAlertLevel, nullptr /* iconURL */, nullptr /* soundURL */, nullptr /* localizationURL */, CFSTR("Missing User Database"), cf::wrap(message), CFSTR("Retry"), CFSTR("Report Issue"), nil /* otherButtonTitle */, &responseFlags);
 
 			if((responseFlags & 0x3) == kCFUserNotificationDefaultResponse)
 			{
@@ -813,7 +813,7 @@ namespace path
 			}
 			else if((responseFlags & 0x3) == kCFUserNotificationAlternateResponse)
 			{
-				[[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:@"https://openradar.appspot.com/10261043"]];
+				[[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:@"https://github.com/textmatelives/textmate/issues"]];
 			}
 		}
 		return entry;
