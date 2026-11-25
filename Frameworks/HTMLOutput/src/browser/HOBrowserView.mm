@@ -5,6 +5,7 @@
 #import "../helpers/OakFileURLSchemeHandler.h"
 #import "../helpers/OakFileHandleURLSchemeHandler.h"
 #import "../helpers/OakSystemCommandURLSchemeHandler.h"
+#import "../helpers/OakWebPreviewAppearance.h"
 #import "../helpers/OakWebPreviewTheme.h"
 #import "../helpers/OakWebPreviewZoom.h"
 #import <OakAppKit/OakUIConstructionFunctions.h>
@@ -32,6 +33,7 @@ static NSString* EscapeHTML (NSString* str)
 		[NSNotificationCenter.defaultCenter addObserver:self selector:@selector(uiFontScaleFactorDidChange:) name:OakUIFontScaleFactorDidChangeNotification object:nil];
 		[NSNotificationCenter.defaultCenter addObserver:self selector:@selector(uiFontScaleFactorDidChange:) name:OakWebPreviewZoomDidChangeNotification object:nil];
 		[NSNotificationCenter.defaultCenter addObserver:self selector:@selector(webPreviewThemeDidChange:) name:OakWebPreviewThemeDidChangeNotification object:nil];
+		[NSNotificationCenter.defaultCenter addObserver:self selector:@selector(webPreviewAppearanceDidChange:) name:OakWebPreviewAppearanceDidChangeNotification object:nil];
 
 		_statusBar = [[HOStatusBar alloc] initWithFrame:NSZeroRect];
 		_statusBar.delegate = _webView;
@@ -91,6 +93,7 @@ static NSString* EscapeHTML (NSString* str)
 	_webView.navigationDelegate = self;
 	_webView.UIDelegate = self;
 	_webView.pageZoom = OakUIFontScaleFactor() * OakWebPreviewZoom();
+	_webView.appearance = OakWebPreviewAppearance(); // nil inherits the window's; the page sees it through prefers-color-scheme
 
 	_scriptMessageHandler.webView = _webView;
 }
@@ -103,6 +106,11 @@ static NSString* EscapeHTML (NSString* str)
 - (void)uiFontScaleFactorDidChange:(NSNotification*)aNotification
 {
 	_webView.pageZoom = OakUIFontScaleFactor() * OakWebPreviewZoom();
+}
+
+- (void)webPreviewAppearanceDidChange:(NSNotification*)aNotification
+{
+	_webView.appearance = OakWebPreviewAppearance();
 }
 
 - (void)webPreviewThemeDidChange:(NSNotification*)aNotification
