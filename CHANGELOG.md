@@ -2,9 +2,9 @@ Title: Release Notes
 
 # Changes
 
-## 2026-11-23 (v2.6.3-undead)
+## 2026-11-24 (v2.6.3-undead-beta.1)
 
-A crash that any accessibility client could trigger is fixed, the HTML output window gains zoom, a theme menu and sensible print margins, Mermaid diagrams get a bundle, and the deprecated-API work in [#118](https://github.com/textmatelives/textmate/issues/118) is finished. See [all changes since v2.6.2-undead](https://github.com/textmatelives/textmate/compare/v2.6.2-undead...v2.6.3-undead).
+A beta of the next stable release, offered on the beta update channel. A crash that any accessibility client could trigger is fixed, the HTML output window gains zoom, a theme menu, an appearance setting and sensible print margins, Mermaid diagrams get a bundle, and the deprecated-API work in [#118](https://github.com/textmatelives/textmate/issues/118) is finished. See [all changes since v2.6.2-undead](https://github.com/textmatelives/textmate/compare/v2.6.2-undead...v2.6.3-undead-beta.1).
 
 ### Accessibility
 
@@ -15,6 +15,7 @@ A crash that any accessibility client could trigger is fixed, the HTML output wi
 * **⌘+ and ⌘- zoom the output window.** View → Font → Bigger, Smaller and Default Size work while an output view has the focus. The zoom is shared by every output view, remembered across launches, and limited to 50–300 percent. [#174](https://github.com/textmatelives/textmate/issues/174). (`aad2ba65`)
 * **View → Preview Theme picks the web preview theme.** The in-page theme switcher Bundle Support draws has been hidden since the output window got tabs; the themes are back as a menu. It lists the Themes bundle’s web themes and any in `~/Library/Application Support/TextMate/Themes/Webpreview`, checks the current one, switches open previews on the spot, and stores the choice where Bundle Support reads it for the next preview. [#174](https://github.com/textmatelives/textmate/issues/174). (`aad2ba65`)
 * **Printing uses half-inch margins and the on-screen zoom.** Printing took whatever margins the shared print info carried. It sets half-inch margins now, and the zoom becomes the print scaling factor, so ⌘+ before printing makes the paper copy larger too. [#174](https://github.com/textmatelives/textmate/issues/174). (`aad2ba65`)
+* **View → Preview Theme → Appearance sets the web preview to Light, Dark or Auto.** A preview that follows the system appearance left no way to read it in light colours on a dark Mac short of switching the whole machine. The setting applies to every output view, changes open previews on the spot, and is remembered across launches; Auto, the default, follows the app as before. Pages see the choice through `prefers-color-scheme`. Raised by [@tbates](https://github.com/tbates) in [textmatelives/GitHub-Markdown.tmbundle#12](https://github.com/textmatelives/GitHub-Markdown.tmbundle/pull/12). (`4d9526db`)
 
 ### Bundles
 
