@@ -13,6 +13,7 @@
 #import <OakTextView/OakTextView.h>
 #import <oak/debug.h>
 #import <BundleMenu/BundleMenu.h>
+#import <HTMLOutput/helpers/OakWebPreviewAppearance.h>
 #import <HTMLOutput/helpers/OakWebPreviewTheme.h>
 #import <theme/theme.h>
 #import <settings/settings.h>
@@ -96,10 +97,39 @@ static NSString* NameForLocaleIdentifier (NSString* languageCode)
 	}];
 }
 
+// Appearance block as in the Theme menu, then the web preview themes
+- (void)previewThemesMenuNeedsUpdate:(NSMenu*)aMenu
+{
+	OakWebPreviewPopulateThemeMenu(aMenu, OakWebPreviewThemesInDirectories(OakWebPreviewThemeDirectories()), OakWebPreviewSelectedThemeClass(), self, @selector(takeWebPreviewThemeFrom:));
+
+	NSString* mode = OakWebPreviewAppearanceMode();
+	MBMenu const items = {
+		{ @"Appearance", @selector(nop:) },
+		{ @"Light",      @selector(takeWebPreviewAppearanceFrom:), .indent = 1, .target = self, .representedObject = @"light" },
+		{ @"Dark",       @selector(takeWebPreviewAppearanceFrom:), .indent = 1, .target = self, .representedObject = @"dark"  },
+		{ @"Auto",       @selector(takeWebPreviewAppearanceFrom:), .indent = 1, .target = self, .representedObject = nil      },
+		{ /* -------- */ },
+	};
+	NSMenu* appearanceMenu = MBCreateMenu(items);
+	NSInteger index = 0;
+	for(NSMenuItem* item in [appearanceMenu.itemArray copy])
+	{
+		[appearanceMenu removeItem:item];
+		if(item.action == @selector(takeWebPreviewAppearanceFrom:))
+			item.state = (!item.representedObject && !mode) || [item.representedObject isEqualToString:mode] ? NSControlStateValueOn : NSControlStateValueOff;
+		[aMenu insertItem:item atIndex:index++];
+	}
+}
+
 - (void)takeWebPreviewThemeFrom:(id)sender
 {
 	if(OakWebPreviewTheme* theme = [sender representedObject])
 		OakWebPreviewSelectTheme(theme);
+}
+
+- (void)takeWebPreviewAppearanceFrom:(id)sender
+{
+	OakWebPreviewSetAppearanceMode([sender representedObject]);
 }
 
 - (void)takeThemeAppearanceFrom:(id)sender
@@ -265,7 +295,7 @@ static NSString* NameForLocaleIdentifier (NSString* languageCode)
 	else if(aMenu == themesMenu)
 		[self themesMenuNeedsUpdate:aMenu];
 	else if(aMenu == previewThemesMenu)
-		OakWebPreviewPopulateThemeMenu(aMenu, OakWebPreviewThemesInDirectories(OakWebPreviewThemeDirectories()), OakWebPreviewSelectedThemeClass(), self, @selector(takeWebPreviewThemeFrom:));
+		[self previewThemesMenuNeedsUpdate:aMenu];
 	else if(aMenu == spellingMenu)
 		[self spellingMenuNeedsUpdate:aMenu];
 	else if(aMenu == wrapColumnMenu)
