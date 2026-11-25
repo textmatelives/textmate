@@ -17,6 +17,7 @@ typedef NS_ENUM(NSInteger, FFSearchTarget) {
 	FFSearchTargetProject,
 	FFSearchTargetFileBrowserItems,
 	FFSearchTargetOther,
+	FFSearchTargetRecentFiles,
 };
 
 @protocol FindDelegate <NSObject>
