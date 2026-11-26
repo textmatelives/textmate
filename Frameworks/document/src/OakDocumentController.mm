@@ -307,6 +307,36 @@ namespace
 	_saveRankedPathsTimer = [NSTimer scheduledTimerWithTimeInterval:2 target:self selector:@selector(saveRankedPathsTimerDidFire:) userInfo:nil repeats:NO];
 }
 
+- (NSArray<NSString*>*)recentClosedFilePaths
+{
+	[self setupRankedPaths];
+
+	NSMutableSet<NSString*>* openPaths = [NSMutableSet set];
+	for(OakDocument* document in [self openDocuments])
+	{
+		if(document.path)
+			[openPaths addObject:document.path];
+	}
+
+	std::map<NSInteger, NSString*> ordered;
+	for(NSString* path in _rankedPaths)
+		ordered.emplace(-[_rankedPaths[path] intValue], path);
+
+	NSMutableArray<NSString*>* res = [NSMutableArray array];
+	for(auto const& pair : ordered)
+	{
+		if([openPaths containsObject:pair.second])
+			continue;
+
+		struct stat buf;
+		if(stat(pair.second.fileSystemRepresentation, &buf) == -1 || !S_ISREG(buf.st_mode))
+			continue;
+
+		[res addObject:pair.second];
+	}
+	return res;
+}
+
 // ======================
 // = Directory Scanning =
 // ======================

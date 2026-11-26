@@ -482,6 +482,8 @@ static void SnapWindowToContent (NSWindow* window)
 		self.window.title = [NSString localizedStringWithFormat:@"Find — %@", [folder stringByAbbreviatingWithTildeInPath]];
 	else if(_searchTarget == FFSearchTargetOpenFiles)
 		self.window.title = @"Find — Open Files";
+	else if(_searchTarget == FFSearchTargetRecentFiles)
+		self.window.title = @"Find — Recent Files";
 	else
 		self.window.title = @"Find";
 }
@@ -596,6 +598,7 @@ static void SnapWindowToContent (NSWindow* window)
 		{ @"Selection",           @selector(orderFrontFindPanel:),        .tag = FFSearchTargetSelection         },
 		{ /* -------- */ },
 		{ @"Open Files",          @selector(orderFrontFindPanel:),        .tag = FFSearchTargetOpenFiles         },
+		{ @"Recent Files",        @selector(orderFrontFindPanel:),        .tag = FFSearchTargetRecentFiles       },
 		{ @"Project Folder",      @selector(orderFrontFindPanel:),  @"F", .tag = FFSearchTargetProject           },
 		{ @"File Browser Items",  @selector(orderFrontFindPanel:),        .tag = FFSearchTargetFileBrowserItems  },
 		{ @"Other Folder…",       @selector(showFolderSelectionPanel:),   .tag = FFSearchTargetOther             },
@@ -669,7 +672,7 @@ static void SnapWindowToContent (NSWindow* window)
 {
 	_searchTarget = newTarget;
 
-	self.canEditGlob          = _searchTarget != FFSearchTargetDocument && _searchTarget != FFSearchTargetSelection;
+	self.canEditGlob          = _searchTarget != FFSearchTargetDocument && _searchTarget != FFSearchTargetSelection && _searchTarget != FFSearchTargetOpenFiles && _searchTarget != FFSearchTargetRecentFiles;
 	self.canReplaceInDocument = _searchTarget == FFSearchTargetDocument || _searchTarget == FFSearchTargetSelection;
 
 	[self updateSearchInPopUpMenu];
@@ -950,6 +953,8 @@ static void SnapWindowToContent (NSWindow* window)
 						paths = @[ self.projectFolder ];
 					else if(searchTarget == FFSearchTargetFileBrowserItems)
 						paths = self.fileBrowserItems;
+					else if(searchTarget == FFSearchTargetRecentFiles)
+						paths = [OakDocumentController.sharedInstance recentClosedFilePaths];
 					else // searchTarget == FFSearchTargetOther
 						paths = @[ self.otherFolder ];
 

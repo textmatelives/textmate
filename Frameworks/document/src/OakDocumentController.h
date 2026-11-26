@@ -25,6 +25,10 @@ extern NSString* kSearchGlobsKey;
 - (NSInteger)lruRankForDocument:(OakDocument*)aDocument;
 - (void)didTouchDocument:(OakDocument*)aDocument;
 
+// Recency-ordered paths of recently touched documents, skipping files that
+// no longer exist and documents with open windows.
+- (NSArray<NSString*>*)recentClosedFilePaths;
+
 - (void)enumerateDocumentsAtPath:(NSString*)aDirectory options:(NSDictionary*)someOptions usingBlock:(void(^)(OakDocument* document, BOOL* stop))block;
 - (void)enumerateDocumentsAtPaths:(NSArray*)items options:(NSDictionary*)someOptions usingBlock:(void(^)(OakDocument* document, BOOL* stop))block;
 
