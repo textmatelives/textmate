@@ -413,16 +413,38 @@ static NSUInteger BytesToUTF16 (NSString* str, size_t byteOffset)
 	// Feed the edit so tab-stop ranges track typing. res[0] echoes the edit
 	// itself (already in the buffer); the rest are mirror updates to apply.
 	// Edits outside the current stop drop the session inside replace().
-	auto res = _snippets.replace(snippet::range_t(locB - _snippetAnchor, oldEndB - _snippetAnchor), newText);
-	if(res.size() < 2)
+	snippet::range_t const echoRange(locB - _snippetAnchor, oldEndB - _snippetAnchor);
+	auto res = _snippets.replace(echoRange, newText);
+
+	// Identify the echoed edit by value (range AND string): mirrors ahead
+	// of the edit are prepended, so the echo is not necessarily at index 0.
+	// A duplicate match is a no-op replace (identical range+string); a
+	// mirror can share the range at an insertion point, where only the
+	// strings differ.
+	BOOL foundEcho = NO;
+	for(auto const& entry : res)
+	{
+		if(entry.first == echoRange && entry.second == newText)
+		{
+			foundEcho = YES;
+			break;
+		}
+	}
+	if(!foundEcho)
+	{
+		_snippets.clear();
 		return;
+	}
 
 	_applyingSnippet = YES;
 	size_t newEndB = locB + newText.size();
 	ssize_t echoDeltaB = (ssize_t)newEndB - (ssize_t)oldEndB;
 	ssize_t shift = 0;
-	for(size_t i = 1; i < res.size(); ++i)
+	for(size_t i = 0; i < res.size(); ++i)
 	{
+		if(res[i].first == echoRange && res[i].second == newText)
+			continue;
+
 		// Map pre-edit bytes to post-edit bytes. Ranges are ascending and
 		// (outside nested snippets) disjoint from the echoed edit.
 		size_t preFrom = res[i].first.from.offset + _snippetAnchor;

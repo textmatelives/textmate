@@ -124,6 +124,24 @@ void test_mirror_tracks_typing ()
 	OAK_ASSERT([editor.string isEqualToString:@"(?'xy'reg_exp) \\k<xy>"]);
 }
 
+void test_mirror_before_stop_updates ()
+{
+	FFTextFieldViewController* controller = nil;
+	NSWindow* window = nil;
+	NSTextView* editor = nil;
+	EditingField(&controller, &window, &editor);
+
+	// Transform mirror ahead of its field: the engine prepends it, so the
+	// echoed edit is not at index 0 of the replacement vector.
+	bundles::item_ptr item = MakeItem(bundles::kItemTypeSnippet, "{ content = '${1/(.*)/$1/} ${1:x}'; }");
+	OAK_ASSERT([controller expandBundleItem:item]);
+	OAK_ASSERT([editor.string isEqualToString:@"x x"]);
+	OAK_ASSERT(NSEqualRanges(editor.selectedRange, NSMakeRange(2, 1)));
+
+	[editor insertText:@"yz"];
+	OAK_ASSERT([editor.string isEqualToString:@"yz yz"]);
+}
+
 void test_edit_outside_snippet_drops_session ()
 {
 	FFTextFieldViewController* controller = nil;
