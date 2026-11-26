@@ -1306,13 +1306,16 @@ static std::vector<std::string> menuEntryStrings (plist::dictionary_t const& inf
 	return uuids;
 }
 
-// Only the last pane drags out; menu-type rows and submenus (“categories”,
+// Any pane drags out: selecting a category opens its children, demoting it
+// out of the last pane, so a last-pane-only source would refuse exactly
+// the populated categories. Menu-type rows and submenus (“categories”,
 // which travel with their contents) can go, while bundles, kind groups,
-// Support files, and separators refuse the whole drag.
+// Support files, and separators refuse the whole drag. Only the last pane
+// allows multi-select, so drags from other panes are single rows.
 - (BOOL)tableView:(NSTableView*)tableView writeRowsWithIndexes:(NSIndexSet*)rowIndexes toPasteboard:(NSPasteboard*)pboard
 {
 	NSInteger pane = [self columnIndexForTableView:tableView];
-	if(pane == -1 || pane != (NSInteger)[paneTables count] - 1)
+	if(pane == -1)
 		return NO;
 	NSMutableArray* uuids = [NSMutableArray array];
 	for(size_t row = [rowIndexes firstIndex]; row != NSNotFound; row = [rowIndexes indexGreaterThanIndex:row])
@@ -1365,7 +1368,7 @@ static std::vector<std::string> menuEntryStrings (plist::dictionary_t const& inf
 {
 	NSInteger pane = [self columnIndexForTableView:tableView];
 	NSInteger lastPane = (NSInteger)[paneTables count] - 1;
-	if(pane == -1 || info.draggingSource != paneTables[lastPane])
+	if(pane == -1 || !info.draggingSource || [paneTables indexOfObject:info.draggingSource] == NSNotFound)
 		return NSDragOperationNone;
 
 	// The payload names the bundle; every dragged item must live in it and
