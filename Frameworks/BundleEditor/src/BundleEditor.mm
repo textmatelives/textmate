@@ -790,7 +790,12 @@ static CGFloat const kPaneWidth = 190;
 	[self showWindow:self];
 	[self setBundleItem:anItem];
 
-	if(anItem->paths().empty())
+	// New file-backed items have no paths yet: mark them dirty so save
+	// writes them. Menus and separators never have files (no path_for_kind
+	// mapping) — submenu records persist via the bundle’s info.plist
+	// entry — so marking them dirty would only fail the save with nothing
+	// to write to.
+	if(anItem->paths().empty() && anItem->kind() != bundles::kItemTypeMenu && anItem->kind() != bundles::kItemTypeMenuItemSeparator)
 	{
 		changes.emplace(anItem, anItem->plist());
 		[self didChangeModifiedState];
