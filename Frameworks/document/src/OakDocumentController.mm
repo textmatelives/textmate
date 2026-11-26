@@ -400,49 +400,55 @@ namespace
 		}
 	}
 
-	while(stop == NO && !dirs.empty())
+	// The loop also runs when only links remain so that top-level symlinks
+	// are drained even if no directories were passed (else they are dropped).
+	while(stop == NO && (!dirs.empty() || !links.empty()))
 	{
-		std::string dir = dirs.front();
-		dirs.pop_front();
-
 		struct stat buf;
-		if(lstat(dir.c_str(), &buf) == -1) // get st_dev so we don’t need to stat each path entry (unless it is a symbolic link)
-		{
-			perrorf("OakDocumentController: lstat(\"%s\")", dir.c_str());
-			continue;
-		}
-
-		ASSERT(S_ISDIR(buf.st_mode) || S_ISLNK(buf.st_mode));
-
 		std::vector<std::string> newDirs;
 		std::set<std::string, text::less_t> files;
-		for(auto const& it : path::entries(dir))
+
+		if(!dirs.empty())
 		{
-			std::string const& path = path::join(dir, it->d_name);
-			if(it->d_type == DT_DIR)
-			{
-				if(globs.exclude(path, path::kPathItemDirectory))
-					continue;
+			std::string dir = dirs.front();
+			dirs.pop_front();
 
-				if(didScan.emplace(buf.st_dev, it->d_ino).second)
-					newDirs.push_back(path);
-			}
-			else if(it->d_type == DT_REG)
+			if(lstat(dir.c_str(), &buf) == -1) // get st_dev so we don’t need to stat each path entry (unless it is a symbolic link)
 			{
-				if(globs.exclude(path, path::kPathItemFile))
-					continue;
+				perrorf("OakDocumentController: lstat(\"%s\")", dir.c_str());
+				continue;
+			}
 
-				if(didScan.emplace(buf.st_dev, it->d_ino).second)
-					files.emplace(path);
-			}
-			else if(it->d_type == DT_LNK && (followDirectoryLinks || followFileLinks))
+			ASSERT(S_ISDIR(buf.st_mode) || S_ISLNK(buf.st_mode));
+
+			for(auto const& it : path::entries(dir))
 			{
-				links.push_back(path); // handle later since link may point to another device plus if link is “local” and will be seen later, we reported the local path rather than this link
+				std::string const& path = path::join(dir, it->d_name);
+				if(it->d_type == DT_DIR)
+				{
+					if(globs.exclude(path, path::kPathItemDirectory))
+						continue;
+
+					if(didScan.emplace(buf.st_dev, it->d_ino).second)
+						newDirs.push_back(path);
+				}
+				else if(it->d_type == DT_REG)
+				{
+					if(globs.exclude(path, path::kPathItemFile))
+						continue;
+
+					if(didScan.emplace(buf.st_dev, it->d_ino).second)
+						files.emplace(path);
+				}
+				else if(it->d_type == DT_LNK && (followDirectoryLinks || followFileLinks))
+				{
+					links.push_back(path); // handle later since link may point to another device plus if link is “local” and will be seen later, we reported the local path rather than this link
+				}
 			}
+
+			std::sort(newDirs.begin(), newDirs.end(), text::less_t());
+			dirs.insert(depthFirst ? dirs.begin() : dirs.end(), newDirs.begin(), newDirs.end());
 		}
-
-		std::sort(newDirs.begin(), newDirs.end(), text::less_t());
-		dirs.insert(depthFirst ? dirs.begin() : dirs.end(), newDirs.begin(), newDirs.end());
 
 		if(dirs.empty())
 		{
