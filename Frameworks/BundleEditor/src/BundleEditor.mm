@@ -377,8 +377,13 @@ static CGFloat const kPaneWidth = 190;
 
 - (void)appendPaneWithEntries:(std::vector<be::entry_ptr> const&)entries
 {
-	NSTableView* tableView = [self newPaneTableView];
+	// Push the entries before creating the table: layoutPanes flips
+	// allowsMultipleSelection, which can synchronously re-enter
+	// tableViewSelectionDidChange: (collapsing a multi-selection), and any
+	// such handler must see paired tables/entries. Entries-longer is the
+	// safe skew direction since every reader indexes by table position.
 	paneEntries.push_back(entries);
+	NSTableView* tableView = [self newPaneTableView];
 	[tableView reloadData];
 	[self layoutPanes];
 }
@@ -416,7 +421,7 @@ static CGFloat const kPaneWidth = 190;
 
 - (be::entry_ptr)selectedEntryInPane:(NSInteger)pane
 {
-	if(pane < 0 || pane >= (NSInteger)[paneTables count])
+	if(pane < 0 || pane >= (NSInteger)[paneTables count] || pane >= (NSInteger)paneEntries.size())
 		return be::entry_ptr();
 	NSInteger row = [paneTables[pane] selectedRow];
 	if(row == -1 || row >= (NSInteger)paneEntries[pane].size())
