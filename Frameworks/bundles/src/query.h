@@ -70,6 +70,11 @@ namespace bundles
 // via lookup(), mirroring how the loader skips unresolvable entries.
 	std::vector<oak::uuid_t> menu_members (oak::uuid_t const& menu_uuid);
 
+// Whether ancestor equals menu or any menu above it, following parent_menu
+// up to the bundle root. Guards drags against dropping a menu into itself
+// or one of its descendants, which would orphan its whole subtree.
+	bool is_menu_ancestor (oak::uuid_t const& ancestor, oak::uuid_t const& menu);
+
 // Translate a visible pane slot into {plist index, membership index} for
 // the menu’s items array. Panes skip entries they cannot draw — unknown,
 // deleted, or hidden uuids — so a raw row number lands high whenever such

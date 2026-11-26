@@ -791,3 +791,47 @@ void test_menu_index_for_pane_slot ()
 	// whatever runs after it in the suite.
 	setup_fixtures();
 }
+
+void test_menu_ancestor_chain ()
+{
+	oak::uuid_t const bundleUUID = oak::uuid_t().generate();
+	oak::uuid_t const menuP      = oak::uuid_t().generate();
+	oak::uuid_t const menuC      = oak::uuid_t().generate();
+	oak::uuid_t const menuG      = oak::uuid_t().generate();
+	oak::uuid_t const menuS      = oak::uuid_t().generate();
+	oak::uuid_t const itemI      = oak::uuid_t().generate();
+
+	auto bundle = std::make_shared<bundles::item_t>(bundleUUID, bundles::item_ptr(), bundles::kItemTypeBundle);
+	auto parent = std::make_shared<bundles::item_t>(menuP, bundle, bundles::kItemTypeMenu);
+	auto child  = std::make_shared<bundles::item_t>(menuC, bundle, bundles::kItemTypeMenu);
+	auto grand  = std::make_shared<bundles::item_t>(menuG, bundle, bundles::kItemTypeMenu);
+	auto sibli  = std::make_shared<bundles::item_t>(menuS, bundle, bundles::kItemTypeMenu);
+	auto item   = std::make_shared<bundles::item_t>(itemI, bundle, bundles::kItemTypeSnippet);
+	// Parent links derive from the membership map, as in production.
+	OAK_ASSERT(bundles::set_index(
+		std::vector<bundles::item_ptr>{ bundle, parent, child, grand, sibli, item },
+		std::map<oak::uuid_t, std::vector<oak::uuid_t>>{ { bundleUUID, { menuP } }, { menuP, { menuC, menuS, itemI } }, { menuC, { menuG } } }
+	));
+
+	// Self, ancestors, and descendants.
+	OAK_ASSERT(bundles::is_menu_ancestor(menuP, menuP) == true);
+	OAK_ASSERT(bundles::is_menu_ancestor(menuP, menuC) == true);
+	OAK_ASSERT(bundles::is_menu_ancestor(menuP, menuG) == true);
+	OAK_ASSERT(bundles::is_menu_ancestor(menuC, menuG) == true);
+	OAK_ASSERT(bundles::is_menu_ancestor(menuC, menuP) == false);
+	OAK_ASSERT(bundles::is_menu_ancestor(menuG, menuP) == false);
+
+	// Siblings and items are never ancestors of each other.
+	OAK_ASSERT(bundles::is_menu_ancestor(menuC, menuS) == false);
+	OAK_ASSERT(bundles::is_menu_ancestor(menuS, menuC) == false);
+	OAK_ASSERT(bundles::is_menu_ancestor(itemI, menuP) == false);
+	OAK_ASSERT(bundles::is_menu_ancestor(menuP, itemI) == true);
+
+	// Unknown uuids terminate the walk.
+	OAK_ASSERT(bundles::is_menu_ancestor(oak::uuid_t().generate(), menuP) == false);
+	OAK_ASSERT(bundles::is_menu_ancestor(menuP, oak::uuid_t().generate()) == false);
+
+	// This test replaces the shared index: rebuild the standard fixtures for
+	// whatever runs after it in the suite.
+	setup_fixtures();
+}
