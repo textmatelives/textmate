@@ -2014,6 +2014,15 @@ static std::vector<std::string> menuEntryStrings (plist::dictionary_t const& inf
 	NSInteger pane = [self columnIndexForTableView:table];
 	if(pane == -1)
 		return;
+	if([[table selectedRowIndexes] count] > 1)
+	{
+		// Multi-selections exist to be dragged: navigating (appending a
+		// child pane) would demote this pane out of multi-select mode and
+		// collapse the selection being built — categories could never join
+		// one. Single clicks below keep navigating as before.
+		[self updateEditedItemFromSelection];
+		return;
+	}
 	[self truncatePanesAfter:pane];
 	if(be::entry_ptr selected = [self selectedEntryInPane:pane])
 	{
