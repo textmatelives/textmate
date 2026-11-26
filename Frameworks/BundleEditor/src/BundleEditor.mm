@@ -65,6 +65,15 @@
 	BOOL draggingActive;
 	BOOL rebuildPending;
 
+	// Structural updates (append/truncate/layout) can synchronously re-enter
+	// tableViewSelectionDidChange: — flipping allowsMultipleSelection
+	// collapses a multi-selection and posts mid-flight. While
+	// selectionUpdateDepth is held, nested notifications only record their
+	// table; the outermost exit flushes the latest one against stable panes
+	// instead of mutating paneTables mid-enumeration.
+	NSInteger selectionUpdateDepth;
+	NSTableView* __weak pendingSelectionTable;
+
 	bundles::item_ptr bundleItem;
 	OakDocument* bundleItemContent;
 }
@@ -84,6 +93,7 @@
 - (void)renameCategoryAtAnchor:(NSMenuItem*)sender;
 - (void)appendPaneWithEntries:(std::vector<be::entry_ptr> const&)entries;
 - (void)truncatePanesAfter:(NSInteger)pane;
+- (void)syncPanesToSelectionInTableView:(NSTableView*)tableView;
 - (void)layoutPanes;
 - (NSInteger)columnIndexForTableView:(NSTableView*)tableView;
 - (void)selectIdentifierPath:(NSArray*)path scroll:(BOOL)scroll;
@@ -1976,6 +1986,24 @@ static std::vector<std::string> menuEntryStrings (plist::dictionary_t const& inf
 - (void)tableViewSelectionDidChange:(NSNotification*)notification
 {
 	NSTableView* table = notification.object;
+	if(selectionUpdateDepth > 0)
+	{
+		pendingSelectionTable = table;
+		return;
+	}
+	++selectionUpdateDepth;
+	[self syncPanesToSelectionInTableView:table];
+	while(pendingSelectionTable)
+	{
+		NSTableView* pending = pendingSelectionTable;
+		pendingSelectionTable = nil;
+		[self syncPanesToSelectionInTableView:pending];
+	}
+	--selectionUpdateDepth;
+}
+
+- (void)syncPanesToSelectionInTableView:(NSTableView*)table
+{
 	NSInteger pane = [self columnIndexForTableView:table];
 	if(pane == -1)
 		return;
