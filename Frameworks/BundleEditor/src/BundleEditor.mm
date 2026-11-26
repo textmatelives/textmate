@@ -1361,9 +1361,9 @@ static std::vector<std::string> menuEntryStrings (plist::dictionary_t const& inf
 	[self flushPendingRebuild];
 }
 
-// Drops land in two places: between last-pane rows (reorder within that
-// pane’s menu) or onto a menu row in any pane (append into it). Bundles,
-// kind groups, Other Actions, and Support files never accept.
+// Drops land in two places: between rows of any menu pane (reorder within
+// that pane’s menu) or onto a menu row in any pane (append into it).
+// Bundles, kind groups, Other Actions, and Support files never accept.
 - (NSDragOperation)tableView:(NSTableView*)tableView validateDrop:(id<NSDraggingInfo>)info proposedRow:(NSInteger)row proposedDropOperation:(NSTableViewDropOperation)operation
 {
 	NSInteger pane = [self columnIndexForTableView:tableView];
@@ -1432,23 +1432,36 @@ static std::vector<std::string> menuEntryStrings (plist::dictionary_t const& inf
 	}
 	else
 	{
-		if(row < 0 || row >= (NSInteger)paneEntries[pane].size())
-			return NSDragOperationNone;
-		be::entry_ptr target = paneEntries[pane][row];
-		if(bundles::item_ptr represented = target->represented_item())
+		paneMenu = [self menuContextForPane:pane];
+		if(operation == NSTableViewDropAbove)
 		{
-			if(represented->kind() == bundles::kItemTypeMenu)
-				menu = represented->uuid();
-			else if(target->identifier() == "Menu Actions" && represented->kind() == bundles::kItemTypeBundle)
-				menu = represented->uuid();
-			else
+			// Reorder slot within this pane’s own menu. Panes without a
+			// menu (kind groups, bundles, Support) still refuse.
+			if(!paneMenu)
 				return NSDragOperationNone;
+			menu = paneMenu;
+			index = std::min<size_t>(row < 0 ? paneEntries[pane].size() : row, paneEntries[pane].size());
 		}
 		else
 		{
-			return NSDragOperationNone;
+			if(row < 0 || row >= (NSInteger)paneEntries[pane].size())
+				return NSDragOperationNone;
+			be::entry_ptr target = paneEntries[pane][row];
+			if(bundles::item_ptr represented = target->represented_item())
+			{
+				if(represented->kind() == bundles::kItemTypeMenu)
+					menu = represented->uuid();
+				else if(target->identifier() == "Menu Actions" && represented->kind() == bundles::kItemTypeBundle)
+					menu = represented->uuid();
+				else
+					return NSDragOperationNone;
+			}
+			else
+			{
+				return NSDragOperationNone;
+			}
+			index = target->has_children() ? target->children().size() : 0;
 		}
-		index = target->has_children() ? target->children().size() : 0;
 	}
 
 	// The target menu must belong to the payload’s bundle.
@@ -1472,7 +1485,7 @@ static std::vector<std::string> menuEntryStrings (plist::dictionary_t const& inf
 	// Without the adjustment the gap below offers a move that animates and
 	// lands exactly home: a silent jump-back. Only for reorder slots in the
 	// pane’s own menu: appending into a submenu row keeps its own math.
-	if([uuids count] == 1 && pane == lastPane && menu == paneMenu)
+	if([uuids count] == 1 && menu == paneMenu)
 	{
 		bundles::item_ptr item = bundles::lookup(to_s((NSString*)uuids[0]));
 		size_t home = item ? [self rowForItemUUID:item->uuid() inPane:pane] : SIZE_MAX;
@@ -1534,30 +1547,44 @@ static std::vector<std::string> menuEntryStrings (plist::dictionary_t const& inf
 	}
 	else
 	{
-		if(row < 0 || row >= (NSInteger)paneEntries[pane].size())
+		paneMenu = [self menuContextForPane:pane];
+		if(operation == NSTableViewDropAbove)
 		{
-			os_log_error(OS_LOG_DEFAULT, "BundleEditor: acceptDrop row %ld outside pane", (long)row);
-			return NO;
-		}
-		be::entry_ptr target = paneEntries[pane][row];
-		if(bundles::item_ptr represented = target->represented_item())
-		{
-			if(represented->kind() == bundles::kItemTypeMenu)
-				menu = represented->uuid();
-			else if(target->identifier() == "Menu Actions" && represented->kind() == bundles::kItemTypeBundle)
-				menu = represented->uuid();
-			else
+			if(!paneMenu)
 			{
-				os_log_error(OS_LOG_DEFAULT, "BundleEditor: acceptDrop target is not a menu");
+				os_log_error(OS_LOG_DEFAULT, "BundleEditor: acceptDrop pane %ld has no menu", (long)pane);
 				return NO;
 			}
+			menu = paneMenu;
+			at = std::min<size_t>(row < 0 ? paneEntries[pane].size() : row, paneEntries[pane].size());
 		}
 		else
 		{
-			os_log_error(OS_LOG_DEFAULT, "BundleEditor: acceptDrop target has no item");
-			return NO;
+			if(row < 0 || row >= (NSInteger)paneEntries[pane].size())
+			{
+				os_log_error(OS_LOG_DEFAULT, "BundleEditor: acceptDrop row %ld outside pane", (long)row);
+				return NO;
+			}
+			be::entry_ptr target = paneEntries[pane][row];
+			if(bundles::item_ptr represented = target->represented_item())
+			{
+				if(represented->kind() == bundles::kItemTypeMenu)
+					menu = represented->uuid();
+				else if(target->identifier() == "Menu Actions" && represented->kind() == bundles::kItemTypeBundle)
+					menu = represented->uuid();
+				else
+				{
+					os_log_error(OS_LOG_DEFAULT, "BundleEditor: acceptDrop target is not a menu");
+					return NO;
+				}
+			}
+			else
+			{
+				os_log_error(OS_LOG_DEFAULT, "BundleEditor: acceptDrop target has no item");
+				return NO;
+			}
+			at = target->has_children() ? target->children().size() : 0;
 		}
-		at = target->has_children() ? target->children().size() : 0;
 	}
 
 	bundles::item_ptr bundle;
@@ -1578,7 +1605,7 @@ static std::vector<std::string> menuEntryStrings (plist::dictionary_t const& inf
 	// the item lands where the highlight pointed regardless of drag
 	// direction. This covers drops onto a plain row too (landing above it
 	// either way); only appending into a submenu row keeps its own slot.
-	if(pane == lastPane && menu == paneMenu)
+	if(menu == paneMenu)
 	{
 		size_t above = 0;
 		for(size_t i = 0; i < at && i < paneEntries[pane].size(); ++i)
