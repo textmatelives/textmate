@@ -502,6 +502,78 @@ namespace ng
 		return res;
 	}
 
+	// ==============================
+	// = Word occurrence (^W) flow =
+	// ==============================
+
+	static bool session_is_live (ranges_t const& selection, occurrence_session_t const& session)
+	{
+		return session.armed && session.snapshot.sorted() == selection.sorted();
+	}
+
+	std::pair<ranges_t, occurrence_session_t> select_word_step (buffer_api_t const& buffer, ranges_t const& selection, occurrence_session_t const& session, bool ignore_case, layout_movement_t const* layout)
+	{
+		bool have_selection = false;
+		for(auto const& range : selection)
+			have_selection = have_selection || !range.empty();
+
+		if(!have_selection) // bare caret(s): seed the word under each caret, arm whole-word mode
+		{
+			ranges_t seed = extend(buffer, selection, kSelectionExtendToWord, layout);
+			occurrence_session_t next;
+			next.armed = true;
+			next.whole_words = true;
+			next.snapshot = seed;
+			return { seed, next };
+		}
+
+		// Existing selection: add the next occurrence of the last non-empty range.
+		bool live = session_is_live(selection, session);
+		range_t seed_range = selection.first();
+		for(auto const& range : selection)
+		{
+			if(!range.empty())
+				seed_range = range;
+		}
+		find::options_t options = find::extend_selection | (ignore_case ? find::ignore_case : find::none) | (live && session.whole_words ? find::full_words : find::none);
+		index_t after = live && session.has_skip ? session.skip.max() : index_t();
+
+		ranges_t res;
+		for(auto const& pair : find(buffer, selection, buffer.substr(seed_range.min().index, seed_range.max().index), options, ranges_t(), nullptr, after))
+			res.push_back(pair.first);
+
+		occurrence_session_t next;
+		next.armed = true;
+		next.whole_words = live && session.whole_words;
+		next.snapshot = res;
+		return { res, next };
+	}
+
+	std::pair<ranges_t, occurrence_session_t> deselect_last_step (ranges_t const& selection, occurrence_session_t const& session)
+	{
+		ranges_t res = deselect_last(selection);
+		occurrence_session_t next;
+		if(session_is_live(selection, session) && res.size() + 1 == selection.size())
+		{
+			// Exactly one range removed: remember it so the next add skips it.
+			next.armed = true;
+			next.whole_words = session.whole_words;
+			next.snapshot = res;
+			for(auto const& range : selection)
+			{
+				bool kept = false;
+				for(auto const& kept_range : res)
+					kept = kept || kept_range.sorted() == range.sorted();
+				if(!kept)
+				{
+					next.skip = range.sorted();
+					next.has_skip = true;
+				}
+			}
+		}
+		return { res, next };
+	}
+
 	// =================
 	// = Move Caret(s) =
 	// =================
@@ -1352,7 +1424,7 @@ namespace ng
 		return res;
 	}
 
-	std::map< range_t, std::map<std::string, std::string> > find (buffer_api_t const& buffer, ranges_t const& selection, std::string const& searchFor, find::options_t options, ranges_t const& searchRanges, bool* didWrap)
+	std::map< range_t, std::map<std::string, std::string> > find (buffer_api_t const& buffer, ranges_t const& selection, std::string const& searchFor, find::options_t options, ranges_t const& searchRanges, bool* didWrap, index_t extend_after)
 	{
 		auto setDidWrap = [&didWrap](bool flag){ if(didWrap != nullptr) *didWrap = flag; };
 		setDidWrap(false);
@@ -1376,6 +1448,8 @@ namespace ng
 				anchor = options & find::backwards ? std::min(range.min(), anchor) : std::max(range.max(), anchor);
 				res.emplace(range, std::map<std::string, std::string>());
 			}
+			if(!(options & find::backwards) && extend_after) // skip a just-dropped hit
+				anchor = std::max(anchor, extend_after);
 
 			if(options & find::backwards)
 			{
