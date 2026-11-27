@@ -229,6 +229,7 @@ static void RefreshDockIconIfUpdated ()
 								{ @"Ignore Case",        @selector(toggleFindOption:), @"c", .modifierFlags = NSEventModifierFlagCommand|NSEventModifierFlagOption, .tag =   2 },
 								{ @"Regular Expression", @selector(toggleFindOption:), @"r", .modifierFlags = NSEventModifierFlagCommand|NSEventModifierFlagOption, .tag =   8 },
 								{ @"Ignore Whitespace",  @selector(toggleFindOption:),                                                                              .tag =   4 },
+							{ @"Whole Words",        @selector(toggleFindOption:),                                                                              .tag =   1 },
 								{ @"Wrap Around",        @selector(toggleFindOption:), @"a", .modifierFlags = NSEventModifierFlagCommand|NSEventModifierFlagOption, .tag = 128 },
 							}
 						},

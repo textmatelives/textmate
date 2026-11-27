@@ -106,7 +106,7 @@ static NSButton* OakCreateHistoryButton (NSString* toolTip)
 @property (nonatomic) BOOL ignoreWhitespace;
 @property (nonatomic) BOOL regularExpression;
 @property (nonatomic) BOOL wrapAround;
-@property (nonatomic) BOOL fullWords; // not implemented
+@property (nonatomic) BOOL fullWords;
 
 @property (nonatomic) BOOL searchHiddenFolders;
 @property (nonatomic) BOOL searchFolderLinks;
@@ -118,6 +118,7 @@ static NSButton* OakCreateHistoryButton (NSString* toolTip)
 @property (nonatomic) CGFloat                    findResultsHeight;
 
 @property (nonatomic, readonly) BOOL  canIgnoreWhitespace;
+@property (nonatomic, readonly) BOOL  canFullWords;
 @property (nonatomic) BOOL            canEditGlob;
 @property (nonatomic) BOOL            canReplaceInDocument;
 
@@ -148,6 +149,8 @@ static NSButton* OakCreateHistoryButton (NSString* toolTip)
 @implementation Find
 + (NSSet*)keyPathsForValuesAffectingCanIgnoreWhitespace  { return [NSSet setWithObject:@"regularExpression"]; }
 + (NSSet*)keyPathsForValuesAffectingIgnoreWhitespace     { return [NSSet setWithObject:@"regularExpression"]; }
++ (NSSet*)keyPathsForValuesAffectingCanFullWords         { return [NSSet setWithObject:@"regularExpression"]; }
++ (NSSet*)keyPathsForValuesAffectingFullWords            { return [NSSet setWithObject:@"regularExpression"]; }
 
 + (instancetype)sharedInstance
 {
@@ -284,6 +287,7 @@ static void SnapWindowToContent (NSWindow* window)
 		NSButton* ignoreWhitespaceCheckBox  = OakCreateCheckBox(@"Ignore Whitespace");
 		NSButton* regularExpressionCheckBox = OakCreateCheckBox(@"Regular Expression");
 		NSButton* wrapAroundCheckBox        = OakCreateCheckBox(@"Wrap Around");
+		NSButton* fullWordsCheckBox         = OakCreateCheckBox(@"Whole Words");
 
 		NSTextField* whereLabel             = OakCreateLabel(@"In:");
 		_wherePopUpButton                   = OakCreatePopUpButton(NO, nil, whereLabel);
@@ -294,12 +298,13 @@ static void SnapWindowToContent (NSWindow* window)
 		NSGridView* optionsGridView = [NSGridView gridViewWithViews:@[
 			@[ regularExpressionCheckBox, ignoreWhitespaceCheckBox ],
 			@[ ignoreCaseCheckBox,        wrapAroundCheckBox       ],
+			@[ fullWordsCheckBox ],
 		]];
 
 		optionsGridView.rowSpacing    = 8;
 		optionsGridView.columnSpacing = 20;
 		optionsGridView.rowAlignment  = NSGridRowAlignmentFirstBaseline;
-		[optionsGridView rowAtIndex:1].bottomPadding = 12;
+		[optionsGridView rowAtIndex:2].bottomPadding = 12;
 
 		NSStackView* whereStackView = [NSStackView stackViewWithViews:@[
 			_wherePopUpButton, matchingLabel, globTextField
@@ -394,10 +399,12 @@ static void SnapWindowToContent (NSWindow* window)
 		[ignoreWhitespaceCheckBox             bind:NSValueBinding         toObject:_objectController            withKeyPath:@"content.ignoreWhitespace"     options:nil];
 		[regularExpressionCheckBox            bind:NSValueBinding         toObject:_objectController            withKeyPath:@"content.regularExpression"    options:nil];
 		[wrapAroundCheckBox                   bind:NSValueBinding         toObject:_objectController            withKeyPath:@"content.wrapAround"           options:nil];
+		[fullWordsCheckBox                    bind:NSValueBinding         toObject:_objectController            withKeyPath:@"content.fullWords"            options:nil];
 		[ignoreWhitespaceCheckBox             bind:NSEnabledBinding       toObject:_objectController            withKeyPath:@"content.canIgnoreWhitespace"  options:nil];
+		[fullWordsCheckBox                    bind:NSEnabledBinding       toObject:_objectController            withKeyPath:@"content.canFullWords"         options:nil];
 		[countButton                          bind:NSEnabledBinding       toObject:_findTextFieldViewController withKeyPath:@"stringValue.length"           options:nil];
 
-		OakSetupKeyViewLoop(@[ _gridView, _findTextFieldViewController.view, _replaceTextFieldViewController.view, countButton, regularExpressionCheckBox, ignoreWhitespaceCheckBox, ignoreCaseCheckBox, wrapAroundCheckBox, _wherePopUpButton, globTextField, actionsPopUpButton ]);
+		OakSetupKeyViewLoop(@[ _gridView, _findTextFieldViewController.view, _replaceTextFieldViewController.view, countButton, regularExpressionCheckBox, ignoreWhitespaceCheckBox, ignoreCaseCheckBox, wrapAroundCheckBox, fullWordsCheckBox, _wherePopUpButton, globTextField, actionsPopUpButton ]);
 	}
 	return _gridView;
 }
@@ -773,6 +780,8 @@ static void SnapWindowToContent (NSWindow* window)
 - (void)setWrapAround:(BOOL)flag        { if(_wrapAround != flag) [NSUserDefaults.standardUserDefaults setObject:@(_wrapAround = flag) forKey:kUserDefaultsFindWrapAround]; }
 - (BOOL)ignoreWhitespace                { return _ignoreWhitespace && self.canIgnoreWhitespace; }
 - (BOOL)canIgnoreWhitespace             { return _regularExpression == NO; }
+- (BOOL)fullWords                       { return _fullWords && self.canFullWords; }
+- (BOOL)canFullWords                    { return _regularExpression == NO; }
 
 - (NSString*)globString                 { [self commitEditing]; return _globHistoryList.head; }
 - (void)setGlobString:(NSString*)aGlob  { [_globHistoryList addObject:aGlob]; }

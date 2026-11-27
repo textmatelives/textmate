@@ -1,6 +1,7 @@
 #include "find.h"
 #include "private.h"
 #include <Onigmo/oniguruma.h>
+#include <text/ctype.h>
 #include <text/utf8.h>
 #include <cf/cf.h>
 
@@ -433,11 +434,72 @@ namespace find
 	// = Find_t facade =
 	// =================
 
+	namespace
+	{
+		enum class char_class_t { WORD, BOUNDARY, NEED_MORE };
+
+		// Classify the char starting at s (n bytes available). A split
+		// multibyte char reports NEED_MORE; anything undecodable fails
+		// closed as WORD so uncertain matches are skipped, never emitted.
+		char_class_t classify_first_char (char const* s, size_t n)
+		{
+			if(n == 0)
+				return char_class_t::NEED_MORE;
+			unsigned char c = s[0];
+			if(c < 0x80)
+				return text::is_word_char(c) ? char_class_t::WORD : char_class_t::BOUNDARY;
+			size_t len = 0;
+			uint32_t ch = 0;
+			if((c & 0xE0) == 0xC0)           { len = 2; ch = c & 0x1F; }
+			else if((c & 0xF0) == 0xE0)      { len = 3; ch = c & 0x0F; }
+			else if((c & 0xF8) == 0xF0)      { len = 4; ch = c & 0x07; }
+			else return char_class_t::WORD; // stray continuation byte
+			if(n < len)
+				return char_class_t::NEED_MORE;
+			for(size_t i = 1; i < len; ++i)
+			{
+				if((s[i] & 0xC0) != 0x80)
+					return char_class_t::WORD; // malformed: fail closed
+				ch = (ch << 6) | (s[i] & 0x3F);
+			}
+			return text::is_word_char(ch) ? char_class_t::WORD : char_class_t::BOUNDARY;
+		}
+
+		// True when the char ending at s+n (n > 0) is a word char, scanning
+		// back at most 3 bytes for its lead. Anything undecodable (including
+		// a position split mid-char) fails closed as true.
+		bool ends_with_word_char (char const* s, size_t n)
+		{
+			for(size_t back = 1; back <= std::min(n, (size_t)4); ++back)
+			{
+				unsigned char c = s[n - back];
+				if((c & 0xC0) == 0x80)
+					continue;
+				size_t len = (c < 0x80) ? 1 : (c & 0xE0) == 0xC0 ? 2 : (c & 0xF0) == 0xE0 ? 3 : (c & 0xF8) == 0xF0 ? 4 : 0;
+				if(len != back)
+					return true; // char doesn't end here: fail closed
+				return classify_first_char(s + n - back, back) == char_class_t::WORD;
+			}
+			return true; // no lead byte in reach: fail closed
+		}
+	}
+
 	find_t::find_t (std::string const& str, options_t options)
 	{
 		if(options & regular_expression)
 				pimpl = std::make_shared<regexp_find_t>(str, options);
 		else	pimpl = std::make_shared<regular_find_t>(str, options);
+		// No caller feeds find_t backwards (ng::find strips the flag and
+		// implements previous-match by picking from forward matches), so
+		// the filter degrades to a passthrough there rather than risk
+		// swapped boundaries in the dead DFA-backwards path.
+		_full_words = (options & full_words) && !(options & (regular_expression|backwards));
+		// A spanning match can start this far behind the chunk edge: each
+		// pattern byte matches at most one char, and a case/diacritic
+		// variant of one char is well under 16 bytes. ignore_whitespace
+		// runs are unbounded, but the dialog forbids that combination;
+		// matches reaching past the tail fail closed (see below).
+		_tail_size = std::min((size_t)4 + 16 * str.size(), (size_t)65536);
 	}
 
 	void find_t::each_match (char const* buf, size_t len, bool moreToCome, std::function<void(std::pair<size_t, size_t> const&, std::map<std::string, std::string> const&)> const& f)
@@ -448,16 +510,103 @@ namespace find
 	void find_t::each_match (char const* buf, size_t len, bool moreToCome, std::function<void(std::pair<size_t, size_t> const&, std::map<std::string, std::string> const&, bool*)> const& f)
 	{
 		bool stop = false;
+		size_t const base = _offset; // absolute offset of buf[0]
+
+		if(_full_words && !_pending.empty() && (len > 0 || !moreToCome))
+		{
+			// A match held at the previous buffer edge: its trailing char
+			// has (maybe) arrived, complete it with the new bytes.
+			decltype(_pending) still_pending;
+			for(auto const& entry : _pending)
+			{
+				// Clean edge at stream end is a boundary; a char truncated
+				// by the stream end (malformed input) fails closed.
+				bool boundary = len == 0 && entry.suffix.empty();
+				if(len > 0)
+				{
+					std::string bytes = entry.suffix + std::string(buf, std::min(len, (size_t)4 - entry.suffix.size()));
+					switch(classify_first_char(bytes.data(), bytes.size()))
+					{
+						case char_class_t::WORD:     boundary = false; break;
+						case char_class_t::BOUNDARY: boundary = true;  break;
+						case char_class_t::NEED_MORE:
+							if(moreToCome) // tiny chunk: keep holding with the new bytes
+							{
+								still_pending.push_back({ entry.match, entry.captures, bytes });
+								continue;
+							}
+							boundary = false; // truncated char at stream end: fail closed
+							break;
+					}
+				}
+				if(boundary && !stop)
+					f(entry.match, entry.captures, &stop);
+			}
+			_pending = std::move(still_pending);
+		}
+
+		auto consider = [&](std::pair<size_t, size_t> match, std::map<std::string, std::string> const& captures){
+			if(match.first > 0) // leading boundary (absolute stream start always counts)
+			{
+				// The match may start in a previous chunk (spanning match),
+				// so gather the ≤ 4 bytes before it from the tail + buffer.
+				size_t const tail_start = base > _tail.size() ? base - _tail.size() : 0;
+				size_t const need_from = match.first > 4 ? match.first - 4 : 0;
+				if(need_from < tail_start)
+					return; // char before the match is beyond reach: fail closed
+				std::string window;
+				if(need_from < base)
+				{
+					size_t const t1 = std::min(match.first, base) - tail_start;
+					window.append(_tail.data() + (need_from - tail_start), t1 - (need_from - tail_start));
+				}
+				if(match.first > base)
+					window.append(buf, match.first - base);
+				if(ends_with_word_char(window.data(), window.size()))
+					return;
+			}
+			if(match.second - base < len)
+			{
+				switch(classify_first_char(buf + (match.second - base), len - (match.second - base)))
+				{
+					case char_class_t::WORD:     return;
+					case char_class_t::BOUNDARY: break;
+					case char_class_t::NEED_MORE: // split multibyte char: hold for the next call
+						_pending.push_back({ match, captures, std::string(buf + (match.second - base), len - (match.second - base)) });
+						return;
+				}
+			}
+			else if(moreToCome) // match ends at the buffer edge: hold for the next call
+			{
+				_pending.push_back({ match, captures, std::string() });
+				return;
+			}
+			f(match, captures, &stop);
+		};
+
 		for(size_t offset = 0; offset < len && !stop; )
 		{
 			std::map<std::string, std::string> captures;
 			std::pair<ssize_t, ssize_t> const& m = pimpl->match(buf + offset, len - offset, &captures);
 			if(m.first <= m.second)
-				f(std::make_pair(_offset + offset + m.first, _offset + offset + m.second), captures, &stop);
+			{
+				std::pair<size_t, size_t> match(base + offset + m.first, base + offset + m.second);
+				if(!_full_words)
+					f(match, captures, &stop);
+				else	consider(match, captures);
+			}
 			offset += m.second;
 		}
 
 		_offset += len;
+		if(_full_words && len > 0) // retain the last ≤ _tail_size bytes (never copy the whole buffer)
+		{
+			if(len >= _tail_size)
+				_tail.assign(buf + len - _tail_size, _tail_size);
+			else if(_tail.size() + len > _tail_size)
+				_tail = _tail.substr(_tail.size() + len - _tail_size) + std::string(buf, len);
+			else	_tail.append(buf, len);
+		}
 
 		if(!moreToCome) // Reached end-of-buffer
 		{
@@ -468,6 +617,17 @@ namespace find
 				f(std::make_pair(_offset + m.first, _offset + m.second), captures, &stop);
 				captures.clear();
 				m = pimpl->match(nullptr, 0, &captures);
+			}
+			if(_full_words && !_pending.empty())
+			{
+				// Stream ended with matches still held: clean-edge holds
+				// end at a boundary, truncated-char holds fail closed.
+				for(auto const& entry : _pending)
+				{
+					if(entry.suffix.empty() && !stop)
+						f(entry.match, entry.captures, &stop);
+				}
+				_pending.clear();
 			}
 		}
 	}

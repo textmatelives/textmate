@@ -2,6 +2,7 @@
 #define FIND_H_F9GHKU01
 
 #include <oak/oak.h>
+#include <vector>
 
 namespace find
 {
@@ -39,6 +40,20 @@ namespace find
 	private:
 		std::shared_ptr<find_implementation_t> pimpl;
 		size_t _offset = 0;
+
+		// Full-words boundary state (literal mode only; regexp users write
+		// \b). Buffers split anywhere, so carry trailing bytes across calls
+		// and hold matches whose trailing char hasn't arrived yet.
+		struct pending_match_t
+		{
+			std::pair<size_t, size_t> match;
+			std::map<std::string, std::string> captures;
+			std::string suffix; // bytes of the split trailing char seen so far (≤ 3)
+		};
+		bool _full_words = false;
+		size_t _tail_size = 4;
+		std::string _tail; // last ≤ _tail_size bytes of the stream, for leading boundaries
+		std::vector<pending_match_t> _pending;
 	};
 }
 
