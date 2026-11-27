@@ -92,6 +92,8 @@ static void* kFirstResponderContext = &kFirstResponderContext;
 	size_t           _snippetAnchor;
 	BOOL             _applyingSnippet;
 	NSString*        _lastKnownString;
+	NSRange          _pendingCaret;
+	BOOL             _hasPendingCaret;
 }
 @end
 
@@ -373,6 +375,7 @@ static NSUInteger BytesToUTF16 (NSString* str, size_t byteOffset)
 	NSString* postString = textStorage.string;
 	NSString* preString  = _lastKnownString ?: postString;
 	_lastKnownString = [postString copy];
+	_hasPendingCaret = NO;
 
 	if(_applyingSnippet || _snippets.empty())
 		return;
@@ -439,7 +442,7 @@ static NSUInteger BytesToUTF16 (NSString* str, size_t byteOffset)
 	_applyingSnippet = YES;
 	size_t newEndB = locB + newText.size();
 	ssize_t echoDeltaB = (ssize_t)newEndB - (ssize_t)oldEndB;
-	ssize_t shift = 0;
+	ssize_t shift = 0, caretDelta = 0;
 	for(size_t i = 0; i < res.size(); ++i)
 	{
 		if(res[i].first == echoRange && res[i].second == newText)
@@ -475,6 +478,29 @@ static NSUInteger BytesToUTF16 (NSString* str, size_t byteOffset)
 			[editor didChangeText];
 		}
 		shift += (ssize_t)res[i].second.size() - (ssize_t)(postTo - postFrom);
+		if(preTo <= oldEndB)
+			caretDelta += (ssize_t)res[i].second.size() - (ssize_t)(preTo - preFrom);
+	}
+
+	// Mirrors ahead of the caret that changed length shifted the text
+	// under it, but direct storage edits don’t move the view’s selection:
+	// without this the caret sits stale (possibly outside the stop, which
+	// drops the session on Tab). Leave it alone when nothing ahead moved,
+	// so undo restoring its own selection is never disturbed.
+	// Stash, don’t set: the view repositions the selection after the
+	// storage notification we’re inside, which would clobber a set here.
+	// controlTextDidChange: runs after that and applies it.
+	if(caretDelta != 0 && !_snippets.empty())
+	{
+		ssize_t caretB = (ssize_t)newEndB + caretDelta;
+		NSUInteger caret = caretB < 0 ? NSNotFound : BytesToUTF16(textStorage.string, (size_t)caretB);
+		if(caret == NSNotFound)
+			_snippets.clear();
+		else
+		{
+			_pendingCaret = NSMakeRange(caret, 0);
+			_hasPendingCaret = YES;
+		}
 	}
 	_applyingSnippet = NO;
 }
@@ -482,5 +508,20 @@ static NSUInteger BytesToUTF16 (NSString* str, size_t byteOffset)
 - (void)addStylesToFieldEditor
 {
 	[_syntaxFormatter addStylesToString:((NSTextView*)_textField.currentEditor).textStorage];
+}
+
+- (void)controlTextDidChange:(NSNotification*)aNotification
+{
+	if(!_hasPendingCaret)
+		return;
+	_hasPendingCaret = NO;
+
+	NSTextView* editor = (NSTextView*)_textField.currentEditor;
+	if(![editor isKindOfClass:[NSTextView class]] || NSMaxRange(_pendingCaret) > editor.string.length)
+	{
+		_snippets.clear();
+		return;
+	}
+	editor.selectedRange = _pendingCaret;
 }
 @end

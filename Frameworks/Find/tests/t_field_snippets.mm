@@ -132,14 +132,20 @@ void test_mirror_before_stop_updates ()
 	EditingField(&controller, &window, &editor);
 
 	// Transform mirror ahead of its field: the engine prepends it, so the
-	// echoed edit is not at index 0 of the replacement vector.
-	bundles::item_ptr item = MakeItem(bundles::kItemTypeSnippet, "{ content = '${1/(.*)/$1/} ${1:x}'; }");
+	// echoed edit is not at index 0 of the replacement vector. The mirror
+	// changing length must also move the caret, or Tab drops the session.
+	bundles::item_ptr item = MakeItem(bundles::kItemTypeSnippet, "{ content = '${1/(.*)/$1/} ${1:x} ${2:y}'; }");
 	OAK_ASSERT([controller expandBundleItem:item]);
-	OAK_ASSERT([editor.string isEqualToString:@"x x"]);
+	OAK_ASSERT([editor.string isEqualToString:@"x x y"]);
 	OAK_ASSERT(NSEqualRanges(editor.selectedRange, NSMakeRange(2, 1)));
 
 	[editor insertText:@"yz"];
-	OAK_ASSERT([editor.string isEqualToString:@"yz yz"]);
+	OAK_ASSERT([editor.string isEqualToString:@"yz yz y"]);
+	OAK_ASSERT(NSEqualRanges(editor.selectedRange, NSMakeRange(5, 0)));
+
+	NSTextField* field = (NSTextField*)controller.view;
+	OAK_ASSERT([controller control:field textView:editor doCommandBySelector:@selector(insertTab:)] == YES);
+	OAK_ASSERT(NSEqualRanges(editor.selectedRange, NSMakeRange(6, 1)));
 }
 
 void test_edit_outside_snippet_drops_session ()
