@@ -502,6 +502,11 @@ static NSUInteger BytesToUTF16 (NSString* str, size_t byteOffset)
 			_hasPendingCaret = YES;
 		}
 	}
+
+	// Nested storage edits don’t re-notify, so without this the tracker
+	// would still hold the pre-mirror text and the next keystroke would
+	// diff (and feed) a garbage span, dropping the session.
+	_lastKnownString = [textStorage.string copy];
 	_applyingSnippet = NO;
 }
 

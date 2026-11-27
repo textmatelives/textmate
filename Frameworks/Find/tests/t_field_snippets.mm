@@ -148,6 +148,25 @@ void test_mirror_before_stop_updates ()
 	OAK_ASSERT(NSEqualRanges(editor.selectedRange, NSMakeRange(6, 1)));
 }
 
+void test_mirror_tracks_consecutive_typing ()
+{
+	FFTextFieldViewController* controller = nil;
+	NSWindow* window = nil;
+	NSTextView* editor = nil;
+	EditingField(&controller, &window, &editor);
+
+	bundles::item_ptr item = MakeItem(bundles::kItemTypeSnippet, "{ content = '${1/(.*)/$1/} ${1:x}'; }");
+	OAK_ASSERT([controller expandBundleItem:item]);
+	OAK_ASSERT(NSEqualRanges(editor.selectedRange, NSMakeRange(2, 1)));
+
+	[editor insertText:@"F"];
+	OAK_ASSERT([editor.string isEqualToString:@"F F"]);
+	[editor insertText:@"O"];
+	OAK_ASSERT([editor.string isEqualToString:@"FO FO"]);
+	[editor insertText:@"O"];
+	OAK_ASSERT([editor.string isEqualToString:@"FOO FOO"]);
+}
+
 void test_edit_outside_snippet_drops_session ()
 {
 	FFTextFieldViewController* controller = nil;
