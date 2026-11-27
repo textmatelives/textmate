@@ -49,6 +49,9 @@ enum OTVFontSmoothing : NSUInteger
 @property (nonatomic, readonly) BOOL                        hasSelection;
 @property (nonatomic) NSString*                             selectionString;
 @property (nonatomic, readonly) NSString*                   symbol;
+@property (nonatomic) BOOL                                  nextSelectionChangeIsExplicitJump;
+
+- (void)ensureSelectionIsInVisibleArea:(id)sender;
 
 @property (nonatomic, getter = isRecordingMacro) BOOL       recordingMacro;
 

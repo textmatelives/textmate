@@ -331,6 +331,9 @@ static void RefreshDockIconIfUpdated ()
 		},
 		{ @"Navigate",
 			.submenu = {
+				{ @"Go Back",                      @selector(navigateBack:),                 @"-", .modifierFlags = NSEventModifierFlagControl },
+				{ @"Go Forward",                   @selector(navigateForward:),              @"+", .modifierFlags = NSEventModifierFlagControl },
+				{ /* -------- */ },
 				{ @"Jump to Line…",              @selector(orderFrontGoToLinePanel:),      @"l" },
 				{ @"Jump to Symbol…",            @selector(showSymbolChooser:),            @"T" },
 				{ @"Jump to Selection",          @selector(centerSelectionInVisibleArea:), @"j" },

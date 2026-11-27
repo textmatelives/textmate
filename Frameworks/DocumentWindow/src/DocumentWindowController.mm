@@ -1,4 +1,5 @@
 #import "DocumentWindowController.h"
+#import "OakCursorHistory.h"
 #import "ProjectLayoutView.h"
 #import "SelectGrammarViewController.h"
 #import "OakRunCommandWindowController.h"
@@ -32,6 +33,7 @@
 #import <scm/scm.h>
 #import <text/parse.h>
 #import <text/tokenize.h>
+#import <text/types.h>
 #import <text/utf8.h>
 #import <regexp/glob.h>
 #import <settings/settings.h>
@@ -94,6 +96,9 @@ static void show_command_error (std::string const& message, oak::uuid_t const& u
 	scm::info_ptr                          _documentSCMInfo;
 	std::map<std::string, std::string>     _documentSCMVariables;
 	std::vector<std::string>               _documentScopeAttributes; // attr.os-version, attr.untitled / attr.rev-path + kSettingsScopeAttributesKey
+
+	OakCursorHistory*                    _cursorHistory;
+	BOOL                                 _isNavigatingHistory;
 }
 @property (nonatomic) NSTitlebarAccessoryViewController* titlebarViewController;
 @property (nonatomic) ProjectLayoutView*          layoutView;
@@ -176,7 +181,7 @@ namespace
 	}
 }
 
-static NSArray* const kObservedKeyPaths = @[ @"arrayController.arrangedObjects.path", @"arrayController.arrangedObjects.displayName", @"arrayController.arrangedObjects.documentEdited", @"selectedDocument.path", @"selectedDocument.displayName", @"selectedDocument.icon", @"selectedDocument.onDisk" , @"selectedDocument.documentEdited" ];
+static NSArray* const kObservedKeyPaths = @[ @"arrayController.arrangedObjects.path", @"arrayController.arrangedObjects.displayName", @"arrayController.arrangedObjects.documentEdited", @"selectedDocument.path", @"selectedDocument.displayName", @"selectedDocument.icon", @"selectedDocument.onDisk" , @"selectedDocument.documentEdited", @"textView.selectionString" ];
 
 @implementation DocumentWindowController
 + (KVDB*)sharedProjectStateDB
@@ -190,6 +195,7 @@ static NSArray* const kObservedKeyPaths = @[ @"arrayController.arrangedObjects.p
 	if((self = [super init]))
 	{
 		self.identifier = [NSUUID UUID];
+		_cursorHistory = [OakCursorHistory new];
 
 		self.tabBarView = [[OakTabBarView alloc] initWithFrame:NSZeroRect];
 		self.tabBarView.dataSource = self;
@@ -816,6 +822,13 @@ static NSArray* const kObservedKeyPaths = @[ @"arrayController.arrangedObjects.p
 	{
 		[self.tabBarView reloadData];
 		[[self class] scheduleSessionBackup:self];
+	}
+
+	if([keyPath isEqualToString:@"textView.selectionString"] && !_isNavigatingHistory)
+	{
+		BOOL isExplicitJump = self.textView.nextSelectionChangeIsExplicitJump;
+		self.textView.nextSelectionChangeIsExplicitJump = NO;
+		[self cursorHistoryRecordCurrentSelectionExplicit:isExplicitJump];
 	}
 }
 
@@ -1636,6 +1649,9 @@ static NSArray* const kObservedKeyPaths = @[ @"arrayController.arrangedObjects.p
 		return;
 	}
 
+	if(!_isNavigatingHistory) // departure: live caret of the outgoing doc
+		[self cursorHistoryRecordCurrentSelectionExplicit:NO];
+
 	[OakDocumentController.sharedInstance didTouchDocument:_selectedDocument];
 	[OakDocumentController.sharedInstance didTouchDocument:newDocument];
 
@@ -1659,12 +1675,95 @@ static NSArray* const kObservedKeyPaths = @[ @"arrayController.arrangedObjects.p
 		self.projectPath = projectPath;
 
 		self.documentView.document = _selectedDocument;
+		if(!_isNavigatingHistory) // arrival (also covers the no-KVO equal-string case; KVO dupes no-op)
+			[self cursorHistoryRecordCurrentSelectionExplicit:NO];
 		[[self class] scheduleSessionBackup:self];
 		[self revealHTMLOutputForDocument:_selectedDocument];
 	}
 	else
 	{
 		self.projectPath = nil;
+	}
+}
+
+// ==================
+// = Cursor History =
+// ==================
+
+- (void)cursorHistoryRecordCurrentSelectionExplicit:(BOOL)isExplicitJump
+{
+	OakDocument* doc = self.documentView.document;
+	NSString* sel = self.textView.selectionString;
+	if(!doc || !sel)
+		return;
+	NSUInteger line = 0, column = 0;
+	[OakCursorHistory parseCaret:sel line:&line column:&column];
+	[_cursorHistory recordSelection:sel line:line column:column document:doc.identifier path:doc.path explicit:isExplicitJump];
+}
+
+- (BOOL)cursorHistoryEntryIsValid:(OakCursorHistoryEntry*)entry
+{
+	for(OakDocument* doc in self.documents)
+	{
+		if([doc.identifier isEqual:entry.documentIdentifier] || (entry.path && [doc.path isEqualToString:entry.path]))
+			return YES;
+	}
+	return entry.path && [NSFileManager.defaultManager fileExistsAtPath:entry.path];
+}
+
+- (IBAction)navigateBack:(id)sender
+{
+	OakCursorHistoryEntry* entry = [_cursorHistory goBackSkipping:^BOOL(OakCursorHistoryEntry* e){ return [self cursorHistoryEntryIsValid:e]; }];
+	if(entry)
+		[self cursorHistoryNavigateToEntry:entry];
+}
+
+- (IBAction)navigateForward:(id)sender
+{
+	OakCursorHistoryEntry* entry = [_cursorHistory goForwardSkipping:^BOOL(OakCursorHistoryEntry* e){ return [self cursorHistoryEntryIsValid:e]; }];
+	if(entry)
+		[self cursorHistoryNavigateToEntry:entry];
+}
+
+- (void)cursorHistoryNavigateToEntry:(OakCursorHistoryEntry*)entry
+{
+	_isNavigatingHistory = YES;
+	@try {
+		OakDocument* target = nil;
+		for(OakDocument* doc in self.documents)
+		{
+			if([doc.identifier isEqual:entry.documentIdentifier])
+			{
+				target = doc;
+				break;
+			}
+		}
+		if(!target && entry.path)
+		{
+			for(OakDocument* doc in self.documents)
+			{
+				if([doc.path isEqualToString:entry.path])
+				{
+					target = doc;
+					break;
+				}
+			}
+		}
+		NSString* sel = entry.selectionString;
+		if(!sel) // line:col fallback, round-tripped through text:: for convention safety
+			sel = [NSString stringWithCxxString:(std::string)text::selection_t(text::pos_t(entry.line, entry.column))];
+		if(target)
+		{
+			[self setSelectedDocument:target];
+			self.textView.selectionString = sel;
+		}
+		else if(entry.path)
+		{
+			[self openItems:@[ @{ @"path": entry.path, @"selectionString": sel } ] closingOtherTabs:NO activate:YES];
+		}
+		[self.textView ensureSelectionIsInVisibleArea:self];
+	} @finally {
+		_isNavigatingHistory = NO;
 	}
 }
 
@@ -2270,6 +2369,7 @@ static NSArray* const kObservedKeyPaths = @[ @"arrayController.arrangedObjects.p
 {
 	if(range != text::range_t::undefined)
 		aDocument.selection = to_ns(range);
+	self.textView.nextSelectionChangeIsExplicitJump = YES;
 	[self openItems:@[ @{ @"identifier": aDocument.identifier.UUIDString } ] closingOtherTabs:NO activate:YES];
 }
 
@@ -2305,6 +2405,7 @@ static NSArray* const kObservedKeyPaths = @[ @"arrayController.arrangedObjects.p
 - (void)fileChooserDidSelectItems:(FileChooser*)sender
 {
 	ASSERT([sender respondsToSelector:@selector(selectedItems)]);
+	self.textView.nextSelectionChangeIsExplicitJump = YES;
 	[self openItems:[sender selectedItems] closingOtherTabs:OakIsAlternateKeyOrMouseEvent() activate:YES];
 }
 
@@ -2361,6 +2462,8 @@ static NSArray* const kObservedKeyPaths = @[ @"arrayController.arrangedObjects.p
 {
 	if(!self.selectedDocument.path)
 		return (void)NSBeep();
+
+	self.textView.nextSelectionChangeIsExplicitJump = YES;
 
 	std::string const documentPath = to_s(self.selectedDocument.path);
 	std::string const documentDir  = path::parent(documentPath);
@@ -2490,6 +2593,10 @@ static NSArray* const kObservedKeyPaths = @[ @"arrayController.arrangedObjects.p
 		active = self.fileBrowserVisible && self.fileBrowser.directoryURLForNewItems;
 		[menuItem setDynamicTitle:active ? [NSString stringWithFormat:@"New File in “%@”", [NSFileManager.defaultManager displayNameAtPath:self.fileBrowser.directoryURLForNewItems.path]] : @"New File"];
 	}
+	else if([menuItem action] == @selector(navigateBack:))
+		active = [_cursorHistory canGoBack];
+	else if([menuItem action] == @selector(navigateForward:))
+		active = [_cursorHistory canGoForward];
 	else if(delegateToFileBrowser.find([menuItem action]) != delegateToFileBrowser.end())
 		active = self.fileBrowserVisible && [self.fileBrowser validateMenuItem:menuItem];
 	else if([menuItem action] == @selector(moveDocumentToNewWindow:))

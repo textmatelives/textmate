@@ -510,7 +510,6 @@ private:
 
 	links_ptr _links;
 }
-- (void)ensureSelectionIsInVisibleArea:(id)sender;
 - (void)updateChoiceMenu:(id)sender;
 - (void)resetBlinkCaretTimer;
 - (void)updateSelection;
@@ -2967,6 +2966,7 @@ static void update_menu_key_equivalents (NSMenu* menu, std::multimap<std::string
 	if(!documentView)
 		return;
 	AUTO_REFRESH;
+	self.nextSelectionChangeIsExplicitJump = YES;
 	documentView->jump_to_next_bookmark(to_s(OakDocumentBookmarkIdentifier));
 }
 
@@ -2975,6 +2975,7 @@ static void update_menu_key_equivalents (NSMenu* menu, std::multimap<std::string
 	if(!documentView)
 		return;
 	AUTO_REFRESH;
+	self.nextSelectionChangeIsExplicitJump = YES;
 	documentView->jump_to_previous_bookmark(to_s(OakDocumentBookmarkIdentifier));
 }
 
@@ -2983,6 +2984,7 @@ static void update_menu_key_equivalents (NSMenu* menu, std::multimap<std::string
 	if(!documentView)
 		return;
 	AUTO_REFRESH;
+	self.nextSelectionChangeIsExplicitJump = YES;
 	documentView->jump_to_next_bookmark();
 }
 
@@ -2991,6 +2993,7 @@ static void update_menu_key_equivalents (NSMenu* menu, std::multimap<std::string
 	if(!documentView)
 		return;
 	AUTO_REFRESH;
+	self.nextSelectionChangeIsExplicitJump = YES;
 	documentView->jump_to_previous_bookmark();
 }
 
@@ -4173,6 +4176,15 @@ static scope::context_t add_modifiers_to_scope (scope::context_t scope, NSUInteg
 	if(oldStage < anEvent.stage && anEvent.stage == 2)
 		[self quickLookWithEvent:anEvent];
 	oldStage = anEvent.stage;
+}
+
+- (void)otherMouseDown:(NSEvent*)anEvent
+{
+	if(anEvent.buttonNumber == 3)
+		[NSApp sendAction:@selector(navigateBack:) to:nil from:self];
+	else if(anEvent.buttonNumber == 4)
+		[NSApp sendAction:@selector(navigateForward:) to:nil from:self];
+	else	[super otherMouseDown:anEvent];
 }
 
 - (void)mouseDown:(NSEvent*)anEvent
