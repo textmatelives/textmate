@@ -22,6 +22,21 @@ namespace ng
 		return str;
 	}
 
+	// The ^W occurrence flow bypasses the find pasteboard, so read the case
+	// setting directly. Missing key means case-sensitive, matching
+	// -[NSUserDefaults boolForKey:] with no registered default.
+	static bool find_ignore_case ()
+	{
+		bool res = false;
+		if(CFPropertyListRef value = CFPreferencesCopyAppValue(CFSTR("findIgnoreCase"), kCFPreferencesCurrentApplication))
+		{
+			if(CFGetTypeID(value) == CFBooleanGetTypeID())
+				res = CFBooleanGetValue((CFBooleanRef)value);
+			CFRelease(value);
+		}
+		return res;
+	}
+
 	find::options_t convert (std::map<std::string, std::string> const& options)
 	{
 		static struct { std::string key; find::options_t flag; } const optionMap[] =
@@ -870,9 +885,9 @@ namespace ng
 			case kSelectHardLine:                               _selections = ng::extend(_buffer, _selections, kSelectionExtendToLine,             layout); break;
 			case kSelectLine:                                   _selections = ng::extend(_buffer, _selections, kSelectionExtendToSoftLine,         layout); break;
 			case kSelectParagraph:                              _selections = ng::extend(_buffer, _selections, kSelectionExtendToParagraph,        layout); break;
-			case kSelectWord:                                   _selections = ng::extend(_buffer, _selections, kSelectionExtendToWord,             layout); break;
+			case kSelectWord:                                   std::tie(_selections, _occurrence_session) = ng::select_word_step(_buffer, _selections, _occurrence_session, find_ignore_case(), layout); break;
 			case kToggleColumnSelection:                        _selections = ng::toggle_columnar(_selections);                                             break;
-			case kDeselectLast:                                 _selections = ng::deselect_last(_selections);                                               break;
+			case kDeselectLast:                                 std::tie(_selections, _occurrence_session) = ng::deselect_last_step(_selections, _occurrence_session); break;
 
 			case kFindNext:
 			case kFindPrevious:

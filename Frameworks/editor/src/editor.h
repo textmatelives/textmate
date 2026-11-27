@@ -286,6 +286,7 @@ namespace ng
 
 		buffer_t& _buffer;
 		ng::ranges_t _selections = ranges_t(0);
+		ng::occurrence_session_t _occurrence_session;
 		snippet_controller_t _snippets;
 
 		completion_info_t _completion_info;

@@ -37,9 +37,26 @@ namespace ng
 	ranges_t select_scope (buffer_api_t const& buffer, ranges_t const& selection, scope::selector_t const& scopeSelector);
 	ranges_t toggle_columnar (ranges_t const& selection);
 	ranges_t deselect_last (ranges_t const& selection);
+
+	// Word-occurrence multi-select (^W flow): a bare caret seeds the word
+	// under it and arms whole-word mode; repeats add the next occurrence;
+	// a hand-made selection adds literally. The session disarms itself when
+	// the selections diverge from its snapshot, so no lifecycle hooks are
+	// needed; a drop arms a one-shot skip of the dropped range.
+	struct occurrence_session_t
+	{
+		bool armed = false;
+		bool whole_words = false;
+		ranges_t snapshot;
+		bool has_skip = false;
+		range_t skip;
+	};
+
+	std::pair<ranges_t, occurrence_session_t> select_word_step (buffer_api_t const& buffer, ranges_t const& selection, occurrence_session_t const& session, bool ignore_case, layout_movement_t const* layout = NULL);
+	std::pair<ranges_t, occurrence_session_t> deselect_last_step (ranges_t const& selection, occurrence_session_t const& session);
 	scope::context_t scope (buffer_api_t const& buffer, ranges_t const& selection, std::string const& extraAttributes = NULL_STR);
 	ranges_t highlight_ranges_for_movement (buffer_api_t const& buffer, ranges_t const& oldSelection, ranges_t const& newSelection);
-	std::map< range_t, std::map<std::string, std::string> > find (buffer_api_t const& buffer, ranges_t const& selection, std::string const& searchFor, find::options_t options, ranges_t const& searchRanges = ranges_t(), bool* didWrap = nullptr);
+	std::map< range_t, std::map<std::string, std::string> > find (buffer_api_t const& buffer, ranges_t const& selection, std::string const& searchFor, find::options_t options, ranges_t const& searchRanges = ranges_t(), bool* didWrap = nullptr, index_t extend_after = index_t());
 	std::map< range_t, std::map<std::string, std::string> > find_all (buffer_api_t const& buffer, std::string const& searchFor, find::options_t options, ranges_t const& searchRanges = ranges_t());
 	range_t word_at (buffer_api_t const& buffer, range_t const& range);
 	ranges_t all_words (buffer_api_t const& buffer);
