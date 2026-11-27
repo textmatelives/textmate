@@ -470,6 +470,8 @@ static NSString* const kFoldingsColumnIdentifier  = @"foldings";
 
 - (void)selectAndCenter:(NSString*)aSelectionString
 {
+	// All callers are explicit jumps (symbol menu/chooser, bookmark menu, Go to Line).
+	_textView.nextSelectionChangeIsExplicitJump = YES;
 	_textView.selectionString = aSelectionString;
 	[_textView centerSelectionInVisibleArea:self];
 }

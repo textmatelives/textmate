@@ -37,6 +37,8 @@
 - (IBAction)mergeAllWindows:(id)sender;         // TODO Move to AppController
 
 - (IBAction)goToRelatedFile:(id)sender;
+- (IBAction)navigateBack:(id)sender;
+- (IBAction)navigateForward:(id)sender;
 - (IBAction)selectNextTab:(id)sender;
 - (IBAction)selectPreviousTab:(id)sender;
 - (IBAction)takeSelectedTabIndexFrom:(id)sender;
