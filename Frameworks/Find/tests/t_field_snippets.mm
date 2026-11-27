@@ -169,6 +169,22 @@ void test_mirror_tracks_consecutive_typing ()
 	OAK_ASSERT([editor.string isEqualToString:@"FO FO"]);
 }
 
+void test_mirror_survives_typing_with_space ()
+{
+	FFTextFieldViewController* controller = nil;
+	NSWindow* window = nil;
+	NSTextView* editor = nil;
+	NSTextField* field = EditingField(&controller, &window, &editor);
+
+	bundles::item_ptr item = MakeItem(bundles::kItemTypeSnippet, "{ content = '${1/(.*)/$1/} ${1:x}'; }");
+	OAK_ASSERT([controller expandBundleItem:item]);
+
+	for(char c : std::string("AB CD"))
+		[editor insertText:[NSString stringWithFormat:@"%c", c]];
+	OAK_ASSERT([editor.string isEqualToString:@"AB CD AB CD"]);
+	OAK_ASSERT([controller control:field textView:editor doCommandBySelector:@selector(insertTab:)] == YES);
+}
+
 void test_multiline_snippet_tracks_consecutive_typing ()
 {
 	FFTextFieldViewController* controller = nil;
@@ -188,6 +204,24 @@ void test_multiline_snippet_tracks_consecutive_typing ()
 	for(char c : std::string("FOO_H"))
 		[editor insertText:[NSString stringWithFormat:@"%c", c]];
 	OAK_ASSERT([editor.string isEqualToString:@"#ifndef FOO_H\n#define FOO_H value\n#endif"]);
+}
+
+void test_char_class_transform_survives_space ()
+{
+	FFTextFieldViewController* controller = nil;
+	NSWindow* window = nil;
+	NSTextView* editor = nil;
+	NSTextField* field = EditingField(&controller, &window, &editor);
+
+	bundles::item_ptr item = MakeItem(bundles::kItemTypeSnippet, "{ content = '${1/([A-Za-z0-9_]+).*/$1/} ${1:x}'; }");
+	OAK_ASSERT([controller expandBundleItem:item]);
+	OAK_ASSERT(NSEqualRanges(editor.selectedRange, NSMakeRange(2, 1)));
+
+	for(char c : std::string("AB CD"))
+		[editor insertText:[NSString stringWithFormat:@"%c", c]];
+	OAK_ASSERT([editor.string isEqualToString:@"AB AB CD"]);
+	OAK_ASSERT([controller control:field textView:editor doCommandBySelector:@selector(insertTab:)] == YES);
+	OAK_ASSERT(NSEqualRanges(editor.selectedRange, NSMakeRange(8, 0)));
 }
 
 void test_edit_outside_snippet_drops_session ()
