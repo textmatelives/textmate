@@ -92,8 +92,22 @@ static void* kFirstResponderContext = &kFirstResponderContext;
 	size_t           _snippetAnchor;
 	BOOL             _applyingSnippet;
 	NSString*        _lastKnownString;
-	NSRange          _pendingCaret;
-	BOOL             _hasPendingCaret;
+
+	// Mirror updates + caret move computed in didProcess, applied in
+	// controlTextDidChange:. Mutating the storage inside its own
+	// didProcessEditing confuses TextKit2’s run tracking (it aborts
+	// adjusting the selection); by the time controlTextDidChange: runs,
+	// the triggering edit has fully completed.
+	struct pending_snippet_update_t
+	{
+		std::vector<std::pair<snippet::range_t, std::string>> mirrors; // non-echo entries, stack coords
+		size_t  oldEndB = 0;             // absolute pre-edit byte offset of the edit end
+		size_t  newEndB = 0;             // absolute post-edit byte offset of the edit end
+		ssize_t caretB  = -1;            // absolute post-mirror byte offset, -1 = leave caret
+		bool empty () const { return mirrors.empty() && caretB < 0; }
+		void clear () { mirrors.clear(); caretB = -1; }
+	};
+	pending_snippet_update_t _pendingUpdate;
 }
 @end
 
@@ -357,6 +371,7 @@ static NSUInteger BytesToUTF16 (NSString* str, size_t byteOffset)
 	_applyingSnippet = NO;
 
 	_snippets.clear();
+	_pendingUpdate.clear();
 	_snippetAnchor = fromB;
 	_snippets.push(snippet, snippet::range_t(0, snippet.text.size()));
 	_lastKnownString = [editor.string copy];
@@ -375,7 +390,6 @@ static NSUInteger BytesToUTF16 (NSString* str, size_t byteOffset)
 	NSString* postString = textStorage.string;
 	NSString* preString  = _lastKnownString ?: postString;
 	_lastKnownString = [postString copy];
-	_hasPendingCaret = NO;
 
 	if(_applyingSnippet || _snippets.empty())
 		return;
@@ -399,23 +413,30 @@ static NSUInteger BytesToUTF16 (NSString* str, size_t byteOffset)
 		return; // attribute-only change
 
 	// Expand to composed-character boundaries so multi-unit characters
-	// never split mid-edit.
-	NSRange oldRange = [preString rangeOfComposedCharacterSequencesForRange:NSMakeRange(prefix, preLen - prefix - suffix)];
-	NSRange newRange = [postString rangeOfComposedCharacterSequencesForRange:NSMakeRange(prefix, postLen - prefix - suffix)];
+	// never split mid-edit — but never expand empty ranges: the API
+	// stretches those to cover the following cluster, which would turn
+	// every mid-string insertion into a replacement (caret positions from
+	// real editing always sit on boundaries anyway).
+	NSRange oldRange = NSMakeRange(prefix, preLen - prefix - suffix);
+	NSRange newRange = NSMakeRange(prefix, postLen - prefix - suffix);
+	if(oldRange.length > 0)
+		oldRange = [preString rangeOfComposedCharacterSequencesForRange:oldRange];
+	if(newRange.length > 0)
+		newRange = [postString rangeOfComposedCharacterSequencesForRange:newRange];
 
 	size_t locB    = UTF16ToBytes(postString, oldRange.location);
 	size_t oldEndB = UTF16ToBytes(preString, NSMaxRange(oldRange));
 	std::string newText = to_s([postString substringWithRange:newRange]);
-	[self applySnippetEditFrom:locB to:oldEndB replacement:newText editor:editor];
+	[self feedSnippetEditFrom:locB to:oldEndB replacement:newText];
 }
 
-- (void)applySnippetEditFrom:(size_t)locB to:(size_t)oldEndB replacement:(std::string const&)newText editor:(NSTextView*)editor
+- (void)feedSnippetEditFrom:(size_t)locB to:(size_t)oldEndB replacement:(std::string const&)newText
 {
-	NSTextStorage* textStorage = editor.textStorage;
-
-	// Feed the edit so tab-stop ranges track typing. res[0] echoes the edit
-	// itself (already in the buffer); the rest are mirror updates to apply.
-	// Edits outside the current stop drop the session inside replace().
+	// Feed the edit so tab-stop ranges track typing, stashing the mirror
+	// updates for controlTextDidChange:. Nothing is applied here: mutating
+	// the storage inside its own didProcessEditing confuses TextKit2’s run
+	// tracking. Edits outside the current stop drop the session inside
+	// replace().
 	snippet::range_t const echoRange(locB - _snippetAnchor, oldEndB - _snippetAnchor);
 	auto res = _snippets.replace(echoRange, newText);
 
@@ -439,20 +460,62 @@ static NSUInteger BytesToUTF16 (NSString* str, size_t byteOffset)
 		return;
 	}
 
-	_applyingSnippet = YES;
 	size_t newEndB = locB + newText.size();
-	ssize_t echoDeltaB = (ssize_t)newEndB - (ssize_t)oldEndB;
-	ssize_t shift = 0, caretDelta = 0;
-	for(size_t i = 0; i < res.size(); ++i)
+	ssize_t caretDelta = 0;
+	_pendingUpdate.clear();
+	_pendingUpdate.oldEndB = oldEndB;
+	_pendingUpdate.newEndB = newEndB;
+	for(auto const& entry : res)
 	{
-		if(res[i].first == echoRange && res[i].second == newText)
+		if(entry.first == echoRange && entry.second == newText)
 			continue;
+		_pendingUpdate.mirrors.push_back(entry);
+		if(entry.first.to.offset + _snippetAnchor <= oldEndB)
+			caretDelta += (ssize_t)entry.second.size() - (ssize_t)(entry.first.to.offset - entry.first.from.offset);
+	}
+	if(caretDelta != 0 && !_snippets.empty())
+		_pendingUpdate.caretB = (ssize_t)newEndB + caretDelta;
+}
 
+- (void)addStylesToFieldEditor
+{
+	[_syntaxFormatter addStylesToString:((NSTextView*)_textField.currentEditor).textStorage];
+}
+
+- (void)controlTextDidChange:(NSNotification*)aNotification
+{
+	if(_pendingUpdate.empty())
+		return;
+
+	NSTextView* editor = (NSTextView*)_textField.currentEditor;
+	NSTextStorage* textStorage = editor.textStorage;
+	if(![editor isKindOfClass:[NSTextView class]])
+	{
+		_pendingUpdate.clear();
+		_snippets.clear();
+		return;
+	}
+
+	// Consume first: each application below re-enters here, and must see
+	// nothing pending.
+	pending_snippet_update_t pending;
+	pending.mirrors.swap(_pendingUpdate.mirrors);
+	pending.oldEndB = _pendingUpdate.oldEndB;
+	pending.newEndB = _pendingUpdate.newEndB;
+	pending.caretB  = _pendingUpdate.caretB;
+	_pendingUpdate.clear();
+
+	ssize_t const echoDeltaB = (ssize_t)pending.newEndB - (ssize_t)pending.oldEndB;
+	_applyingSnippet = YES;
+	ssize_t shift = 0;
+	for(auto const& entry : pending.mirrors)
+	{
 		// Map pre-edit bytes to post-edit bytes. Ranges are ascending and
-		// (outside nested snippets) disjoint from the echoed edit.
-		size_t preFrom = res[i].first.from.offset + _snippetAnchor;
-		size_t preTo   = res[i].first.to.offset + _snippetAnchor;
-		ssize_t echoShift = preFrom >= oldEndB ? echoDeltaB : 0;
+		// (outside nested snippets) disjoint from the echoed edit, which
+		// the buffer already contains.
+		size_t preFrom = entry.first.from.offset + _snippetAnchor;
+		size_t preTo   = entry.first.to.offset + _snippetAnchor;
+		ssize_t echoShift = preFrom >= pending.oldEndB ? echoDeltaB : 0;
 		ssize_t postFrom = (ssize_t)preFrom + shift + echoShift;
 		ssize_t postTo   = (ssize_t)preTo + shift + echoShift;
 		if(postFrom < 0 || postTo < 0)
@@ -471,62 +534,22 @@ static NSUInteger BytesToUTF16 (NSString* str, size_t byteOffset)
 		}
 
 		NSRange range = NSMakeRange(from16, to16 - from16);
-		NSString* str = to_ns(res[i].second);
+		NSString* str = to_ns(entry.second);
 		if([editor shouldChangeTextInRange:range replacementString:str])
 		{
 			[textStorage replaceCharactersInRange:range withString:str];
 			[editor didChangeText];
 		}
-		shift += (ssize_t)res[i].second.size() - (ssize_t)(postTo - postFrom);
-		if(preTo <= oldEndB)
-			caretDelta += (ssize_t)res[i].second.size() - (ssize_t)(preTo - preFrom);
+		shift += (ssize_t)entry.second.size() - (ssize_t)(postTo - postFrom);
 	}
 
-	// Mirrors ahead of the caret that changed length shifted the text
-	// under it, but direct storage edits don’t move the view’s selection:
-	// without this the caret sits stale (possibly outside the stop, which
-	// drops the session on Tab). Leave it alone when nothing ahead moved,
-	// so undo restoring its own selection is never disturbed.
-	// Stash, don’t set: the view repositions the selection after the
-	// storage notification we’re inside, which would clobber a set here.
-	// controlTextDidChange: runs after that and applies it.
-	if(caretDelta != 0 && !_snippets.empty())
+	if(pending.caretB >= 0 && !_snippets.empty())
 	{
-		ssize_t caretB = (ssize_t)newEndB + caretDelta;
-		NSUInteger caret = caretB < 0 ? NSNotFound : BytesToUTF16(textStorage.string, (size_t)caretB);
+		NSUInteger caret = BytesToUTF16(textStorage.string, (size_t)pending.caretB);
 		if(caret == NSNotFound)
 			_snippets.clear();
-		else
-		{
-			_pendingCaret = NSMakeRange(caret, 0);
-			_hasPendingCaret = YES;
-		}
+		else	editor.selectedRange = NSMakeRange(caret, 0);
 	}
-
-	// Nested storage edits don’t re-notify, so without this the tracker
-	// would still hold the pre-mirror text and the next keystroke would
-	// diff (and feed) a garbage span, dropping the session.
-	_lastKnownString = [textStorage.string copy];
 	_applyingSnippet = NO;
-}
-
-- (void)addStylesToFieldEditor
-{
-	[_syntaxFormatter addStylesToString:((NSTextView*)_textField.currentEditor).textStorage];
-}
-
-- (void)controlTextDidChange:(NSNotification*)aNotification
-{
-	if(!_hasPendingCaret)
-		return;
-	_hasPendingCaret = NO;
-
-	NSTextView* editor = (NSTextView*)_textField.currentEditor;
-	if(![editor isKindOfClass:[NSTextView class]] || NSMaxRange(_pendingCaret) > editor.string.length)
-	{
-		_snippets.clear();
-		return;
-	}
-	editor.selectedRange = _pendingCaret;
 }
 @end

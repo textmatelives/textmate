@@ -165,6 +165,29 @@ void test_mirror_tracks_consecutive_typing ()
 	OAK_ASSERT([editor.string isEqualToString:@"FO FO"]);
 	[editor insertText:@"O"];
 	OAK_ASSERT([editor.string isEqualToString:@"FOO FOO"]);
+	[editor deleteBackward:nil];
+	OAK_ASSERT([editor.string isEqualToString:@"FO FO"]);
+}
+
+void test_multiline_snippet_tracks_consecutive_typing ()
+{
+	FFTextFieldViewController* controller = nil;
+	NSWindow* window = nil;
+	NSTextView* editor = nil;
+	EditingField(&controller, &window, &editor);
+
+	// The C include-guard shape: multi-line, char-class transform mirror
+	// ahead of a long default stop.
+	static test::bundle_index_t index;
+	plist::dictionary_t plist;
+	plist["content"] = std::string("#ifndef ${1/([A-Za-z0-9_]+).*/$1/}\n#define ${1:SYMBOL} ${2:value}\n#endif");
+	bundles::item_ptr item = index.add(bundles::kItemTypeSnippet, plist);
+	OAK_ASSERT([controller expandBundleItem:item]);
+	OAK_ASSERT(NSEqualRanges(editor.selectedRange, NSMakeRange(23, 6)));
+
+	for(char c : std::string("FOO_H"))
+		[editor insertText:[NSString stringWithFormat:@"%c", c]];
+	OAK_ASSERT([editor.string isEqualToString:@"#ifndef FOO_H\n#define FOO_H value\n#endif"]);
 }
 
 void test_edit_outside_snippet_drops_session ()
