@@ -1025,6 +1025,7 @@ static std::string shell_quote (std::vector<std::string> paths)
 	scm::gutter_diff::compute(repoRoot, relPath, std::move(buffer), ^(scm::gutter_diff::result_t result){
 		[doc removeAllMarksOfType:@"diff.added"];
 		[doc removeAllMarksOfType:@"diff.modified"];
+		[doc removeAllMarksOfType:@"diff.deleted"];
 
 		for(auto const& [line, c] : result)
 		{
@@ -1033,7 +1034,7 @@ static std::string shell_quote (std::vector<std::string> paths)
 			{
 				case scm::gutter_diff::change::added:    type = @"diff.added";    break;
 				case scm::gutter_diff::change::modified: type = @"diff.modified"; break;
-				case scm::gutter_diff::change::deleted:  break; // no template asset yet
+				case scm::gutter_diff::change::deleted:  type = @"diff.deleted";  break;
 			}
 			if(type)
 				[doc setMarkOfType:type atPosition:text::pos_t(line - 1, 0) content:nil];
