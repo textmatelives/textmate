@@ -296,6 +296,24 @@ namespace bundles
 		return std::vector<oak::uuid_t>();
 	}
 
+	bool is_menu_ancestor (oak::uuid_t const& ancestor, oak::uuid_t const& menu)
+	{
+		if(!ancestor || !menu)
+			return false;
+		std::set<oak::uuid_t> seen;
+		oak::uuid_t current = menu;
+		while(current && seen.insert(current).second)
+		{
+			if(current == ancestor)
+				return true;
+			item_ptr item = lookup(current);
+			if(!item || item->kind() == kItemTypeBundle)
+				break;
+			current = item->parent_menu();
+		}
+		return false;
+	}
+
 	std::pair<size_t, size_t> menu_indexes_for_pane_slot (std::vector<std::string> const& entries, size_t slot, std::set<std::string> const& dragged)
 	{
 		size_t plistIndex = 0, membersIndex = 0, drawn = 0;
