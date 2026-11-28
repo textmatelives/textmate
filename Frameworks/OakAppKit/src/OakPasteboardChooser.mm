@@ -108,6 +108,11 @@ static NSMutableDictionary* SharedChoosers;
 			windowTitle = @"Find History";
 			actionName  = @"Find Next";
 		}
+		else if([_pasteboard isEqual:OakPasteboard.replacePasteboard])
+		{
+			windowTitle = @"Replace History";
+			actionName  = @"Use";
+		}
 
 		_arrayController = [[NSArrayController alloc] init];
 
@@ -209,7 +214,8 @@ static NSMutableDictionary* SharedChoosers;
 {
 	auto updateDefaultButton = ^NSEvent*(NSEvent* event){
 		BOOL optionDown = (event.modifierFlags & NSEventModifierFlagDeviceIndependentFlagsMask) == NSEventModifierFlagOption;
-		_actionButton.title = optionDown ? @"Find in Project" : @"Find Next";
+		if([_pasteboard isEqual:OakPasteboard.findPasteboard])
+			_actionButton.title = optionDown ? @"Find in Project" : @"Find Next";
 		return event;
 	};
 

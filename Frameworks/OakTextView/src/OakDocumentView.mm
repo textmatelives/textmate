@@ -464,6 +464,14 @@ static NSString* const kFoldingsColumnIdentifier  = @"foldings";
 	[chooser showWindowRelativeToFrame:[self.window convertRectToScreen:[_textView convertRect:[_textView visibleRect] toView:nil]]];
 }
 
+- (void)showReplaceHistory:(id)sender
+{
+	// No action: accepting picks the entry as current (or deletes/clears),
+	// which is the whole point of managing replace history.
+	OakPasteboardChooser* chooser = [OakPasteboardChooser sharedChooserForPasteboard:OakPasteboard.replacePasteboard];
+	[chooser showWindowRelativeToFrame:[self.window convertRectToScreen:[_textView convertRect:[_textView visibleRect] toView:nil]]];
+}
+
 // ==================
 // = Symbol Chooser =
 // ==================
