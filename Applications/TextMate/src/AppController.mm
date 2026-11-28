@@ -216,6 +216,7 @@ static void RefreshDockIconIfUpdated ()
 						{ @"Find in Folder…",             @selector(orderFrontFindPanel:),                .tag = FFSearchTargetOther    },
 						{ /* -------- */ },
 						{ @"Show Find History",           @selector(showFindHistory:),              @"f", .modifierFlags = NSEventModifierFlagCommand|NSEventModifierFlagOption|NSEventModifierFlagControl },
+						{ @"Show Replace History",        @selector(showReplaceHistory:),           @"r", .modifierFlags = NSEventModifierFlagCommand|NSEventModifierFlagOption|NSEventModifierFlagControl },
 						{ /* -------- */ },
 						{ @"Incremental Search",          @selector(incrementalSearch:),            @"s", .modifierFlags = NSEventModifierFlagControl },
 						{ @"Incremental Search Previous", @selector(incrementalSearchPrevious:),    @"S", .modifierFlags = NSEventModifierFlagControl },
